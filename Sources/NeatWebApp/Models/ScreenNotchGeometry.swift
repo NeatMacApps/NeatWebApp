@@ -1,0 +1,105 @@
+import AppKit
+
+struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
+    private static let activationHorizontalPadding: CGFloat = 8
+    private static let activationBottomPadding: CGFloat = 8
+
+    let screenFrame: CGRect
+    let visibleFrame: CGRect
+    let safeAreaInsets: NSEdgeInsets
+    let auxiliaryTopLeftArea: CGRect
+    let auxiliaryTopRightArea: CGRect
+    let localizedName: String
+
+    var id: String {
+        "\(localizedName)-\(Int(screenFrame.origin.x))-\(Int(screenFrame.origin.y))-\(Int(screenFrame.width))x\(Int(screenFrame.height))"
+    }
+
+    init?(
+        screen: NSScreen
+    ) {
+        self.init(
+            screenFrame: screen.frame,
+            visibleFrame: screen.visibleFrame,
+            safeAreaInsets: screen.safeAreaInsets,
+            auxiliaryTopLeftArea: screen.auxiliaryTopLeftArea ?? .zero,
+            auxiliaryTopRightArea: screen.auxiliaryTopRightArea ?? .zero,
+            localizedName: screen.localizedName
+        )
+
+        guard hasNotch else {
+            return nil
+        }
+    }
+
+    init(
+        screenFrame: CGRect,
+        visibleFrame: CGRect,
+        safeAreaInsets: NSEdgeInsets,
+        auxiliaryTopLeftArea: CGRect,
+        auxiliaryTopRightArea: CGRect,
+        localizedName: String
+    ) {
+        self.screenFrame = screenFrame
+        self.visibleFrame = visibleFrame
+        self.safeAreaInsets = safeAreaInsets
+        self.auxiliaryTopLeftArea = auxiliaryTopLeftArea
+        self.auxiliaryTopRightArea = auxiliaryTopRightArea
+        self.localizedName = localizedName
+    }
+
+    var hasNotch: Bool {
+        safeAreaInsets.top > 0 &&
+        !auxiliaryTopLeftArea.isEmpty &&
+        !auxiliaryTopRightArea.isEmpty &&
+        auxiliaryTopLeftArea.maxX < auxiliaryTopRightArea.minX
+    }
+
+    var notchRect: CGRect {
+        let topStrip = CGRect(
+            x: screenFrame.minX,
+            y: screenFrame.maxY - safeAreaInsets.top,
+            width: screenFrame.width,
+            height: safeAreaInsets.top
+        )
+
+        return CGRect(
+            x: auxiliaryTopLeftArea.maxX,
+            y: topStrip.minY,
+            width: max(auxiliaryTopRightArea.minX - auxiliaryTopLeftArea.maxX, 0),
+            height: topStrip.height
+        )
+    }
+
+    var activationRect: CGRect {
+        var rect = notchRect
+        rect.origin.x -= Self.activationHorizontalPadding
+        rect.size.width += Self.activationHorizontalPadding * 2
+        rect.origin.y -= Self.activationBottomPadding
+        rect.size.height += Self.activationBottomPadding
+        return rect.intersection(screenFrame)
+    }
+
+    func overlayOrigin(for panelSize: CGSize) -> CGPoint {
+        CGPoint(
+            x: notchRect.midX - (panelSize.width / 2),
+            y: notchRect.minY - panelSize.height - 10
+        )
+    }
+
+    static func screen(containing point: CGPoint, within geometries: [ScreenNotchGeometry]) -> ScreenNotchGeometry? {
+        geometries.first(where: { $0.screenFrame.contains(point) })
+    }
+
+    static func == (lhs: ScreenNotchGeometry, rhs: ScreenNotchGeometry) -> Bool {
+        lhs.screenFrame == rhs.screenFrame &&
+        lhs.visibleFrame == rhs.visibleFrame &&
+        lhs.safeAreaInsets.top == rhs.safeAreaInsets.top &&
+        lhs.safeAreaInsets.left == rhs.safeAreaInsets.left &&
+        lhs.safeAreaInsets.bottom == rhs.safeAreaInsets.bottom &&
+        lhs.safeAreaInsets.right == rhs.safeAreaInsets.right &&
+        lhs.auxiliaryTopLeftArea == rhs.auxiliaryTopLeftArea &&
+        lhs.auxiliaryTopRightArea == rhs.auxiliaryTopRightArea &&
+        lhs.localizedName == rhs.localizedName
+    }
+}

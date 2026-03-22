@@ -1,0 +1,577 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0086BDE5E84A48A18FB533AB /* WebAppFaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6535023594466573F6BD745C /* WebAppFaviconLoader.swift */; };
+		01F9716F402A1F19242A0236 /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B6E6D82411C62C8C81826 /* BrowserWebView.swift */; };
+		053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
+		11F5F79C56256DD9DAFACF9E /* LauncherOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */; };
+		29B79A222C4FA0E3780DAE4B /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
+		42BB40148402990AFA14688D /* LauncherPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */; };
+		50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
+		5DB82736E984691CC7D15DEA /* BrowserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4439DB55CDCD672746B164E7 /* BrowserSession.swift */; };
+		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
+		667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */; };
+		7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */; };
+		8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */; };
+		898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
+		98A529BA559227F47CF540EA /* ScreenNotchGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */; };
+		A99EDC06F81B9C12BFDB2EA6 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
+		BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104516AB0D614875D050B34D /* WebAppIconView.swift */; };
+		C9FDC56D7697517D4825E39F /* WebAppWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */; };
+		E47D09DC24DC6FE2D67CA5C8 /* WebAppWindowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF1B7E5F120FAAA6FE1F9E0 /* WebAppWindowCoordinator.swift */; };
+		E785257BD4C3D661B97F5472 /* NeatWebAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */; };
+		E94BA4C2883BA0A5A5AA1A41 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AB86B7F555EAF061B89125 /* AppCommands.swift */; };
+		EDB3ADFDB1A47F94A4B018C9 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D060C4D3DD8DC88849971C39 /* DashboardView.swift */; };
+		FF83C2338E69D5313467C47E /* LauncherPresentationContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6CA6226612BE2CC099FE90D4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5D4339875356890C6F82C180 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FB04F29A1BD3B13B73302B10;
+			remoteInfo = NeatWebApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppPreferencesStore.swift; sourceTree = "<group>"; };
+		104516AB0D614875D050B34D /* WebAppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppIconView.swift; sourceTree = "<group>"; };
+		169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppDefinition.swift; sourceTree = "<group>"; };
+		22AB86B7F555EAF061B89125 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
+		249468F78ECB158EF76D893C /* LauncherOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayController.swift; sourceTree = "<group>"; };
+		257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometryTests.swift; sourceTree = "<group>"; };
+		270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchActivationMonitor.swift; sourceTree = "<group>"; };
+		328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherPresentationContextTests.swift; sourceTree = "<group>"; };
+		3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatWebAppApp.swift; sourceTree = "<group>"; };
+		439B6E6D82411C62C8C81826 /* BrowserWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserWebView.swift; sourceTree = "<group>"; };
+		4439DB55CDCD672746B164E7 /* BrowserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSession.swift; sourceTree = "<group>"; };
+		6535023594466573F6BD745C /* WebAppFaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconLoader.swift; sourceTree = "<group>"; };
+		763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowController.swift; sourceTree = "<group>"; };
+		87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometry.swift; sourceTree = "<group>"; };
+		A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherPresentationContext.swift; sourceTree = "<group>"; };
+		BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserContainerView.swift; sourceTree = "<group>"; };
+		C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchDebugOverlayController.swift; sourceTree = "<group>"; };
+		CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CD7BD55FB4EA79C3E38633C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D060C4D3DD8DC88849971C39 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatWebApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		FCF1B7E5F120FAAA6FE1F9E0 /* WebAppWindowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowCoordinator.swift; sourceTree = "<group>"; };
+		FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayRootView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		10202B68B0B46A2A05EFB217 /* Browser */ = {
+			isa = PBXGroup;
+			children = (
+				67631CD7ABA5264A3299E2A0 /* AppKitBridge */,
+				BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */,
+				4439DB55CDCD672746B164E7 /* BrowserSession.swift */,
+			);
+			path = Browser;
+			sourceTree = "<group>";
+		};
+		1611A32D798D9B0E174D2384 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				240E58313E1F67E04C81AE8A /* NeatWebAppTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		240E58313E1F67E04C81AE8A /* NeatWebAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */,
+				257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */,
+			);
+			path = NeatWebAppTests;
+			sourceTree = "<group>";
+		};
+		3771EF9760EB9D9F2518FB43 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				FE510B09AE9992B2892FB3F8 /* NeatWebApp */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		3FD4283F00E8CC254E4F7F82 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */,
+				169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5457E09BDE596CFB321D0343 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				D060C4D3DD8DC88849971C39 /* DashboardView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		67631CD7ABA5264A3299E2A0 /* AppKitBridge */ = {
+			isa = PBXGroup;
+			children = (
+				439B6E6D82411C62C8C81826 /* BrowserWebView.swift */,
+			);
+			path = AppKitBridge;
+			sourceTree = "<group>";
+		};
+		9C62D0453FDC29E950D879E5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */,
+				87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */,
+				1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A17748DDAE8174F10646C9C0 /* Launcher */ = {
+			isa = PBXGroup;
+			children = (
+				FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */,
+			);
+			path = Launcher;
+			sourceTree = "<group>";
+		};
+		A608912A86BA43A266C85FB2 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				104516AB0D614875D050B34D /* WebAppIconView.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		D5074A44EC3600AEC3CBD934 = {
+			isa = PBXGroup;
+			children = (
+				3771EF9760EB9D9F2518FB43 /* Sources */,
+				1611A32D798D9B0E174D2384 /* Tests */,
+				3FD4283F00E8CC254E4F7F82 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E0A76F352720883EEE9272EC /* App */ = {
+			isa = PBXGroup;
+			children = (
+				22AB86B7F555EAF061B89125 /* AppCommands.swift */,
+				CD7BD55FB4EA79C3E38633C3 /* Info.plist */,
+				3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F0A3370C6F7499A6950156D5 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */,
+				249468F78ECB158EF76D893C /* LauncherOverlayController.swift */,
+				270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */,
+				C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */,
+				6535023594466573F6BD745C /* WebAppFaviconLoader.swift */,
+				05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */,
+				763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */,
+				FCF1B7E5F120FAAA6FE1F9E0 /* WebAppWindowCoordinator.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		FB92790582C9B1B5E275A41F /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				10202B68B0B46A2A05EFB217 /* Browser */,
+				5457E09BDE596CFB321D0343 /* Dashboard */,
+				A17748DDAE8174F10646C9C0 /* Launcher */,
+				A608912A86BA43A266C85FB2 /* Shared */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		FE510B09AE9992B2892FB3F8 /* NeatWebApp */ = {
+			isa = PBXGroup;
+			children = (
+				E0A76F352720883EEE9272EC /* App */,
+				FB92790582C9B1B5E275A41F /* Features */,
+				9C62D0453FDC29E950D879E5 /* Models */,
+				F0A3370C6F7499A6950156D5 /* Services */,
+				CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */,
+			);
+			path = NeatWebApp;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BFF4B9D25682D9A99393461E /* NeatWebAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6C7CE586E62509F7C82E712 /* Build configuration list for PBXNativeTarget "NeatWebAppTests" */;
+			buildPhases = (
+				232E3261F2556C0AB07485B6 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4E6FE2F06569043089B19110 /* PBXTargetDependency */,
+			);
+			name = NeatWebAppTests;
+			packageProductDependencies = (
+			);
+			productName = NeatWebAppTests;
+			productReference = 169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FB04F29A1BD3B13B73302B10 /* NeatWebApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74233E56A9A3973751FBCB75 /* Build configuration list for PBXNativeTarget "NeatWebApp" */;
+			buildPhases = (
+				813818C49D27E0143323184B /* Sources */,
+				1E28413B6800193084305DEE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NeatWebApp;
+			packageProductDependencies = (
+			);
+			productName = NeatWebApp;
+			productReference = D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5D4339875356890C6F82C180 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					BFF4B9D25682D9A99393461E = {
+						ProvisioningStyle = Automatic;
+					};
+					FB04F29A1BD3B13B73302B10 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 3713881D6A265850FA6ED279 /* Build configuration list for PBXProject "NeatWebApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D5074A44EC3600AEC3CBD934;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FB04F29A1BD3B13B73302B10 /* NeatWebApp */,
+				BFF4B9D25682D9A99393461E /* NeatWebAppTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1E28413B6800193084305DEE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		232E3261F2556C0AB07485B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF83C2338E69D5313467C47E /* LauncherPresentationContextTests.swift in Sources */,
+				7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		813818C49D27E0143323184B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E94BA4C2883BA0A5A5AA1A41 /* AppCommands.swift in Sources */,
+				898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */,
+				29B79A222C4FA0E3780DAE4B /* BrowserContainerView.swift in Sources */,
+				5DB82736E984691CC7D15DEA /* BrowserSession.swift in Sources */,
+				01F9716F402A1F19242A0236 /* BrowserWebView.swift in Sources */,
+				EDB3ADFDB1A47F94A4B018C9 /* DashboardView.swift in Sources */,
+				5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */,
+				11F5F79C56256DD9DAFACF9E /* LauncherOverlayRootView.swift in Sources */,
+				42BB40148402990AFA14688D /* LauncherPresentationContext.swift in Sources */,
+				E785257BD4C3D661B97F5472 /* NeatWebAppApp.swift in Sources */,
+				50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */,
+				8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */,
+				98A529BA559227F47CF540EA /* ScreenNotchGeometry.swift in Sources */,
+				A99EDC06F81B9C12BFDB2EA6 /* WebAppDefinition.swift in Sources */,
+				0086BDE5E84A48A18FB533AB /* WebAppFaviconLoader.swift in Sources */,
+				BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */,
+				667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */,
+				C9FDC56D7697517D4825E39F /* WebAppWindowController.swift in Sources */,
+				E47D09DC24DC6FE2D67CA5C8 /* WebAppWindowCoordinator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4E6FE2F06569043089B19110 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FB04F29A1BD3B13B73302B10 /* NeatWebApp */;
+			targetProxy = 6CA6226612BE2CC099FE90D4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		12AFDEDCA2561A9D7F50BD93 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/NeatWebApp/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.geraltgraham.NeatWebApp;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3720D40B802CE2C5847F9C78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		79EA321A881920CC356FFA86 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/NeatWebApp/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.geraltgraham.NeatWebApp;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		AF98807BB9032C708F86DEE3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.geraltgraham.NeatWebAppTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatWebApp.app/Contents/MacOS/NeatWebApp";
+			};
+			name = Debug;
+		};
+		E1090F01B4BBDF05A80D07C8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E9A5E789BFC7DA2FD8F9917C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.geraltgraham.NeatWebAppTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatWebApp.app/Contents/MacOS/NeatWebApp";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3713881D6A265850FA6ED279 /* Build configuration list for PBXProject "NeatWebApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3720D40B802CE2C5847F9C78 /* Debug */,
+				E1090F01B4BBDF05A80D07C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		74233E56A9A3973751FBCB75 /* Build configuration list for PBXNativeTarget "NeatWebApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79EA321A881920CC356FFA86 /* Debug */,
+				12AFDEDCA2561A9D7F50BD93 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C6C7CE586E62509F7C82E712 /* Build configuration list for PBXNativeTarget "NeatWebAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF98807BB9032C708F86DEE3 /* Debug */,
+				E9A5E789BFC7DA2FD8F9917C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5D4339875356890C6F82C180 /* Project object */;
+}
