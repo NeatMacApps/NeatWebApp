@@ -6,8 +6,10 @@ struct LauncherPresentationContext: Equatable, Sendable {
         let barSize: CGSize
         let topInsetHeight: CGFloat
         let iconRowHeight: CGFloat
+        let iconBottomPadding: CGFloat
+        let visibleAppCount: Int
         let iconSize: CGFloat
-        let iconCornerRadius: CGFloat
+        let iconSpacing: CGFloat
         let iconFontSize: CGFloat
         let panelBottomPadding: CGFloat
         let backgroundCornerRadius: CGFloat
@@ -23,24 +25,47 @@ struct LauncherPresentationContext: Equatable, Sendable {
     let geometry: ScreenNotchGeometry
     let apps: [WebAppDefinition]
 
+    var visibleApps: [WebAppDefinition] {
+        Array(apps.prefix(layout.visibleAppCount))
+    }
+
     var layout: Layout {
         let appCount = max(apps.count, 1)
         let notchWidth = geometry.notchRect.width
         let notchHeight = geometry.notchRect.height
-        let slotWidth = notchWidth / CGFloat(appCount)
-        let iconSize = max(min(slotWidth - 8, 40), 24)
-        let iconVerticalPadding: CGFloat = 10
-        let iconRowHeight = iconSize + iconVerticalPadding * 2
+        let preferredIconSize = min(max(notchHeight * 0.54, 28), 40)
+        let minimumIconSize = max(min(notchHeight * 0.44, preferredIconSize), 24)
+        let minimumSpacing = max(min(notchHeight * 0.16, 14), 8)
+        let iconBottomPadding = max(min(notchHeight * 0.15, 12), 8)
+        let maximumVisibleAppCount = max(
+            Int(floor((notchWidth - minimumSpacing) / (preferredIconSize + minimumSpacing))),
+            1
+        )
+        let visibleAppCount = min(appCount, maximumVisibleAppCount)
+        let iconSize = min(
+            preferredIconSize,
+            max(
+                (notchWidth - (CGFloat(visibleAppCount + 1) * minimumSpacing)) / CGFloat(visibleAppCount),
+                minimumIconSize
+            )
+        )
+        let iconSpacing = max(
+            (notchWidth - (CGFloat(visibleAppCount) * iconSize)) / CGFloat(visibleAppCount + 1),
+            0
+        )
+        let iconRowHeight = iconSize + iconBottomPadding
         let barHeight = notchHeight + iconRowHeight
-        let panelBottomPadding: CGFloat = 8
+        let panelBottomPadding: CGFloat = 0
 
         return Layout(
             notchSize: CGSize(width: notchWidth, height: notchHeight),
             barSize: CGSize(width: notchWidth, height: barHeight),
             topInsetHeight: notchHeight,
             iconRowHeight: iconRowHeight,
+            iconBottomPadding: iconBottomPadding,
+            visibleAppCount: visibleAppCount,
             iconSize: iconSize,
-            iconCornerRadius: max(iconSize * 0.24, 10),
+            iconSpacing: iconSpacing,
             iconFontSize: max(iconSize * 0.42, 14),
             panelBottomPadding: panelBottomPadding,
             backgroundCornerRadius: min(iconRowHeight * 0.5, 24)

@@ -94,8 +94,6 @@ private final class NotchDebugOverlayView: NSView {
 
         draw(rect: localRect(for: geometry.activationRect), fillColor: NSColor.systemBlue.withAlphaComponent(0.16), strokeColor: NSColor.systemBlue)
         draw(rect: localRect(for: geometry.notchRect), fillColor: NSColor.systemRed.withAlphaComponent(0.28), strokeColor: NSColor.systemRed)
-        drawLabel(in: localRect(for: geometry.notchRect), title: "Notch \(geometry.notchRect.debugSummary)")
-        drawLabel(in: localRect(for: geometry.activationRect), title: "Activation \(geometry.activationRect.debugSummary)", offsetY: -22)
     }
 
     private func localRect(for rect: CGRect) -> CGRect {
@@ -115,33 +113,6 @@ private final class NotchDebugOverlayView: NSView {
         strokeColor.setStroke()
         path.lineWidth = 2
         path.stroke()
-    }
-
-    private func drawLabel(in rect: CGRect, title: String, offsetY: CGFloat = 10) {
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold),
-            .foregroundColor: NSColor.white
-        ]
-        let label = NSAttributedString(string: title, attributes: attributes)
-        let labelSize = label.size()
-        let paddedRect = CGRect(
-            x: max(rect.minX, 16),
-            y: min(rect.maxY + offsetY, bounds.maxY - labelSize.height - 12),
-            width: labelSize.width + 18,
-            height: labelSize.height + 10
-        )
-
-        let backgroundPath = NSBezierPath(roundedRect: paddedRect, xRadius: 10, yRadius: 10)
-        NSColor.black.withAlphaComponent(0.78).setFill()
-        backgroundPath.fill()
-
-        label.draw(at: CGPoint(x: paddedRect.minX + 9, y: paddedRect.minY + 5))
-    }
-}
-
-private extension CGRect {
-    var debugSummary: String {
-        "[x:\(Int(origin.x)) y:\(Int(origin.y)) w:\(Int(width)) h:\(Int(height))]"
     }
 }
 

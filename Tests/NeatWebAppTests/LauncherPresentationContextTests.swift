@@ -18,8 +18,29 @@ final class LauncherPresentationContextTests: XCTestCase {
 
         XCTAssertEqual(context.layout.topInsetHeight, geometry.notchRect.height)
         XCTAssertEqual(context.panelFrame.maxY, geometry.screenFrame.maxY)
-        XCTAssertEqual(context.layout.iconSize, (geometry.notchRect.width / 6) - 8, accuracy: 0.001)
+        XCTAssertGreaterThan(context.layout.iconBottomPadding, 0)
+        XCTAssertEqual(context.layout.iconRowHeight, context.layout.iconSize + context.layout.iconBottomPadding, accuracy: 0.001)
+        XCTAssertEqual(context.layout.panelBottomPadding, 0)
         XCTAssertEqual(context.panelSize.height, context.layout.barSize.height + context.layout.panelBottomPadding)
+    }
+
+    func testUsesEqualOuterAndInnerSpacingForVisibleApps() {
+        let geometry = makeGeometry()
+        let context = LauncherPresentationContext(geometry: geometry, apps: WebAppDefinition.examples)
+        let layout = context.layout
+        let expectedSpacing = (geometry.notchRect.width - (CGFloat(layout.visibleAppCount) * layout.iconSize)) / CGFloat(layout.visibleAppCount + 1)
+
+        XCTAssertEqual(layout.iconSpacing, expectedSpacing, accuracy: 0.001)
+    }
+
+    func testLayoutCalculatesVisibleAppCountForSizing() {
+        let geometry = makeGeometry()
+        let context = LauncherPresentationContext(geometry: geometry, apps: WebAppDefinition.examples)
+
+        // visibleAppCount is used for layout sizing (icon size / spacing), not for truncation
+        XCTAssertEqual(context.layout.visibleAppCount, 5)
+        // All apps are available for rendering (scrolling handles overflow)
+        XCTAssertEqual(context.apps.count, WebAppDefinition.examples.count)
     }
 
     private func makeGeometry() -> ScreenNotchGeometry {

@@ -1,10 +1,34 @@
 import CoreGraphics
 import Foundation
 
+struct StoredDisplayIdentity: Codable, Equatable, Sendable {
+    var displayID: UInt32?
+    var localizedName: String
+    var frame: CGRect
+}
+
+struct StoredWindowPlacement: Codable, Equatable, Sendable {
+    var frame: CGRect
+    var display: StoredDisplayIdentity?
+}
+
 struct StoredWebAppPreference: Codable, Equatable, Sendable {
     var pageZoom: Double = 0.8
     var isPinned: Bool = false
     var windowFrame: CGRect?
+    var windowPlacement: StoredWindowPlacement?
+
+    var resolvedWindowPlacement: StoredWindowPlacement? {
+        if let windowPlacement {
+            return windowPlacement
+        }
+
+        guard let windowFrame else {
+            return nil
+        }
+
+        return StoredWindowPlacement(frame: windowFrame, display: nil)
+    }
 }
 
 @MainActor

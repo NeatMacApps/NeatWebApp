@@ -14,19 +14,20 @@ final class WebAppWindowCoordinator {
         self.onActiveSessionChange = onActiveSessionChange
     }
 
-    func open(_ definition: WebAppDefinition) {
+    func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?) {
         if let existingWindowController = windowControllers[definition.id] {
-            existingWindowController.showAndFocus()
+            existingWindowController.showAndFocus(preferredGeometry: preferredGeometry)
             return
         }
 
         let windowController = WebAppWindowController(
             definition: definition,
             preferencesStore: preferencesStore,
+            preferredGeometry: preferredGeometry,
             onFocusChange: onActiveSessionChange
         )
 
         windowControllers[definition.id] = windowController
-        windowController.showAndFocus()
+        windowController.showAndFocus(preferredGeometry: preferredGeometry)
     }
 }

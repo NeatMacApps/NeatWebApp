@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct LauncherOverlayRootView: View {
+    @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
 
     let context: LauncherPresentationContext
@@ -11,25 +12,24 @@ struct LauncherOverlayRootView: View {
 
         VStack(spacing: 0) {
             attachedLauncher(layout: layout)
-                .scaleEffect(
-                    x: isExpanded ? 1 : 0.92,
-                    y: isExpanded ? 1 : 0.32,
-                    anchor: .top
+                .frame(
+                    width: layout.barSize.width,
+                    height: isExpanded ? layout.barSize.height : layout.topInsetHeight,
+                    alignment: .top
                 )
-                .opacity(isExpanded ? 1 : 0)
-                .blur(radius: isExpanded ? 0 : 8)
+                .clipped()
+                .offset(y: isExpanded ? 0 : -6)
+                .opacity(isExpanded ? 1 : 0.92)
 
             Spacer(minLength: 0)
         }
         .frame(width: context.panelSize.width, height: context.panelSize.height)
         .onAppear {
             isExpanded = false
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
-                isExpanded = true
-            }
+            updateExpandedState(for: appModel.isLauncherVisible, animated: true)
         }
-        .onDisappear {
-            isExpanded = false
+        .onChange(of: appModel.isLauncherVisible) { _, isLauncherVisible in
+            updateExpandedState(for: isLauncherVisible, animated: true)
         }
     }
 
@@ -45,34 +45,49 @@ struct LauncherOverlayRootView: View {
                 Color.clear
                     .frame(height: layout.topInsetHeight)
 
-                HStack(spacing: 0) {
-                    ForEach(context.apps) { app in
-                        Button {
-                            onSelectApp(app)
-                        } label: {
-                            WebAppIconView(
-                                app: app,
-                                size: layout.iconSize,
-                                cornerRadius: layout.iconCornerRadius,
-                                font: .system(size: layout.iconFontSize, weight: .semibold)
-                            )
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .contentShape(Rectangle())
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: layout.iconSpacing) {
+                        ForEach(context.apps) { app in
+                            Button {
+                                onSelectApp(app)
+                            } label: {
+                                WebAppIconView(
+                                    app: app,
+                                    size: layout.iconSize,
+                                    font: .system(size: layout.iconFontSize, weight: .semibold)
+                                )
+                                .frame(width: layout.iconSize, height: layout.iconSize)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help(app.name)
+                            .accessibilityLabel(app.name)
                         }
-                        .buttonStyle(.plain)
-                        .help(app.name)
-                        .accessibilityLabel(app.name)
                     }
+                    .padding(.horizontal, layout.iconSpacing)
                 }
-                .frame(height: layout.iconRowHeight)
+                .scrollClipDisabled()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(height: layout.iconRowHeight, alignment: .top)
             }
         }
         .frame(width: layout.barSize.width, height: layout.barSize.height, alignment: .top)
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 8)
+        // Keep the launcher body flat against the page content.
+        // A drop shadow here reads as an extra translucent strip under the bar.
     }
 
     private var islandFill: Color {
         .black
+    }
+
+    private func updateExpandedState(for isLauncherVisible: Bool, animated: Bool) {
+        if animated {
+            withAnimation(.smooth(duration: 0.22)) {
+                isExpanded = isLauncherVisible
+            }
+        } else {
+            isExpanded = isLauncherVisible
+        }
     }
 }
 

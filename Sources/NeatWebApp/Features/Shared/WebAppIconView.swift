@@ -6,29 +6,29 @@ struct WebAppIconView: View {
 
     let app: WebAppDefinition
     let size: CGFloat
-    let cornerRadius: CGFloat
     let font: Font
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(backgroundStyle)
-
             if let favicon = appModel.faviconImage(for: app) {
                 Image(nsImage: favicon)
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
-                    .padding(size * 0.18)
             } else {
+                Circle()
+                    .fill(backgroundStyle)
+
                 Text(app.fallbackIconLetter)
                     .font(font)
                     .foregroundStyle(.white)
             }
         }
         .frame(width: size, height: size)
+        // Launcher icons intentionally avoid drop shadows.
+        // When six icons sit in one row, their shadows merge into a gray band under the bar.
         .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            Circle()
                 .stroke(.white.opacity(0.08), lineWidth: 1)
         }
         .task {
@@ -37,10 +37,6 @@ struct WebAppIconView: View {
     }
 
     private var backgroundStyle: some ShapeStyle {
-        if appModel.faviconImage(for: app) != nil {
-            return AnyShapeStyle(.white.opacity(0.96))
-        }
-
         return AnyShapeStyle(Color.webAppAccent(named: app.accentColorName).opacity(0.92))
     }
 }

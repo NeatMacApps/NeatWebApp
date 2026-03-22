@@ -5,7 +5,10 @@ import AppKit
 @Observable
 @MainActor
 final class AppModel {
-    private(set) var apps: [WebAppDefinition] = WebAppDefinition.examples
+    private static let launcherHideDelay: Duration = .milliseconds(200)
+    private static let launcherTransitionDuration: Duration = .milliseconds(220)
+
+    private(set) var apps: [WebAppDefinition] = []
     private(set) var detectedNotchScreens: [ScreenNotchGeometry] = []
     private(set) var launcherContext: LauncherPresentationContext?
     private(set) var diagnosticsMessage = "Move the mouse into the notch zone to reveal the launcher."
@@ -25,6 +28,9 @@ final class AppModel {
 
     @ObservationIgnored
     private let preferencesStore = WebAppPreferencesStore()
+    
+    @ObservationIgnored
+    private let customAppStore = CustomWebAppStore()
 
     @ObservationIgnored
     private lazy var windowCoordinator = WebAppWindowCoordinator(
@@ -32,9 +38,6 @@ final class AppModel {
     ) { [weak self] session in
         self?.activeBrowserSession = session
     }
-
-    @ObservationIgnored
-    private var hideWorkItem: DispatchWorkItem?
 
     @ObservationIgnored
     private var screenObserver: NSObjectProtocol?
@@ -48,12 +51,16 @@ final class AppModel {
     @ObservationIgnored
     private var faviconLoadTasks: [String: Task<Void, Never>] = [:]
 
+    @ObservationIgnored
+    private var hideLauncherTask: Task<Void, Never>?
+
     func startIfNeeded() {
         guard !hasStarted else {
             return
         }
 
         hasStarted = true
+        loadApps()
         refreshScreenState()
         preloadFavicons()
 
@@ -98,7 +105,8 @@ final class AppModel {
     }
 
     func openWebApp(_ app: WebAppDefinition) {
-        windowCoordinator.open(app)
+        let preferredGeometry = launcherContext?.geometry ?? defaultWebAppOpenGeometry
+        windowCoordinator.open(app, preferredGeometry: preferredGeometry)
         hideLauncher()
     }
 
@@ -142,32 +150,59 @@ final class AppModel {
     }
 
     func hideLauncher() {
-        hideWorkItem?.cancel()
-        overlayController.hide()
-        launcherContext = nil
-        isLauncherVisible = false
+        guard hideLauncherTask == nil else {
+            return
+        }
+
+        guard isLauncherVisible || overlayController.frame != nil else {
+            launcherContext = nil
+            return
+        }
+
+        hideLauncherTask = Task {
+            defer {
+                hideLauncherTask = nil
+            }
+
+            do {
+                try await Task.sleep(for: Self.launcherHideDelay)
+            } catch {
+                return
+            }
+
+            isLauncherVisible = false
+
+            do {
+                try await Task.sleep(for: Self.launcherTransitionDuration)
+            } catch {
+                return
+            }
+
+            overlayController.hide()
+            launcherContext = nil
+        }
     }
 
     private func handleMouseLocationChange(_ mouseLocation: CGPoint) {
         if let frame = overlayController.frame, frame.contains(mouseLocation) {
-            hideWorkItem?.cancel()
             return
         }
 
         guard let geometry = ScreenNotchGeometry.screen(containing: mouseLocation, within: detectedNotchScreens) else {
-            scheduleHide()
+            hideLauncher()
             return
         }
 
         if geometry.activationRect.contains(mouseLocation) {
             showLauncher(for: geometry)
         } else {
-            scheduleHide()
+            hideLauncher()
         }
     }
 
     private func showLauncher(for geometry: ScreenNotchGeometry) {
-        hideWorkItem?.cancel()
+        hideLauncherTask?.cancel()
+        hideLauncherTask = nil
 
         let context = LauncherPresentationContext(geometry: geometry, apps: apps)
         launcherContext = context
@@ -175,10 +210,45 @@ final class AppModel {
         overlayController.present(context: context, appModel: self)
     }
 
+    func addCustomApp(_ app: WebAppDefinition) {
+        var customApps = customAppStore.load()
+        customApps.append(app)
+        customAppStore.save(customApps)
+        loadApps()
+        ensureFaviconLoaded(for: app)
+    }
+
+    func deleteCustomApp(_ app: WebAppDefinition) {
+        var customApps = customAppStore.load()
+        customApps.removeAll { $0.id == app.id }
+        customAppStore.save(customApps)
+        loadApps()
+        faviconImages.removeValue(forKey: app.id)
+        failedFaviconAppIDs.remove(app.id)
+    }
+
+    func canDeleteApp(_ app: WebAppDefinition) -> Bool {
+        !WebAppDefinition.examples.contains { $0.id == app.id }
+    }
+
+    private func loadApps() {
+        let customApps = customAppStore.load()
+        apps = WebAppDefinition.examples + customApps
+    }
+
     private func preloadFavicons() {
         for app in apps {
             ensureFaviconLoaded(for: app)
         }
+    }
+
+    private var defaultWebAppOpenGeometry: ScreenNotchGeometry? {
+        guard let mainScreen = NSScreen.main else {
+            return detectedNotchScreens.first
+        }
+
+        return detectedNotchScreens.first(where: { $0.screenFrame == mainScreen.frame })
+        ?? detectedNotchScreens.first
     }
 
     private func storeFaviconResponse(_ data: Data?, for appID: String) {
@@ -191,18 +261,7 @@ final class AppModel {
             return
         }
 
-        faviconImages[appID] = image
+        faviconImages[appID] = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
         failedFaviconAppIDs.remove(appID)
-    }
-
-    private func scheduleHide() {
-        hideWorkItem?.cancel()
-
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.hideLauncher()
-        }
-
-        hideWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16, execute: workItem)
     }
 }

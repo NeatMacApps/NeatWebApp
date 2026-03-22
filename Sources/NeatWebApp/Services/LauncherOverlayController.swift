@@ -22,6 +22,10 @@ final class LauncherOverlayController {
 
         let hostingController = NSHostingController(rootView: AnyView(rootView))
         hostingController.view.frame = CGRect(origin: .zero, size: context.panelSize)
+        hostingController.view.wantsLayer = true
+        // The launcher panel relies on true transparency around the attached bar.
+        // If this view ever gets an opaque background, it shows up as a stray gray block.
+        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
 
         panel.contentViewController = hostingController
         panel.setFrame(context.panelFrame.integral, display: true)

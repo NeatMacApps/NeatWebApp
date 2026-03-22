@@ -22,25 +22,76 @@ private struct BrowserWindowDragBar: View {
     var body: some View {
         @Bindable var bindableSession = session
 
-        return ZStack(alignment: .trailing) {
+        return ZStack {
             WindowDragHandle()
 
-            Button(action: session.togglePinned) {
-                Image(systemName: bindableSession.isPinned ? "pin.fill" : "pin")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.black.opacity(bindableSession.isPinned ? 1 : 0.82))
-                    .frame(width: 24, height: 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(.black.opacity(bindableSession.isPinned ? 0.14 : 0))
-                    )
+            HStack {
+                BrowserChromeButton(
+                    systemImage: "xmark",
+                    foregroundStyle: Color.primary.opacity(0.82),
+                    action: session.closeWindow
+                )
+                .help("Close Window")
+
+                Spacer()
+
+                BrowserChromeButton(
+                    systemImage: bindableSession.isPinned ? "pin.fill" : "pin",
+                    foregroundStyle: Color.primary.opacity(bindableSession.isPinned ? 1 : 0.82),
+                    isHighlighted: bindableSession.isPinned,
+                    action: session.togglePinned
+                )
+                .help(bindableSession.isPinned ? "Disable Always on Top" : "Enable Always on Top")
             }
-            .buttonStyle(.plain)
-            .padding(.trailing, 8)
-            .help(bindableSession.isPinned ? "Disable Always on Top" : "Enable Always on Top")
+            .padding(.horizontal, 8)
         }
         .frame(height: 24)
-        .background(.white)
+        .background(WindowChromeMaterial())
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(.primary.opacity(0.08))
+                .frame(height: 0.5)
+        }
+    }
+}
+
+private struct BrowserChromeButton: View {
+    let systemImage: String
+    let foregroundStyle: Color
+    var isHighlighted = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(foregroundStyle)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(Color.primary.opacity(isHighlighted ? 0.12 : 0))
+                )
+        }
+        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+}
+
+private struct WindowChromeMaterial: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .titlebar
+        view.blendingMode = .withinWindow
+        view.state = .active
+        view.isEmphasized = false
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = .titlebar
+        nsView.blendingMode = .withinWindow
+        nsView.state = .active
+        nsView.isEmphasized = false
     }
 }
 

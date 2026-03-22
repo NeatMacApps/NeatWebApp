@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import AppKit
 import WebKit
 
 @Observable
@@ -114,18 +115,23 @@ final class BrowserSession {
         persistPreference()
     }
 
-    private func persistPreference(windowFrame: CGRect? = nil) {
+    private func persistPreference(windowPlacement: StoredWindowPlacement? = nil) {
         var preference = preferencesStore.load(for: definition.id)
         preference.pageZoom = pageZoom
         preference.isPinned = isPinned
-        if let windowFrame {
-            preference.windowFrame = windowFrame
+        if let windowPlacement {
+            preference.windowPlacement = windowPlacement
+            preference.windowFrame = windowPlacement.frame
         }
         preferencesStore.save(preference, for: definition.id)
     }
 
-    func persistWindowFrame(_ frame: CGRect) {
-        persistPreference(windowFrame: frame)
+    func persistWindowFrame(_ frame: CGRect, on screen: NSScreen?) {
+        let placement = StoredWindowPlacement(
+            frame: frame,
+            display: screen.map(StoredDisplayIdentity.init(screen:))
+        )
+        persistPreference(windowPlacement: placement)
     }
 }
 
@@ -138,5 +144,21 @@ private extension Double {
 private extension String {
     var nonEmpty: String? {
         isEmpty ? nil : self
+    }
+}
+
+private extension StoredDisplayIdentity {
+    init(screen: NSScreen) {
+        self.init(
+            displayID: screen.displayID,
+            localizedName: screen.localizedName,
+            frame: screen.frame
+        )
+    }
+}
+
+private extension NSScreen {
+    var displayID: UInt32? {
+        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
     }
 }
