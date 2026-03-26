@@ -2,14 +2,15 @@ import CoreGraphics
 
 struct LauncherPresentationContext: Equatable, Sendable {
     struct Layout: Equatable, Sendable {
-        let notchSize: CGSize
         let barSize: CGSize
         let topInsetHeight: CGFloat
         let iconRowHeight: CGFloat
         let iconBottomPadding: CGFloat
         let visibleAppCount: Int
+        let shouldScroll: Bool
         let iconSize: CGFloat
         let iconSpacing: CGFloat
+        let iconHorizontalPadding: CGFloat
         let iconFontSize: CGFloat
         let panelBottomPadding: CGFloat
         let backgroundCornerRadius: CGFloat
@@ -25,10 +26,6 @@ struct LauncherPresentationContext: Equatable, Sendable {
     let geometry: ScreenNotchGeometry
     let apps: [WebAppDefinition]
 
-    var visibleApps: [WebAppDefinition] {
-        Array(apps.prefix(layout.visibleAppCount))
-    }
-
     var layout: Layout {
         let appCount = max(apps.count, 1)
         let notchWidth = geometry.notchRect.width
@@ -42,6 +39,7 @@ struct LauncherPresentationContext: Equatable, Sendable {
             1
         )
         let visibleAppCount = min(appCount, maximumVisibleAppCount)
+        let shouldScroll = appCount > maximumVisibleAppCount
         let iconSize = min(
             preferredIconSize,
             max(
@@ -49,23 +47,21 @@ struct LauncherPresentationContext: Equatable, Sendable {
                 minimumIconSize
             )
         )
-        let iconSpacing = max(
-            (notchWidth - (CGFloat(visibleAppCount) * iconSize)) / CGFloat(visibleAppCount + 1),
-            0
-        )
+        let iconSpacing = visibleAppCount > 1 ? minimumSpacing : 0
         let iconRowHeight = iconSize + iconBottomPadding
         let barHeight = notchHeight + iconRowHeight
         let panelBottomPadding: CGFloat = 0
 
         return Layout(
-            notchSize: CGSize(width: notchWidth, height: notchHeight),
             barSize: CGSize(width: notchWidth, height: barHeight),
             topInsetHeight: notchHeight,
             iconRowHeight: iconRowHeight,
             iconBottomPadding: iconBottomPadding,
             visibleAppCount: visibleAppCount,
+            shouldScroll: shouldScroll,
             iconSize: iconSize,
             iconSpacing: iconSpacing,
+            iconHorizontalPadding: minimumSpacing,
             iconFontSize: max(iconSize * 0.42, 14),
             panelBottomPadding: panelBottomPadding,
             backgroundCornerRadius: min(iconRowHeight * 0.5, 24)

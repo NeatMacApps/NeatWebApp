@@ -31,6 +31,35 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertFalse(geometry.hasNotch)
     }
 
+    func testActivationContainsPointerAtTopEdgeWithSmallOverflow() {
+        let geometry = ScreenNotchGeometry(
+            screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940),
+            safeAreaInsets: NSEdgeInsets(top: 74, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 908, width: 620, height: 74),
+            auxiliaryTopRightArea: CGRect(x: 892, y: 908, width: 620, height: 74),
+            localizedName: "Built-in Display"
+        )
+
+        XCTAssertTrue(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY)))
+        XCTAssertTrue(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 1)))
+        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 3)))
+    }
+
+    func testStickyActivationKeepsPointerNearTopEdgeInside() {
+        let geometry = ScreenNotchGeometry(
+            screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940),
+            safeAreaInsets: NSEdgeInsets(top: 74, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 908, width: 620, height: 74),
+            auxiliaryTopRightArea: CGRect(x: 892, y: 908, width: 620, height: 74),
+            localizedName: "Built-in Display"
+        )
+
+        XCTAssertTrue(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 8)))
+        XCTAssertFalse(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 13)))
+    }
+
     func testPlacementDefaultsToBelowPreferredNotch() {
         let geometry = ScreenNotchGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),

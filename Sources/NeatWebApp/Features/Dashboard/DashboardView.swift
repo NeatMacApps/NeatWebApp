@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DashboardView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -7,6 +8,7 @@ struct DashboardView: View {
 
     @State private var isAddSheetPresented = false
     @State private var appToDelete: WebAppDefinition?
+    @State private var draggedApp: WebAppDefinition?
 
     var body: some View {
         ZStack {
@@ -103,46 +105,38 @@ struct DashboardView: View {
                 .buttonStyle(.bordered)
             }
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 16)], spacing: 16) {
+            VStack(spacing: 12) {
                 ForEach(appModel.apps) { app in
-                    appCard(for: app)
+                    appListItem(for: app)
                 }
             }
         }
     }
 
-    private func appCard(for app: WebAppDefinition) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 12) {
-                WebAppIconView(
-                    app: app,
-                    size: 42,
-                    font: .system(size: 20, weight: .semibold)
-                )
+    private func appListItem(for app: WebAppDefinition) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .imageScale(.large)
+                .frame(width: 24)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(app.name)
-                        .font(.headline)
-                    Text(app.shortDescription)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+            WebAppIconView(
+                app: app,
+                size: 32,
+                font: .system(size: 16, weight: .semibold)
+            )
 
-                Spacer()
-
-                if appModel.canDeleteApp(app) {
-                    Button {
-                        appToDelete = app
-                    } label: {
-                        Image(systemName: "trash")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Delete this web app")
-                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(app.name)
+                    .font(.headline)
+                Text(app.shortDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+            
+            Spacer()
 
-            Text(app.homeURL.absoluteString)
+            Text(app.homeURL.host ?? app.homeURL.absoluteString)
                 .font(.footnote.monospaced())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -151,24 +145,35 @@ struct DashboardView: View {
                 appModel.openWebApp(app)
             }
             .buttonStyle(.borderedProminent)
+
+            Button {
+                appToDelete = app
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Delete this web app")
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(secondaryPanelBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(secondaryPanelBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(panelBorder, lineWidth: 1)
         }
+        .onDrag {
+            self.draggedApp = app
+            return NSItemProvider(object: app.id as NSString)
+        }
+        .onDrop(of: [.text], delegate: AppDropDelegate(item: app, items: appModel.apps, draggedItem: $draggedApp, appModel: appModel))
         .contextMenu {
             Button("Open Window") {
                 appModel.openWebApp(app)
             }
-
-            if appModel.canDeleteApp(app) {
-                Divider()
-                Button("Delete", role: .destructive) {
-                    appToDelete = app
-                }
+            Divider()
+            Button("Delete", role: .destructive) {
+                appToDelete = app
             }
         }
     }
@@ -421,4 +426,38 @@ private struct AddWebAppSheet: View {
 #Preview {
     DashboardView()
         .environment(AppModel())
+}
+
+private struct AppDropDelegate: DropDelegate {
+    let item: WebAppDefinition
+    let items: [WebAppDefinition]
+    @Binding var draggedItem: WebAppDefinition?
+    let appModel: AppModel
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem,
+              draggedItem.id != item.id,
+              let from = items.firstIndex(of: draggedItem),
+              let to = items.firstIndex(of: item) else {
+            return
+        }
+
+        if from != to {
+            var indexSet = IndexSet()
+            indexSet.insert(from)
+            let destination = to > from ? to + 1 : to
+            withAnimation(.default) {
+                appModel.moveCustomApps(from: indexSet, to: destination)
+            }
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        return true
+    }
 }

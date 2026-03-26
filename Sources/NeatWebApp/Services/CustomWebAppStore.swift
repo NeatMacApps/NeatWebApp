@@ -3,7 +3,8 @@ import Foundation
 @MainActor
 final class CustomWebAppStore {
     private enum Key {
-        static let customApps = "NeatWebApp.CustomApps"
+        static let allApps = "NeatWebApp.AllApps"
+        static let legacyCustomApps = "NeatWebApp.CustomApps"
     }
 
     private let userDefaults: UserDefaults
@@ -12,11 +13,18 @@ final class CustomWebAppStore {
         self.userDefaults = userDefaults
     }
 
-    func load() -> [WebAppDefinition] {
-        guard let data = userDefaults.data(forKey: Key.customApps) else {
+    func load() -> [WebAppDefinition]? {
+        if let data = userDefaults.data(forKey: Key.allApps),
+           let apps = try? JSONDecoder().decode([WebAppDefinition].self, from: data) {
+            return apps
+        }
+        return nil
+    }
+    
+    func loadLegacyCustomApps() -> [WebAppDefinition] {
+        guard let data = userDefaults.data(forKey: Key.legacyCustomApps) else {
             return []
         }
-
         return (try? JSONDecoder().decode([WebAppDefinition].self, from: data)) ?? []
     }
 
@@ -24,7 +32,6 @@ final class CustomWebAppStore {
         guard let data = try? JSONEncoder().encode(apps) else {
             return
         }
-
-        userDefaults.set(data, forKey: Key.customApps)
+        userDefaults.set(data, forKey: Key.allApps)
     }
 }

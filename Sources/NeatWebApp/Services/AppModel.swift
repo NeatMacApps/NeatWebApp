@@ -5,7 +5,7 @@ import AppKit
 @Observable
 @MainActor
 final class AppModel {
-    private static let launcherHideDelay: Duration = .milliseconds(200)
+    private static let launcherHideDelay: Duration = .milliseconds(400)
     private static let launcherTransitionDuration: Duration = .milliseconds(220)
 
     private(set) var apps: [WebAppDefinition] = []
@@ -31,6 +31,9 @@ final class AppModel {
     
     @ObservationIgnored
     private let customAppStore = CustomWebAppStore()
+
+    @ObservationIgnored
+    private let faviconStore = WebAppFaviconStore()
 
     @ObservationIgnored
     private lazy var windowCoordinator = WebAppWindowCoordinator(
@@ -61,6 +64,7 @@ final class AppModel {
 
         hasStarted = true
         loadApps()
+        restoreCachedFavicons()
         refreshScreenState()
         preloadFavicons()
 
@@ -114,12 +118,12 @@ final class AppModel {
         faviconImages[app.id]
     }
 
-    func ensureFaviconLoaded(for app: WebAppDefinition) {
-        guard faviconImages[app.id] == nil else {
+    func ensureFaviconLoaded(for app: WebAppDefinition, refreshCachedImage: Bool = false) {
+        guard refreshCachedImage || faviconImages[app.id] == nil else {
             return
         }
 
-        guard !failedFaviconAppIDs.contains(app.id) else {
+        guard refreshCachedImage || !failedFaviconAppIDs.contains(app.id) else {
             return
         }
 
@@ -188,21 +192,28 @@ final class AppModel {
             return
         }
 
-        guard let geometry = ScreenNotchGeometry.screen(containing: mouseLocation, within: detectedNotchScreens) else {
-            hideLauncher()
+        if isLauncherVisible,
+           let geometry = launcherContext?.geometry,
+           geometry.containsStickyActivationPoint(mouseLocation) {
+            showLauncher(for: geometry)
             return
         }
 
-        if geometry.activationRect.contains(mouseLocation) {
+        if let geometry = detectedNotchScreens.first(where: { $0.containsActivationPoint(mouseLocation) }) {
             showLauncher(for: geometry)
-        } else {
-            hideLauncher()
+            return
         }
+
+        hideLauncher()
     }
 
     private func showLauncher(for geometry: ScreenNotchGeometry) {
         hideLauncherTask?.cancel()
         hideLauncherTask = nil
+
+        if isLauncherVisible, launcherContext?.geometry == geometry {
+            return
+        }
 
         let context = LauncherPresentationContext(geometry: geometry, apps: apps)
         launcherContext = context
@@ -211,34 +222,47 @@ final class AppModel {
     }
 
     func addCustomApp(_ app: WebAppDefinition) {
-        var customApps = customAppStore.load()
-        customApps.append(app)
-        customAppStore.save(customApps)
-        loadApps()
+        apps.append(app)
+        customAppStore.save(apps)
         ensureFaviconLoaded(for: app)
     }
 
     func deleteCustomApp(_ app: WebAppDefinition) {
-        var customApps = customAppStore.load()
-        customApps.removeAll { $0.id == app.id }
-        customAppStore.save(customApps)
-        loadApps()
+        apps.removeAll { $0.id == app.id }
+        customAppStore.save(apps)
         faviconImages.removeValue(forKey: app.id)
         failedFaviconAppIDs.remove(app.id)
+        faviconStore.delete(for: app.id)
     }
 
-    func canDeleteApp(_ app: WebAppDefinition) -> Bool {
-        !WebAppDefinition.examples.contains { $0.id == app.id }
+    func moveCustomApps(from source: IndexSet, to destination: Int) {
+        apps.move(fromOffsets: source, toOffset: destination)
+        customAppStore.save(apps)
     }
 
     private func loadApps() {
-        let customApps = customAppStore.load()
-        apps = WebAppDefinition.examples + customApps
+        if let storedApps = customAppStore.load() {
+            apps = storedApps
+        } else {
+            let legacyApps = customAppStore.loadLegacyCustomApps()
+            apps = WebAppDefinition.examples + legacyApps
+            customAppStore.save(apps)
+        }
     }
 
     private func preloadFavicons() {
         for app in apps {
-            ensureFaviconLoaded(for: app)
+            ensureFaviconLoaded(for: app, refreshCachedImage: true)
+        }
+    }
+
+    private func restoreCachedFavicons() {
+        for app in apps {
+            guard let image = faviconStore.load(for: app.id) else {
+                continue
+            }
+
+            faviconImages[app.id] = image
         }
     }
 
@@ -261,7 +285,9 @@ final class AppModel {
             return
         }
 
-        faviconImages[appID] = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
+        let normalizedImage = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
+        faviconImages[appID] = normalizedImage
+        faviconStore.save(normalizedImage, for: appID)
         failedFaviconAppIDs.remove(appID)
     }
 }

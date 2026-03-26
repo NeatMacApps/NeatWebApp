@@ -136,6 +136,8 @@ done
 - AppKit 只用于 SwiftUI 不擅长的部分，例如窗口级行为、屏幕几何、事件监控。
 - 修改应用入口或命令菜单时，同时检查 `Sources/NeatWebApp/App/NeatWebAppApp.swift` 与 `Sources/NeatWebApp/App/AppCommands.swift`。
 - 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
+- launcher 图标行两侧的 fade / 阴影反馈必须与真实可滚动方向一致：某一侧还有被裁切内容时保留该侧过渡，某一侧已经滑到尽头时关闭该侧过渡，避免给出错误提示。
+- launcher 图标必须保持固定紧凑间距；1、2、3、4 个图标以及更多图标的默认排布都不要按剩余宽度做均分拉伸，禁止出现为了“铺满”而把中间间隔拉得很大的排布。
 - 修改刘海识别逻辑时，同时检查 `Sources/NeatWebApp/Models/ScreenNotchGeometry.swift` 和相关测试。
 - 修改浏览器行为时，同时检查 `Sources/NeatWebApp/Features/Browser/BrowserSession.swift`、`Sources/NeatWebApp/Features/Browser/AppKitBridge/BrowserWebView.swift`、`Sources/NeatWebApp/Services/WebAppWindowController.swift`。
 - 修改网站数据、缩放、置顶、窗口恢复时，要连同偏好持久化一起验证。

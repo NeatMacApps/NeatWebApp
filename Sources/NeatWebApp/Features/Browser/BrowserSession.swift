@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import Observation
 import AppKit
 import WebKit
@@ -25,6 +26,9 @@ final class BrowserSession {
     private let preferencesStore: WebAppPreferencesStore
 
     @ObservationIgnored
+    let websiteDataStore: WKWebsiteDataStore
+
+    @ObservationIgnored
     private weak var webView: WKWebView?
 
     @ObservationIgnored
@@ -44,6 +48,7 @@ final class BrowserSession {
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
         self.preferencesStore = preferencesStore
+        self.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.websiteDataStoreIdentifier(for: definition.id))
     }
 
     func attach(webView: WKWebView) {
@@ -132,6 +137,34 @@ final class BrowserSession {
             display: screen.map(StoredDisplayIdentity.init(screen:))
         )
         persistPreference(windowPlacement: placement)
+    }
+
+    private static func websiteDataStoreIdentifier(for appID: String) -> UUID {
+        let digest = SHA256.hash(data: Data("NeatWebApp.WebsiteDataStore.\(appID)".utf8))
+        var bytes = Array(digest.prefix(16))
+
+        // Keep the mapping stable across launches while producing a valid UUID.
+        bytes[6] = (bytes[6] & 0x0F) | 0x50
+        bytes[8] = (bytes[8] & 0x3F) | 0x80
+
+        return UUID(uuid: (
+            bytes[0],
+            bytes[1],
+            bytes[2],
+            bytes[3],
+            bytes[4],
+            bytes[5],
+            bytes[6],
+            bytes[7],
+            bytes[8],
+            bytes[9],
+            bytes[10],
+            bytes[11],
+            bytes[12],
+            bytes[13],
+            bytes[14],
+            bytes[15]
+        ))
     }
 }
 

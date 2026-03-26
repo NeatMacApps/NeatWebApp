@@ -207,8 +207,8 @@ struct WebAppWindowPlacementScreen: Equatable, Sendable {
 }
 
 enum WebAppWindowPlacementResolver {
-    private static let notchSpacing: CGFloat = 12
-    private static let fallbackTopMargin: CGFloat = 72
+    private static let notchSpacing: CGFloat = 80
+    private static let fallbackTopMargin: CGFloat = 84
 
     static func resolveFrame(
         preference: StoredWebAppPreference,

@@ -24,13 +24,37 @@ final class LauncherPresentationContextTests: XCTestCase {
         XCTAssertEqual(context.panelSize.height, context.layout.barSize.height + context.layout.panelBottomPadding)
     }
 
-    func testUsesEqualOuterAndInnerSpacingForVisibleApps() {
+    func testUsesFixedSpacingWhenTwoAppsFit() {
+        let geometry = makeGeometry()
+        let context = LauncherPresentationContext(geometry: geometry, apps: Array(WebAppDefinition.examples.prefix(2)))
+        let layout = context.layout
+        let expectedSpacing = max(min(geometry.notchRect.height * 0.16, 14), 8)
+
+        XCTAssertEqual(layout.iconSpacing, expectedSpacing, accuracy: 0.001)
+        XCTAssertEqual(layout.iconHorizontalPadding, expectedSpacing, accuracy: 0.001)
+        XCTAssertFalse(layout.shouldScroll)
+    }
+
+    func testUsesFixedSpacingWhenFourAppsFit() {
+        let geometry = makeGeometry()
+        let context = LauncherPresentationContext(geometry: geometry, apps: Array(WebAppDefinition.examples.prefix(4)))
+        let layout = context.layout
+        let expectedSpacing = max(min(geometry.notchRect.height * 0.16, 14), 8)
+
+        XCTAssertEqual(layout.iconSpacing, expectedSpacing, accuracy: 0.001)
+        XCTAssertEqual(layout.iconHorizontalPadding, expectedSpacing, accuracy: 0.001)
+        XCTAssertFalse(layout.shouldScroll)
+    }
+
+    func testUsesFixedSpacingWhenAppsOverflowVisibleCapacity() {
         let geometry = makeGeometry()
         let context = LauncherPresentationContext(geometry: geometry, apps: WebAppDefinition.examples)
         let layout = context.layout
-        let expectedSpacing = (geometry.notchRect.width - (CGFloat(layout.visibleAppCount) * layout.iconSize)) / CGFloat(layout.visibleAppCount + 1)
+        let expectedSpacing = max(min(geometry.notchRect.height * 0.16, 14), 8)
 
+        XCTAssertTrue(layout.shouldScroll)
         XCTAssertEqual(layout.iconSpacing, expectedSpacing, accuracy: 0.001)
+        XCTAssertEqual(layout.iconHorizontalPadding, expectedSpacing, accuracy: 0.001)
     }
 
     func testLayoutCalculatesVisibleAppCountForSizing() {
@@ -41,6 +65,39 @@ final class LauncherPresentationContextTests: XCTestCase {
         XCTAssertEqual(context.layout.visibleAppCount, 5)
         // All apps are available for rendering (scrolling handles overflow)
         XCTAssertEqual(context.apps.count, WebAppDefinition.examples.count)
+    }
+
+    func testEdgeFadeStateShowsOnlyTrailingFadeAtInitialPosition() {
+        let state = LauncherEdgeFadeState(
+            visibleRect: CGRect(x: 0, y: 0, width: 200, height: 40),
+            contentWidth: 240,
+            horizontalPadding: 8
+        )
+
+        XCTAssertFalse(state.showsLeadingFade)
+        XCTAssertTrue(state.showsTrailingFade)
+    }
+
+    func testEdgeFadeStateShowsOnlyLeadingFadeAtTrailingEdge() {
+        let state = LauncherEdgeFadeState(
+            visibleRect: CGRect(x: 48, y: 0, width: 200, height: 40),
+            contentWidth: 256,
+            horizontalPadding: 8
+        )
+
+        XCTAssertTrue(state.showsLeadingFade)
+        XCTAssertFalse(state.showsTrailingFade)
+    }
+
+    func testEdgeFadeStateDisablesBothFadesWhenContentFitsViewport() {
+        let state = LauncherEdgeFadeState(
+            visibleRect: CGRect(x: 0, y: 0, width: 200, height: 40),
+            contentWidth: 120,
+            horizontalPadding: 8
+        )
+
+        XCTAssertFalse(state.showsLeadingFade)
+        XCTAssertFalse(state.showsTrailingFade)
     }
 
     private func makeGeometry() -> ScreenNotchGeometry {

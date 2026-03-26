@@ -3,6 +3,8 @@ import AppKit
 struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     private static let activationHorizontalPadding: CGFloat = 8
     private static let activationBottomPadding: CGFloat = 8
+    private static let activationTopOverflow: CGFloat = 2
+    private static let activationStickyTopOverflow: CGFloat = 12
 
     let screenFrame: CGRect
     let visibleFrame: CGRect
@@ -80,15 +82,20 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         return rect.intersection(screenFrame)
     }
 
-    func overlayOrigin(for panelSize: CGSize) -> CGPoint {
-        CGPoint(
-            x: notchRect.midX - (panelSize.width / 2),
-            y: notchRect.minY - panelSize.height - 10
-        )
+    func containsActivationPoint(_ point: CGPoint) -> Bool {
+        containsActivationPoint(point, topOverflow: Self.activationTopOverflow)
     }
 
-    static func screen(containing point: CGPoint, within geometries: [ScreenNotchGeometry]) -> ScreenNotchGeometry? {
-        geometries.first(where: { $0.screenFrame.contains(point) })
+    func containsStickyActivationPoint(_ point: CGPoint) -> Bool {
+        containsActivationPoint(point, topOverflow: Self.activationStickyTopOverflow)
+    }
+
+    private func containsActivationPoint(_ point: CGPoint, topOverflow: CGFloat) -> Bool {
+        let rect = activationRect
+        return point.x >= rect.minX &&
+        point.x <= rect.maxX &&
+        point.y >= rect.minY &&
+        point.y <= rect.maxY + topOverflow
     }
 
     static func == (lhs: ScreenNotchGeometry, rhs: ScreenNotchGeometry) -> Bool {

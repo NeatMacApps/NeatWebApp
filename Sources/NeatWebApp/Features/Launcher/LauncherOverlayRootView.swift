@@ -3,6 +3,7 @@ import SwiftUI
 struct LauncherOverlayRootView: View {
     @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
+    @State private var edgeFadeState = LauncherEdgeFadeState.none
 
     let context: LauncherPresentationContext
     let onSelectApp: (WebAppDefinition) -> Void
@@ -26,10 +27,17 @@ struct LauncherOverlayRootView: View {
         .frame(width: context.panelSize.width, height: context.panelSize.height)
         .onAppear {
             isExpanded = false
+            resetEdgeFadeState(for: layout)
             updateExpandedState(for: appModel.isLauncherVisible, animated: true)
         }
         .onChange(of: appModel.isLauncherVisible) { _, isLauncherVisible in
             updateExpandedState(for: isLauncherVisible, animated: true)
+        }
+        .onChange(of: context.apps.count) { _, _ in
+            resetEdgeFadeState(for: context.layout)
+        }
+        .onChange(of: context.panelSize) { _, _ in
+            resetEdgeFadeState(for: context.layout)
         }
     }
 
@@ -45,32 +53,7 @@ struct LauncherOverlayRootView: View {
                 Color.clear
                     .frame(height: layout.topInsetHeight)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: layout.iconSpacing) {
-                        ForEach(context.apps) { app in
-                            Button {
-                                onSelectApp(app)
-                            } label: {
-                                WebAppIconView(
-                                    app: app,
-                                    size: layout.iconSize,
-                                    font: .system(size: layout.iconFontSize, weight: .semibold)
-                                )
-                                .frame(width: layout.iconSize, height: layout.iconSize)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .help(app.name)
-                            .accessibilityLabel(app.name)
-                        }
-                    }
-                    .scrollTargetLayout()
-                }
-                .contentMargins(.horizontal, max(0, (layout.barSize.width - layout.iconSize) / 2), for: .scrollContent)
-                .scrollTargetBehavior(.viewAligned)
-                .scrollClipDisabled()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .frame(height: layout.iconRowHeight, alignment: .top)
+                iconRow(layout: layout)
             }
         }
         .frame(width: layout.barSize.width, height: layout.barSize.height, alignment: .top)
@@ -82,6 +65,86 @@ struct LauncherOverlayRootView: View {
         .black
     }
 
+    private func iconRow(layout: LauncherPresentationContext.Layout) -> some View {
+        iconRowContent(layout: layout)
+            .mask(edgeFadeMask)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(height: layout.iconRowHeight, alignment: .top)
+            .animation(.easeOut(duration: 0.12), value: edgeFadeState)
+    }
+
+    @ViewBuilder
+    private func iconRowContent(layout: LauncherPresentationContext.Layout) -> some View {
+        if layout.shouldScroll {
+            ScrollView(.horizontal, showsIndicators: false) {
+                iconButtons(layout: layout)
+                    .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, layout.iconHorizontalPadding, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
+            .onScrollGeometryChange(for: LauncherEdgeFadeState.self) { geometry in
+                LauncherEdgeFadeState(
+                    scrollGeometry: geometry,
+                    horizontalPadding: layout.iconHorizontalPadding
+                )
+            } action: { _, newValue in
+                edgeFadeState = newValue
+            }
+        } else if context.apps.count == 1 {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                iconButtons(layout: layout)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, layout.iconHorizontalPadding)
+        } else {
+            HStack(spacing: 0) {
+                iconButtons(layout: layout)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, layout.iconHorizontalPadding)
+        }
+    }
+
+    private func iconButtons(layout: LauncherPresentationContext.Layout) -> some View {
+        HStack(alignment: .top, spacing: layout.iconSpacing) {
+            ForEach(context.apps) { app in
+                Button {
+                    onSelectApp(app)
+                } label: {
+                    WebAppIconView(
+                        app: app,
+                        size: layout.iconSize,
+                        font: .system(size: layout.iconFontSize, weight: .semibold)
+                    )
+                    .frame(width: layout.iconSize, height: layout.iconSize)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(app.name)
+                .accessibilityLabel(app.name)
+            }
+        }
+    }
+
+    private var edgeFadeMask: some View {
+        LinearGradient(
+            stops: [
+                .init(color: edgeFadeState.showsLeadingFade ? .clear : .black, location: 0),
+                .init(color: .black, location: 0.1),
+                .init(color: .black, location: 0.9),
+                .init(color: edgeFadeState.showsTrailingFade ? .clear : .black, location: 1)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private func resetEdgeFadeState(for layout: LauncherPresentationContext.Layout) {
+        edgeFadeState = layout.shouldScroll ? .trailingOnly : .none
+    }
+
     private func updateExpandedState(for isLauncherVisible: Bool, animated: Bool) {
         if animated {
             withAnimation(.smooth(duration: 0.22)) {
@@ -90,6 +153,49 @@ struct LauncherOverlayRootView: View {
         } else {
             isExpanded = isLauncherVisible
         }
+    }
+}
+
+struct LauncherEdgeFadeState: Equatable, Sendable {
+    static let none = LauncherEdgeFadeState(showsLeadingFade: false, showsTrailingFade: false)
+    static let trailingOnly = LauncherEdgeFadeState(showsLeadingFade: false, showsTrailingFade: true)
+
+    let showsLeadingFade: Bool
+    let showsTrailingFade: Bool
+
+    init(showsLeadingFade: Bool, showsTrailingFade: Bool) {
+        self.showsLeadingFade = showsLeadingFade
+        self.showsTrailingFade = showsTrailingFade
+    }
+
+    init(
+        visibleRect: CGRect,
+        contentWidth: CGFloat,
+        horizontalPadding: CGFloat,
+        threshold: CGFloat = 1
+    ) {
+        guard visibleRect.width > 0, contentWidth > 0 else {
+            self = .none
+            return
+        }
+
+        let leadingHiddenWidth = max(visibleRect.minX - horizontalPadding, 0)
+        let trailingVisibleLimit = contentWidth - horizontalPadding
+        let trailingHiddenWidth = max(trailingVisibleLimit - visibleRect.maxX, 0)
+
+        self.init(
+            showsLeadingFade: leadingHiddenWidth > threshold,
+            showsTrailingFade: trailingHiddenWidth > threshold
+        )
+    }
+
+    init(scrollGeometry: ScrollGeometry, horizontalPadding: CGFloat, threshold: CGFloat = 1) {
+        self.init(
+            visibleRect: scrollGeometry.visibleRect,
+            contentWidth: scrollGeometry.contentSize.width,
+            horizontalPadding: horizontalPadding,
+            threshold: threshold
+        )
     }
 }
 

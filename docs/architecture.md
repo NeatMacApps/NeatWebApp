@@ -44,6 +44,7 @@
   - 当前阶段用于调试、验证几何与快速打开 WebApp
 - `Launcher`
   - 刘海两侧展开的 launcher UI
+  - 横向溢出时根据真实滚动位置动态显示左右边缘渐隐反馈
 - `Browser`
   - `BrowserSession`
   - `BrowserWebView`
