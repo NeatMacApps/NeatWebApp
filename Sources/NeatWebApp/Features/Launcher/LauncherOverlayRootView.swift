@@ -64,8 +64,10 @@ struct LauncherOverlayRootView: View {
                             .accessibilityLabel(app.name)
                         }
                     }
-                    .padding(.horizontal, layout.iconSpacing)
+                    .scrollTargetLayout()
                 }
+                .contentMargins(.horizontal, max(0, (layout.barSize.width - layout.iconSize) / 2), for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
                 .scrollClipDisabled()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .frame(height: layout.iconRowHeight, alignment: .top)
