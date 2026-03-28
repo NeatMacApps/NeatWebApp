@@ -5,13 +5,15 @@ struct BrowserContainerView: View {
     let session: BrowserSession
 
     var body: some View {
+        let theme = session.chromeTheme
+
         VStack(spacing: 0) {
             BrowserWindowDragBar(session: session)
 
             BrowserWebView(session: session)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(.black)
+        .background(theme.pageColor.color)
         .ignoresSafeArea(.container, edges: .top)
     }
 }
@@ -20,7 +22,7 @@ private struct BrowserWindowDragBar: View {
     let session: BrowserSession
 
     var body: some View {
-        @Bindable var bindableSession = session
+        let theme = session.chromeTheme
 
         return ZStack {
             WindowDragHandle()
@@ -28,7 +30,8 @@ private struct BrowserWindowDragBar: View {
             HStack {
                 BrowserChromeButton(
                     systemImage: "xmark",
-                    foregroundStyle: Color.primary.opacity(0.82),
+                    foregroundStyle: theme.foregroundColor.color.opacity(0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
                     action: session.closeWindow
                 )
                 .help("Close Window")
@@ -36,20 +39,37 @@ private struct BrowserWindowDragBar: View {
                 Spacer()
 
                 BrowserChromeButton(
-                    systemImage: bindableSession.isPinned ? "pin.fill" : "pin",
-                    foregroundStyle: Color.primary.opacity(bindableSession.isPinned ? 1 : 0.82),
-                    isHighlighted: bindableSession.isPinned,
+                    systemImage: "arrow.clockwise",
+                    foregroundStyle: theme.foregroundColor.color.opacity(0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    action: session.reloadFromConfiguredURL
+                )
+                .help("Reset to Configured URL and Refresh")
+
+                BrowserChromeButton(
+                    systemImage: session.isMobileUA ? "laptopcomputer" : "iphone",
+                    foregroundStyle: theme.foregroundColor.color.opacity(0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    action: session.toggleUA
+                )
+                .help(session.isMobileUA ? "Switch to Desktop UA" : "Switch to Mobile UA")
+
+                BrowserChromeButton(
+                    systemImage: session.isPinned ? "pin.fill" : "pin",
+                    foregroundStyle: theme.foregroundColor.color.opacity(session.isPinned ? 1 : 0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    isHighlighted: session.isPinned,
                     action: session.togglePinned
                 )
-                .help(bindableSession.isPinned ? "Disable Always on Top" : "Enable Always on Top")
+                .help(session.isPinned ? "Disable Always on Top" : "Enable Always on Top")
             }
             .padding(.horizontal, 8)
         }
         .frame(height: 24)
-        .background(WindowChromeMaterial())
+        .background(theme.barBottomColor.color)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(.primary.opacity(0.08))
+                .fill(theme.dividerColor.color)
                 .frame(height: 0.5)
         }
     }
@@ -58,6 +78,7 @@ private struct BrowserWindowDragBar: View {
 private struct BrowserChromeButton: View {
     let systemImage: String
     let foregroundStyle: Color
+    let highlightedFillStyle: Color
     var isHighlighted = false
     let action: () -> Void
 
@@ -69,29 +90,11 @@ private struct BrowserChromeButton: View {
                 .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.primary.opacity(isHighlighted ? 0.12 : 0))
+                        .fill(isHighlighted ? highlightedFillStyle : .clear)
                 )
         }
         .buttonStyle(.plain)
         .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-    }
-}
-
-private struct WindowChromeMaterial: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .titlebar
-        view.blendingMode = .withinWindow
-        view.state = .active
-        view.isEmphasized = false
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = .titlebar
-        nsView.blendingMode = .withinWindow
-        nsView.state = .active
-        nsView.isEmphasized = false
     }
 }
 

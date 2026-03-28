@@ -48,10 +48,11 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
 
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
         ensureWindowFrameIsVisible(preferredGeometry: preferredGeometry ?? self.preferredGeometry)
+        NSApp.activate(ignoringOtherApps: true)
         window?.deminiaturize(nil)
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        session.focusWebView()
     }
 
     func updatePinnedState(_ isPinned: Bool) {
@@ -67,6 +68,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
+        session.focusWebView()
         onFocusChange(session)
     }
 
@@ -90,7 +92,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = false
-        window.backgroundColor = .black
+        window.backgroundColor = BrowserChromeTheme.fallback.pageColor.nsColor
         window.level = isPinned ? .floating : .normal
         window.contentMinSize = WindowMetrics.minimumContentSize
         window.toolbar = nil
@@ -105,12 +107,17 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: rootView)
         window.contentViewController = hostingController
 
+        session.onChromeThemeChange = { [weak self] theme in
+            self?.window?.backgroundColor = theme.pageColor.nsColor
+        }
         session.onPinnedChange = { [weak self] isPinned in
             self?.updatePinnedState(isPinned)
         }
         session.onCloseRequest = { [weak self] in
             self?.hideWindow()
         }
+
+        window.backgroundColor = session.chromeTheme.pageColor.nsColor
     }
 
     private func persistWindowFrame() {

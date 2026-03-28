@@ -5,7 +5,7 @@ import AppKit
 @Observable
 @MainActor
 final class AppModel {
-    private static let launcherHideDelay: Duration = .milliseconds(400)
+    private static let launcherHideDelay: Duration = .milliseconds(800)
     private static let launcherTransitionDuration: Duration = .milliseconds(220)
 
     private(set) var apps: [WebAppDefinition] = []
@@ -110,8 +110,8 @@ final class AppModel {
 
     func openWebApp(_ app: WebAppDefinition) {
         let preferredGeometry = launcherContext?.geometry ?? defaultWebAppOpenGeometry
+        hideLauncher(immediately: true)
         windowCoordinator.open(app, preferredGeometry: preferredGeometry)
-        hideLauncher()
     }
 
     func faviconImage(for app: WebAppDefinition) -> NSImage? {
@@ -153,7 +153,22 @@ final class AppModel {
         activeBrowserSession?.resetZoom()
     }
 
-    func hideLauncher() {
+    func hideLauncher(immediately: Bool = false) {
+        if immediately {
+            hideLauncherTask?.cancel()
+            hideLauncherTask = nil
+
+            guard isLauncherVisible || overlayController.frame != nil else {
+                launcherContext = nil
+                return
+            }
+
+            isLauncherVisible = false
+            overlayController.hide()
+            launcherContext = nil
+            return
+        }
+
         guard hideLauncherTask == nil else {
             return
         }

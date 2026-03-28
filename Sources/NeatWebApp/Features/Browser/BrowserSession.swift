@@ -11,6 +11,7 @@ final class BrowserSession {
 
     var pageTitle: String
     var currentURL: URL
+    var chromeTheme = BrowserChromeTheme.fallback
     var canGoBack = false
     var canGoForward = false
     var isLoading = false
@@ -21,6 +22,14 @@ final class BrowserSession {
             persistPreference()
         }
     }
+    var isMobileUA: Bool {
+        didSet {
+            applyUserAgent()
+            persistPreference()
+        }
+    }
+
+    private static let mobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 
     @ObservationIgnored
     private let preferencesStore: WebAppPreferencesStore
@@ -37,6 +46,9 @@ final class BrowserSession {
     @ObservationIgnored
     var onCloseRequest: (() -> Void)?
 
+    @ObservationIgnored
+    var onChromeThemeChange: ((BrowserChromeTheme) -> Void)?
+
     init(
         definition: WebAppDefinition,
         preference: StoredWebAppPreference,
@@ -47,6 +59,7 @@ final class BrowserSession {
         self.currentURL = definition.homeURL
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
+        self.isMobileUA = preference.isMobileUA
         self.preferencesStore = preferencesStore
         self.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.websiteDataStoreIdentifier(for: definition.id))
     }
@@ -56,12 +69,35 @@ final class BrowserSession {
         webView.allowsMagnification = true
         webView.allowsBackForwardNavigationGestures = true
         webView.pageZoom = pageZoom
+        webView.underPageBackgroundColor = chromeTheme.pageColor.nsColor
+        applyUserAgent()
 
         if webView.url == nil {
             webView.load(URLRequest(url: currentURL))
         } else {
             syncNavigationState(from: webView)
         }
+    }
+
+    func focusWebView() {
+        guard let webView, let window = webView.window else {
+            return
+        }
+
+        guard window.firstResponder !== webView else {
+            return
+        }
+
+        window.makeFirstResponder(webView)
+    }
+
+    func toggleUA() {
+        isMobileUA.toggle()
+        reload()
+    }
+
+    private func applyUserAgent() {
+        webView?.customUserAgent = isMobileUA ? Self.mobileUserAgent : nil
     }
 
     func goBack() {
@@ -77,8 +113,11 @@ final class BrowserSession {
     }
 
     func goHome() {
-        let request = URLRequest(url: definition.homeURL)
-        webView?.load(request)
+        loadConfiguredHomePage()
+    }
+
+    func reloadFromConfiguredURL() {
+        loadConfiguredHomePage()
     }
 
     func decreaseZoom() {
@@ -99,6 +138,17 @@ final class BrowserSession {
 
     func closeWindow() {
         onCloseRequest?()
+    }
+
+    func updateChromeThemeColor(_ pageColor: BrowserThemeColor?) {
+        let nextTheme = pageColor.map(BrowserChromeTheme.init(pageColor:)) ?? .fallback
+        guard nextTheme != chromeTheme else {
+            return
+        }
+
+        chromeTheme = nextTheme
+        webView?.underPageBackgroundColor = nextTheme.pageColor.nsColor
+        onChromeThemeChange?(nextTheme)
     }
 
     func syncNavigationState(from webView: WKWebView) {
@@ -124,6 +174,7 @@ final class BrowserSession {
         var preference = preferencesStore.load(for: definition.id)
         preference.pageZoom = pageZoom
         preference.isPinned = isPinned
+        preference.isMobileUA = isMobileUA
         if let windowPlacement {
             preference.windowPlacement = windowPlacement
             preference.windowFrame = windowPlacement.frame
@@ -137,6 +188,17 @@ final class BrowserSession {
             display: screen.map(StoredDisplayIdentity.init(screen:))
         )
         persistPreference(windowPlacement: placement)
+    }
+
+    private func loadConfiguredHomePage() {
+        currentURL = definition.homeURL
+        pageTitle = definition.name
+        canGoBack = false
+        canGoForward = false
+        isLoading = true
+
+        let request = URLRequest(url: definition.homeURL)
+        webView?.load(request)
     }
 
     private static func websiteDataStoreIdentifier(for appID: String) -> UUID {

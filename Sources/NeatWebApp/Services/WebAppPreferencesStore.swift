@@ -15,6 +15,7 @@ struct StoredWindowPlacement: Codable, Equatable, Sendable {
 struct StoredWebAppPreference: Codable, Equatable, Sendable {
     var pageZoom: Double = 0.8
     var isPinned: Bool = false
+    var isMobileUA: Bool = false
     var windowFrame: CGRect?
     var windowPlacement: StoredWindowPlacement?
 

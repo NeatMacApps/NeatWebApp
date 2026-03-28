@@ -27,7 +27,7 @@ struct LauncherPresentationContext: Equatable, Sendable {
     let apps: [WebAppDefinition]
 
     var layout: Layout {
-        let appCount = max(apps.count, 1)
+        let launcherItemCount = max(apps.count + 1, 1)
         let notchWidth = geometry.notchRect.width
         let notchHeight = geometry.notchRect.height
         let preferredIconSize = min(max(notchHeight * 0.54, 28), 40)
@@ -38,8 +38,8 @@ struct LauncherPresentationContext: Equatable, Sendable {
             Int(floor((notchWidth - minimumSpacing) / (preferredIconSize + minimumSpacing))),
             1
         )
-        let visibleAppCount = min(appCount, maximumVisibleAppCount)
-        let shouldScroll = appCount > maximumVisibleAppCount
+        let visibleAppCount = min(launcherItemCount, maximumVisibleAppCount)
+        let shouldScroll = launcherItemCount > maximumVisibleAppCount
         let iconSize = min(
             preferredIconSize,
             max(

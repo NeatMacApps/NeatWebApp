@@ -1,12 +1,18 @@
+import AppKit
 import SwiftUI
 
 struct LauncherOverlayRootView: View {
+    @Environment(\.openWindow) private var openWindow
     @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
     @State private var edgeFadeState = LauncherEdgeFadeState.none
 
     let context: LauncherPresentationContext
     let onSelectApp: (WebAppDefinition) -> Void
+
+    private var launcherItems: [LauncherItem] {
+        context.apps.map(LauncherItem.webApp) + [.dashboard]
+    }
 
     var body: some View {
         let layout = context.layout
@@ -91,7 +97,7 @@ struct LauncherOverlayRootView: View {
             } action: { _, newValue in
                 edgeFadeState = newValue
             }
-        } else if context.apps.count == 1 {
+        } else if launcherItems.count == 1 {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 iconButtons(layout: layout)
@@ -109,22 +115,47 @@ struct LauncherOverlayRootView: View {
 
     private func iconButtons(layout: LauncherPresentationContext.Layout) -> some View {
         HStack(alignment: .top, spacing: layout.iconSpacing) {
-            ForEach(context.apps) { app in
+            ForEach(launcherItems) { item in
                 Button {
-                    onSelectApp(app)
+                    handleSelection(for: item)
                 } label: {
-                    WebAppIconView(
-                        app: app,
-                        size: layout.iconSize,
-                        font: .system(size: layout.iconFontSize, weight: .semibold)
-                    )
-                    .frame(width: layout.iconSize, height: layout.iconSize)
-                    .contentShape(Rectangle())
+                    launcherIcon(for: item, layout: layout)
                 }
                 .buttonStyle(.plain)
-                .help(app.name)
-                .accessibilityLabel(app.name)
+                .help(item.helpText)
+                .accessibilityLabel(item.helpText)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func launcherIcon(for item: LauncherItem, layout: LauncherPresentationContext.Layout) -> some View {
+        switch item {
+        case .webApp(let app):
+            WebAppIconView(
+                app: app,
+                size: layout.iconSize * 0.85,
+                font: .system(size: layout.iconFontSize * 0.85, weight: .semibold)
+            )
+            .frame(width: layout.iconSize, height: layout.iconSize)
+            .contentShape(Rectangle())
+        case .dashboard:
+            Image(systemName: "plus")
+                .font(.system(size: layout.iconFontSize, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.92))
+                .frame(width: layout.iconSize, height: layout.iconSize)
+                .contentShape(Rectangle())
+        }
+    }
+
+    private func handleSelection(for item: LauncherItem) {
+        switch item {
+        case .webApp(let app):
+            onSelectApp(app)
+        case .dashboard:
+            appModel.hideLauncher(immediately: true)
+            openWindow(id: "dashboard")
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
@@ -152,6 +183,29 @@ struct LauncherOverlayRootView: View {
             }
         } else {
             isExpanded = isLauncherVisible
+        }
+    }
+}
+
+private enum LauncherItem: Identifiable {
+    case webApp(WebAppDefinition)
+    case dashboard
+
+    var id: String {
+        switch self {
+        case .webApp(let app):
+            return app.id
+        case .dashboard:
+            return "dashboard-launcher-item"
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .webApp(let app):
+            return app.name
+        case .dashboard:
+            return "Open Dashboard"
         }
     }
 }
