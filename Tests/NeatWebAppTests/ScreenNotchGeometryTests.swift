@@ -16,6 +16,13 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertTrue(geometry.hasNotch)
         XCTAssertEqual(geometry.notchRect, CGRect(x: 620, y: 908, width: 272, height: 74))
         XCTAssertEqual(geometry.activationRect, CGRect(x: 612, y: 900, width: 288, height: 82))
+
+        let retentionRect = geometry.launcherRetentionRect
+        XCTAssertEqual(retentionRect.midX, geometry.notchRect.midX, accuracy: 0.001)
+        XCTAssertLessThan(retentionRect.width, geometry.activationRect.width * 1.5)
+        XCTAssertGreaterThan(retentionRect.height, geometry.activationRect.height * 2)
+        XCTAssertLessThan(retentionRect.height, geometry.activationRect.height * 3)
+        XCTAssertLessThan(retentionRect.minY, geometry.activationRect.minY - 100)
     }
 
     func testRejectsNonNotchedDisplays() {
@@ -60,6 +67,22 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertFalse(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 13)))
     }
 
+    func testLauncherRetentionKeepsPointerBelowLauncherInside() {
+        let geometry = ScreenNotchGeometry(
+            screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940),
+            safeAreaInsets: NSEdgeInsets(top: 74, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 908, width: 620, height: 74),
+            auxiliaryTopRightArea: CGRect(x: 892, y: 908, width: 620, height: 74),
+            localizedName: "Built-in Display"
+        )
+
+        XCTAssertTrue(geometry.containsLauncherRetentionPoint(CGPoint(x: geometry.notchRect.midX, y: 820)))
+        XCTAssertTrue(geometry.containsLauncherRetentionPoint(CGPoint(x: 570, y: geometry.activationRect.midY)))
+        XCTAssertFalse(geometry.containsLauncherRetentionPoint(CGPoint(x: geometry.notchRect.midX, y: 780)))
+        XCTAssertFalse(geometry.containsLauncherRetentionPoint(CGPoint(x: 555, y: geometry.activationRect.midY)))
+    }
+
     func testPlacementDefaultsToBelowPreferredNotch() {
         let geometry = ScreenNotchGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
@@ -87,9 +110,9 @@ final class ScreenNotchGeometryTests: XCTestCase {
         )
 
         XCTAssertEqual(frame.width, 460)
-        XCTAssertEqual(frame.height, 896)
+        XCTAssertEqual(frame.height, 828)
         XCTAssertEqual(frame.midX, geometry.notchRect.midX)
-        XCTAssertEqual(frame.maxY, geometry.notchRect.minY - 12, accuracy: 0.001)
+        XCTAssertEqual(frame.maxY, geometry.notchRect.minY - 80, accuracy: 0.001)
     }
 
     func testPlacementRestoresSavedFrameOnMatchingDisplayAndClampsToVisibleFrame() {
@@ -171,6 +194,6 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertEqual(frame.width, 720)
         XCTAssertEqual(frame.height, 760)
         XCTAssertEqual(frame.midX, geometry.notchRect.midX)
-        XCTAssertEqual(frame.maxY, geometry.notchRect.minY - 12, accuracy: 0.001)
+        XCTAssertEqual(frame.maxY, geometry.notchRect.minY - 80, accuracy: 0.001)
     }
 }

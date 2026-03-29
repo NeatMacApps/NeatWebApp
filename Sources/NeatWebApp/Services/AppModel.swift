@@ -14,6 +14,7 @@ final class AppModel {
     private(set) var diagnosticsMessage = "Move the mouse into the notch zone to reveal the launcher."
     private(set) var isNotchDebugOverlayVisible = false
     private(set) var isLauncherVisible = false
+    private(set) var isTemporarilySuppressed = false
     private(set) var activeBrowserSession: BrowserSession?
     private(set) var faviconImages: [String: NSImage] = [:]
 
@@ -68,8 +69,8 @@ final class AppModel {
         refreshScreenState()
         preloadFavicons()
 
-        notchActivationMonitor.start { [weak self] mouseLocation in
-            self?.handleMouseLocationChange(mouseLocation)
+        notchActivationMonitor.start { [weak self] mouseLocation, eventType in
+            self?.handleMouseEvent(mouseLocation, eventType)
         }
 
         screenObserver = NotificationCenter.default.addObserver(
@@ -110,7 +111,7 @@ final class AppModel {
 
     func openWebApp(_ app: WebAppDefinition) {
         let preferredGeometry = launcherContext?.geometry ?? defaultWebAppOpenGeometry
-        hideLauncher(immediately: true)
+        hideLauncher(afterDelay: .zero)
         windowCoordinator.open(app, preferredGeometry: preferredGeometry)
     }
 
@@ -153,6 +154,11 @@ final class AppModel {
         activeBrowserSession?.resetZoom()
     }
 
+    func dismissLauncherVoluntarily() {
+        isTemporarilySuppressed = true
+        hideLauncher(afterDelay: .zero)
+    }
+
     func hideLauncher(immediately: Bool = false) {
         if immediately {
             hideLauncherTask?.cancel()
@@ -169,6 +175,10 @@ final class AppModel {
             return
         }
 
+        hideLauncher(afterDelay: Self.launcherHideDelay)
+    }
+
+    private func hideLauncher(afterDelay delay: Duration) {
         guard hideLauncherTask == nil else {
             return
         }
@@ -183,10 +193,12 @@ final class AppModel {
                 hideLauncherTask = nil
             }
 
-            do {
-                try await Task.sleep(for: Self.launcherHideDelay)
-            } catch {
-                return
+            if delay > .zero {
+                do {
+                    try await Task.sleep(for: delay)
+                } catch {
+                    return
+                }
             }
 
             isLauncherVisible = false
@@ -202,19 +214,40 @@ final class AppModel {
         }
     }
 
-    private func handleMouseLocationChange(_ mouseLocation: CGPoint) {
+    private func handleMouseEvent(_ mouseLocation: CGPoint, _ eventType: NSEvent.EventType) {
+        let isClick = (eventType == .leftMouseDown || eventType == .rightMouseDown)
+        
+        let geometryForActivation = detectedNotchScreens.first(where: { $0.containsActivationPoint(mouseLocation) })
+        let activationContains = geometryForActivation != nil
+
+        if isTemporarilySuppressed {
+            if !activationContains {
+                isTemporarilySuppressed = false
+            } else {
+                return
+            }
+        }
+
         if let frame = overlayController.frame, frame.contains(mouseLocation) {
+            return
+        }
+
+        if isClick,
+           isLauncherVisible,
+           let geometry = launcherContext?.geometry,
+           geometry.containsLauncherRetentionPoint(mouseLocation) {
+            dismissLauncherVoluntarily()
             return
         }
 
         if isLauncherVisible,
            let geometry = launcherContext?.geometry,
-           geometry.containsStickyActivationPoint(mouseLocation) {
+           geometry.containsLauncherRetentionPoint(mouseLocation) {
             showLauncher(for: geometry)
             return
         }
 
-        if let geometry = detectedNotchScreens.first(where: { $0.containsActivationPoint(mouseLocation) }) {
+        if let geometry = geometryForActivation {
             showLauncher(for: geometry)
             return
         }

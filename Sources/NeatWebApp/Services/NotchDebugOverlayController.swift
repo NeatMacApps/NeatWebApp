@@ -92,6 +92,7 @@ private final class NotchDebugOverlayView: NSView {
 
         context.clear(bounds)
 
+        draw(rect: localRect(for: geometry.launcherRetentionRect), fillColor: NSColor.systemGreen.withAlphaComponent(0.10), strokeColor: NSColor.systemGreen)
         draw(rect: localRect(for: geometry.activationRect), fillColor: NSColor.systemBlue.withAlphaComponent(0.16), strokeColor: NSColor.systemBlue)
         draw(rect: localRect(for: geometry.notchRect), fillColor: NSColor.systemRed.withAlphaComponent(0.28), strokeColor: NSColor.systemRed)
     }

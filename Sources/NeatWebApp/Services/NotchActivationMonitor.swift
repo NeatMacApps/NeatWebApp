@@ -5,23 +5,26 @@ final class NotchActivationMonitor {
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
-    func start(onMouseLocationChanged: @escaping (CGPoint) -> Void) {
+    func start(onMouseEvent: @escaping @MainActor (CGPoint, NSEvent.EventType) -> Void) {
         stop()
 
-        let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
+        let mask: NSEvent.EventTypeMask = [
+            .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+            .leftMouseDown, .rightMouseDown
+        ]
 
-        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { _ in
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { event in
             Task { @MainActor in
-                onMouseLocationChanged(NSEvent.mouseLocation)
+                onMouseEvent(NSEvent.mouseLocation, event.type)
             }
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { event in
-            onMouseLocationChanged(NSEvent.mouseLocation)
+            onMouseEvent(NSEvent.mouseLocation, event.type)
             return event
         }
 
-        onMouseLocationChanged(NSEvent.mouseLocation)
+        onMouseEvent(NSEvent.mouseLocation, .mouseMoved)
     }
 
     func stop() {

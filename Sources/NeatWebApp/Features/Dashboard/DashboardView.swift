@@ -203,6 +203,10 @@ struct DashboardView: View {
                         Text("activationRect: \(screen.activationRect.debugSummary)")
                             .font(.footnote.monospaced())
                             .foregroundStyle(.secondary)
+
+                        Text("launcherRetentionRect: \(screen.launcherRetentionRect.debugSummary)")
+                            .font(.footnote.monospaced())
+                            .foregroundStyle(.secondary)
                     }
                     .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)

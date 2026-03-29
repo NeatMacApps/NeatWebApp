@@ -5,6 +5,11 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     private static let activationBottomPadding: CGFloat = 8
     private static let activationTopOverflow: CGFloat = 2
     private static let activationStickyTopOverflow: CGFloat = 12
+    private static let launcherRetentionHorizontalPaddingRatio: CGFloat = 0.22
+    private static let launcherRetentionTopPaddingRatio: CGFloat = 0.08
+    private static let launcherRetentionBottomPaddingWidthRatio: CGFloat = 0.72
+    private static let launcherRetentionBottomPaddingHeightRatio: CGFloat = 1.6
+    private static let launcherRetentionHeightScale: CGFloat = 0.6
 
     let screenFrame: CGRect
     let visibleFrame: CGRect
@@ -96,6 +101,72 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         point.x <= rect.maxX &&
         point.y >= rect.minY &&
         point.y <= rect.maxY + topOverflow
+    }
+
+    var launcherRetentionRect: CGRect {
+        let launcherFrame = estimatedLauncherFrame
+        let horizontalPadding = max(
+            launcherFrame.width * Self.launcherRetentionHorizontalPaddingRatio,
+            28
+        )
+        let topPadding = max(
+            launcherFrame.height * Self.launcherRetentionTopPaddingRatio,
+            8
+        )
+        let bottomPadding = max(
+            launcherFrame.width * Self.launcherRetentionBottomPaddingWidthRatio,
+            launcherFrame.height * Self.launcherRetentionBottomPaddingHeightRatio
+        )
+        let rect = CGRect(
+            x: launcherFrame.minX - horizontalPadding,
+            y: launcherFrame.minY - bottomPadding,
+            width: launcherFrame.width + (horizontalPadding * 2),
+            height: launcherFrame.height + topPadding + bottomPadding
+        )
+
+        return verticallyScaledPreservingTopEdge(
+            rect,
+            by: Self.launcherRetentionHeightScale
+        )
+    }
+
+    func containsLauncherRetentionPoint(_ point: CGPoint) -> Bool {
+        contains(point, in: launcherRetentionRect)
+    }
+
+    private var estimatedLauncherFrame: CGRect {
+        let notchHeight = notchRect.height
+        let iconSize = min(max(notchHeight * 0.54, 28), 40)
+        let iconBottomPadding = max(min(notchHeight * 0.15, 12), 8)
+        let launcherHeight = notchHeight + iconSize + iconBottomPadding
+
+        return CGRect(
+            x: notchRect.minX,
+            y: screenFrame.maxY - launcherHeight,
+            width: notchRect.width,
+            height: launcherHeight
+        )
+    }
+
+    private func verticallyScaledPreservingTopEdge(_ rect: CGRect, by scale: CGFloat) -> CGRect {
+        guard scale > 0, scale < 1 else {
+            return rect
+        }
+
+        let scaledHeight = rect.height * scale
+        return CGRect(
+            x: rect.minX,
+            y: rect.maxY - scaledHeight,
+            width: rect.width,
+            height: scaledHeight
+        )
+    }
+
+    private func contains(_ point: CGPoint, in rect: CGRect) -> Bool {
+        point.x >= rect.minX &&
+        point.x <= rect.maxX &&
+        point.y >= rect.minY &&
+        point.y <= rect.maxY
     }
 
     static func == (lhs: ScreenNotchGeometry, rhs: ScreenNotchGeometry) -> Bool {
