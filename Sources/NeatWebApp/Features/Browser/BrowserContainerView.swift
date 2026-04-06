@@ -25,7 +25,15 @@ private struct BrowserWindowDragBar: View {
         let theme = session.chromeTheme
 
         return ZStack {
-            WindowDragHandle()
+            WindowDragHandle(onDoubleClick: session.collapseWindow)
+
+            Text(session.definition.name)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(theme.foregroundColor.color.opacity(0.9))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, 84)
+                .allowsHitTesting(false)
 
             HStack {
                 BrowserChromeButton(
@@ -35,6 +43,23 @@ private struct BrowserWindowDragBar: View {
                     action: session.closeWindow
                 )
                 .help("Close Window")
+
+                BrowserChromeButton(
+                    systemImage: "circle.dashed",
+                    foregroundStyle: theme.foregroundColor.color.opacity(0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    action: session.collapseWindow
+                )
+                .help("Collapse to Floating Icon")
+
+                BrowserChromeButton(
+                    systemImage: session.isPinned ? "pin.fill" : "pin",
+                    foregroundStyle: theme.foregroundColor.color.opacity(session.isPinned ? 1 : 0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    isHighlighted: session.isPinned,
+                    action: session.togglePinned
+                )
+                .help(session.isPinned ? "Disable Always on Top" : "Enable Always on Top")
 
                 Spacer()
 
@@ -53,15 +78,6 @@ private struct BrowserWindowDragBar: View {
                     action: session.toggleUA
                 )
                 .help(session.isMobileUA ? "Switch to Desktop UA" : "Switch to Mobile UA")
-
-                BrowserChromeButton(
-                    systemImage: session.isPinned ? "pin.fill" : "pin",
-                    foregroundStyle: theme.foregroundColor.color.opacity(session.isPinned ? 1 : 0.82),
-                    highlightedFillStyle: theme.highlightedFillColor.color,
-                    isHighlighted: session.isPinned,
-                    action: session.togglePinned
-                )
-                .help(session.isPinned ? "Disable Always on Top" : "Enable Always on Top")
             }
             .padding(.horizontal, 8)
         }
@@ -99,19 +115,32 @@ private struct BrowserChromeButton: View {
 }
 
 private struct WindowDragHandle: NSViewRepresentable {
+    let onDoubleClick: () -> Void
+
     func makeNSView(context: Context) -> WindowDragHandleView {
-        WindowDragHandleView()
+        let view = WindowDragHandleView()
+        view.onDoubleClick = onDoubleClick
+        return view
     }
 
-    func updateNSView(_ nsView: WindowDragHandleView, context: Context) {}
+    func updateNSView(_ nsView: WindowDragHandleView, context: Context) {
+        nsView.onDoubleClick = onDoubleClick
+    }
 }
 
 private final class WindowDragHandleView: NSView {
+    var onDoubleClick: (() -> Void)?
+
     override var isOpaque: Bool {
         false
     }
 
     override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            onDoubleClick?()
+            return
+        }
+
         window?.performDrag(with: event)
     }
 }

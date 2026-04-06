@@ -15,8 +15,9 @@ final class AppModel {
     private(set) var isNotchDebugOverlayVisible = false
     private(set) var isLauncherVisible = false
     private(set) var isTemporarilySuppressed = false
-    private(set) var activeBrowserSession: BrowserSession?
+    private(set) var activeRuntimeAppID: String?
     private(set) var faviconImages: [String: NSImage] = [:]
+    private(set) var isLaunchAtLoginEnabled = false
 
     @ObservationIgnored
     private let overlayController = LauncherOverlayController()
@@ -28,8 +29,6 @@ final class AppModel {
     private let notchDebugOverlayController = NotchDebugOverlayController()
 
     @ObservationIgnored
-    private let preferencesStore = WebAppPreferencesStore()
-    
     @ObservationIgnored
     private let customAppStore = CustomWebAppStore()
 
@@ -37,11 +36,17 @@ final class AppModel {
     private let faviconStore = WebAppFaviconStore()
 
     @ObservationIgnored
-    private lazy var windowCoordinator = WebAppWindowCoordinator(
-        preferencesStore: preferencesStore
-    ) { [weak self] session in
-        self?.activeBrowserSession = session
-    }
+    private let launchAtLoginService = LaunchAtLoginService()
+
+    @ObservationIgnored
+    private lazy var runtimeCoordinator = WebAppRuntimeCoordinator(
+        onActiveAppIDChange: { [weak self] appID in
+            self?.activeRuntimeAppID = appID
+        },
+        onDiagnosticMessage: { [weak self] message in
+            self?.diagnosticsMessage = message
+        }
+    )
 
     @ObservationIgnored
     private var screenObserver: NSObjectProtocol?
@@ -67,6 +72,8 @@ final class AppModel {
         loadApps()
         restoreCachedFavicons()
         refreshScreenState()
+        refreshLaunchAtLoginState()
+        runtimeCoordinator.refreshRegistry()
         preloadFavicons()
 
         notchActivationMonitor.start { [weak self] mouseLocation, eventType in
@@ -112,7 +119,7 @@ final class AppModel {
     func openWebApp(_ app: WebAppDefinition) {
         let preferredGeometry = launcherContext?.geometry ?? defaultWebAppOpenGeometry
         hideLauncher(afterDelay: .zero)
-        windowCoordinator.open(app, preferredGeometry: preferredGeometry)
+        runtimeCoordinator.open(app, preferredGeometry: preferredGeometry)
     }
 
     func faviconImage(for app: WebAppDefinition) -> NSImage? {
@@ -143,15 +150,37 @@ final class AppModel {
     }
 
     func zoomInActiveWebApp() {
-        activeBrowserSession?.increaseZoom()
+        guard let activeRuntimeAppID else {
+            return
+        }
+
+        runtimeCoordinator.increaseZoom(appID: activeRuntimeAppID)
     }
 
     func zoomOutActiveWebApp() {
-        activeBrowserSession?.decreaseZoom()
+        guard let activeRuntimeAppID else {
+            return
+        }
+
+        runtimeCoordinator.decreaseZoom(appID: activeRuntimeAppID)
     }
 
     func resetZoomForActiveWebApp() {
-        activeBrowserSession?.resetZoom()
+        guard let activeRuntimeAppID else {
+            return
+        }
+
+        runtimeCoordinator.resetZoom(appID: activeRuntimeAppID)
+    }
+
+    func setLaunchAtLoginEnabled(_ isEnabled: Bool) {
+        do {
+            try launchAtLoginService.setEnabled(isEnabled)
+        } catch {
+            diagnosticsMessage = error.localizedDescription
+        }
+
+        refreshLaunchAtLoginState()
     }
 
     func dismissLauncherVoluntarily() {
@@ -337,5 +366,13 @@ final class AppModel {
         faviconImages[appID] = normalizedImage
         faviconStore.save(normalizedImage, for: appID)
         failedFaviconAppIDs.remove(appID)
+    }
+
+    private func refreshLaunchAtLoginState() {
+        isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
+
+        if launchAtLoginService.requiresApproval {
+            diagnosticsMessage = "Launch at Login is waiting for approval in System Settings > General > Login Items."
+        }
     }
 }

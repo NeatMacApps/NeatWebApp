@@ -1,0 +1,331 @@
+import AppKit
+import Foundation
+
+@MainActor
+protocol WebAppRuntimeCoordinating {
+    func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?)
+    func focus(appID: String)
+    func collapse(appID: String)
+    func expand(appID: String)
+    func terminate(appID: String)
+    func increaseZoom(appID: String)
+    func decreaseZoom(appID: String)
+    func resetZoom(appID: String)
+    func refreshRegistry()
+}
+
+@MainActor
+final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
+    private let registryStore: RuntimeRegistryStore
+    private let launcher: RuntimeLauncher
+    private let commandBus: RuntimeCommandBus
+    private let onActiveAppIDChange: (String?) -> Void
+    private let onDiagnosticMessage: (String) -> Void
+    private let hostVersion: String
+    private let runtimeBuildIdentifier: String
+    private var registry: [String: RuntimeState] = [:]
+    private var nextSequence = 1
+    private var eventObserver: NSObjectProtocol?
+    private var migratingAppIDs: Set<String> = []
+    private var activeAppID: String? {
+        didSet {
+            guard oldValue != activeAppID else {
+                return
+            }
+
+            onActiveAppIDChange(activeAppID)
+        }
+    }
+
+    init(
+        registryStore: RuntimeRegistryStore = RuntimeRegistryStore(),
+        launcher: RuntimeLauncher? = nil,
+        commandBus: RuntimeCommandBus = RuntimeCommandBus(),
+        onActiveAppIDChange: @escaping (String?) -> Void,
+        onDiagnosticMessage: @escaping (String) -> Void
+    ) {
+        self.registryStore = registryStore
+        self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
+        self.commandBus = commandBus
+        self.onActiveAppIDChange = onActiveAppIDChange
+        self.onDiagnosticMessage = onDiagnosticMessage
+        self.hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+        self.runtimeBuildIdentifier = (try? self.launcher.currentRuntimeBuildIdentifier()) ?? hostVersion
+        self.eventObserver = commandBus.observeEvents { [weak self] event in
+            self?.handle(event)
+        }
+        refreshRegistry()
+    }
+
+    func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?) {
+        refreshRegistry()
+
+        if let state = registry[definition.id] {
+            switch state.phase {
+            case .collapsedToFloatingIcon:
+                expand(appID: definition.id)
+            case .hidden:
+                sendCommand(.showWindow, state: state)
+            case .launching, .windowVisible:
+                focus(appID: definition.id)
+            case .terminating:
+                launchNewRuntime(for: definition, preferredGeometry: preferredGeometry, reason: .reopenExisting)
+            }
+            return
+        }
+
+        launchNewRuntime(for: definition, preferredGeometry: preferredGeometry, reason: .openFromLauncher)
+    }
+
+    func focus(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.focusWindow, state: state)
+    }
+
+    func collapse(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.collapseWindow, state: state)
+    }
+
+    func expand(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.expandWindow, state: state)
+    }
+
+    func terminate(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.terminateRuntime, state: state)
+    }
+
+    func increaseZoom(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.increaseZoom, state: state)
+    }
+
+    func decreaseZoom(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.decreaseZoom, state: state)
+    }
+
+    func resetZoom(appID: String) {
+        guard let state = registry[appID] else {
+            return
+        }
+
+        sendCommand(.resetZoom, state: state)
+    }
+
+    func refreshRegistry() {
+        registryStore.cleanupStaleStates()
+        registry = Dictionary(
+            uniqueKeysWithValues: registryStore.loadAllStates().map { ($0.appID, $0) }
+        )
+        migrateOutdatedRuntimesIfNeeded()
+
+        if let activeAppID, registry[activeAppID] == nil {
+            self.activeAppID = nil
+        }
+    }
+
+    private func launchNewRuntime(
+        for definition: WebAppDefinition,
+        preferredGeometry: ScreenNotchGeometry?,
+        reason: RuntimeLaunchReason
+    ) {
+        let bootstrap = RuntimeBootstrap(
+            instanceID: UUID(),
+            appID: definition.id,
+            definition: definition,
+            launchReason: reason,
+            preferredDisplayID: preferredGeometry?.displayID,
+            runtimeBuildIdentifier: runtimeBuildIdentifier,
+            restoredPhase: nil,
+            restoredWindowFrame: nil,
+            restoredFloatingIconFrame: nil,
+            createdAt: .now,
+            hostVersion: hostVersion
+        )
+
+        do {
+            try launcher.launch(bootstrap) { [weak self] message in
+                if self?.activeAppID == definition.id {
+                    self?.activeAppID = nil
+                }
+                self?.onDiagnosticMessage(message)
+            }
+            activeAppID = definition.id
+        } catch {
+            onDiagnosticMessage(error.localizedDescription)
+        }
+    }
+
+    private func migrateOutdatedRuntimesIfNeeded() {
+        let outdatedRuntimes = registry.values.compactMap { state -> (RuntimeState, RuntimeBootstrap)? in
+            guard let bootstrap = registryStore.loadBootstrap(instanceID: state.instanceID),
+                  bootstrap.runtimeBuildIdentifier != runtimeBuildIdentifier else {
+                return nil
+            }
+
+            return (state, bootstrap)
+        }
+
+        for (state, bootstrap) in outdatedRuntimes {
+            guard !migratingAppIDs.contains(state.appID) else {
+                continue
+            }
+
+            migratingAppIDs.insert(state.appID)
+            Task { @MainActor [weak self] in
+                await self?.migrateOutdatedRuntime(state: state, bootstrap: bootstrap)
+            }
+        }
+    }
+
+    private func migrateOutdatedRuntime(state: RuntimeState, bootstrap: RuntimeBootstrap) async {
+        defer {
+            migratingAppIDs.remove(state.appID)
+            refreshRegistry()
+        }
+
+        terminateProcessIfNeeded(for: state)
+        await waitForRuntimeShutdown(state)
+
+        guard let restoredPhase = relaunchPhase(for: state.phase) else {
+            return
+        }
+
+        let replacementBootstrap = RuntimeBootstrap(
+            instanceID: UUID(),
+            appID: bootstrap.appID,
+            definition: bootstrap.definition,
+            launchReason: .reopenExisting,
+            preferredDisplayID: bootstrap.preferredDisplayID,
+            runtimeBuildIdentifier: runtimeBuildIdentifier,
+            restoredPhase: restoredPhase,
+            restoredWindowFrame: state.windowFrame,
+            restoredFloatingIconFrame: state.floatingIconFrame,
+            createdAt: .now,
+            hostVersion: hostVersion
+        )
+
+        do {
+            try launcher.launch(replacementBootstrap) { [weak self] message in
+                self?.onDiagnosticMessage(message)
+            }
+        } catch {
+            onDiagnosticMessage(error.localizedDescription)
+        }
+    }
+
+    private func terminateProcessIfNeeded(for state: RuntimeState) {
+        sendCommand(.terminateRuntime, state: state)
+
+        guard let application = NSRunningApplication(processIdentifier: state.pid) else {
+            return
+        }
+
+        application.terminate()
+    }
+
+    private func waitForRuntimeShutdown(_ state: RuntimeState) async {
+        for _ in 0..<20 {
+            registryStore.cleanupStaleStates()
+
+            if NSRunningApplication(processIdentifier: state.pid) == nil,
+               registryStore.loadState(instanceID: state.instanceID) == nil {
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+
+        if let application = NSRunningApplication(processIdentifier: state.pid) {
+            application.forceTerminate()
+        }
+
+        for _ in 0..<10 {
+            registryStore.cleanupStaleStates()
+
+            if NSRunningApplication(processIdentifier: state.pid) == nil,
+               registryStore.loadState(instanceID: state.instanceID) == nil {
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
+    private func relaunchPhase(for phase: RuntimePhase) -> RuntimePhase? {
+        switch phase {
+        case .launching, .windowVisible:
+            .windowVisible
+        case .collapsedToFloatingIcon:
+            .collapsedToFloatingIcon
+        case .hidden, .terminating:
+            nil
+        }
+    }
+
+    private func sendCommand(_ commandName: RuntimeCommandName, state: RuntimeState) {
+        let command = RuntimeCommand(
+            instanceID: state.instanceID,
+            appID: state.appID,
+            sequence: nextSequence,
+            command: commandName,
+            definition: nil
+        )
+        nextSequence += 1
+        commandBus.send(command)
+    }
+
+    private func handle(_ event: RuntimeEvent) {
+        let state = registryStore.state(forAppID: event.appID) ?? RuntimeState(
+            instanceID: event.instanceID,
+            appID: event.appID,
+            pid: 0,
+            phase: event.phase,
+            windowFrame: event.windowFrame,
+            floatingIconFrame: event.floatingIconFrame,
+            lastUpdatedAt: event.lastUpdatedAt
+        )
+
+        switch event.event {
+        case .runtimeStarted, .windowShown, .windowFocused, .windowExpanded:
+            registry[event.appID] = state
+            activeAppID = event.appID
+        case .windowCollapsed:
+            registry[event.appID] = state
+            if activeAppID == event.appID {
+                activeAppID = nil
+            }
+        case .windowHidden:
+            registry[event.appID] = state
+            if activeAppID == event.appID {
+                activeAppID = nil
+            }
+        case .runtimeTerminating, .runtimeCrashed:
+            registry.removeValue(forKey: event.appID)
+            if activeAppID == event.appID {
+                activeAppID = nil
+            }
+        }
+    }
+}

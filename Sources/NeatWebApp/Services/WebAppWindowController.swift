@@ -1,22 +1,47 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 @MainActor
-final class WebAppWindowController: NSWindowController, NSWindowDelegate {
+protocol RuntimeWindowEventSink: AnyObject {
+    func webAppWindowDidUpdate(
+        appID: String,
+        phase: RuntimePhase,
+        windowFrame: CGRect?,
+        floatingIconFrame: CGRect?
+    )
+
+    func webAppWindowDidFocus(appID: String, windowFrame: CGRect?)
+}
+
+@MainActor
+final class WebAppWindowController: NSWindowController, NSWindowDelegate, BrowserSessionCommandHandling {
     enum WindowMetrics {
         static let defaultContentSize = NSSize(width: 460, height: 900)
         static let minimumContentSize = NSSize(width: 390, height: 640)
+        static let floatingIconDiameter: CGFloat = 52 * 0.8
+        static let floatingIconShadowPadding: CGFloat = 10
+        static let floatingIconTransitionDuration: TimeInterval = 0.22
+        static let pinnedWindowLevel = NSWindow.Level.floating
+        static let floatingIconLevel = NSWindow.Level(rawValue: pinnedWindowLevel.rawValue + 1)
     }
 
     let session: BrowserSession
-    private let onFocusChange: (BrowserSession?) -> Void
+    private weak var eventSink: (any RuntimeWindowEventSink)?
     private let preferredGeometry: ScreenNotchGeometry?
+    private let faviconStore = WebAppFaviconStore()
+    private var floatingIconPanel: FloatingWebAppIconPanel?
+    private var transitionSnapshotPanel: WindowSnapshotTransitionPanel?
+    private var collapsedWindowSnapshot: NSImage?
+    private var expandedWindowFrameBeforeCollapse: CGRect?
+    private var isAnimatingFloatingIconTransition = false
+    private var lastExternalFrontmostApplication: NSRunningApplication?
 
     init(
         definition: WebAppDefinition,
         preferencesStore: WebAppPreferencesStore,
         preferredGeometry: ScreenNotchGeometry?,
-        onFocusChange: @escaping (BrowserSession?) -> Void
+        eventSink: (any RuntimeWindowEventSink)?
     ) {
         let preference = preferencesStore.load(for: definition.id)
         self.session = BrowserSession(
@@ -24,7 +49,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
             preference: preference,
             preferencesStore: preferencesStore
         )
-        self.onFocusChange = onFocusChange
+        self.eventSink = eventSink
         self.preferredGeometry = preferredGeometry
 
         let window = NSWindow(
@@ -47,16 +72,65 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
+        if floatingIconPanel != nil {
+            expandFromFloatingIcon(shouldFocusWebView: true)
+            return
+        }
+
+        rememberFrontmostExternalApplication()
         ensureWindowFrameIsVisible(preferredGeometry: preferredGeometry ?? self.preferredGeometry)
         NSApp.activate(ignoringOtherApps: true)
         window?.deminiaturize(nil)
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
         session.focusWebView()
+        eventSink?.webAppWindowDidUpdate(
+            appID: session.definition.id,
+            phase: .windowVisible,
+            windowFrame: window?.frame,
+            floatingIconFrame: nil
+        )
+    }
+
+    func collapseWindow() {
+        collapseToFloatingIcon()
+    }
+
+    func restoreCollapsedWindow(windowFrame: CGRect?, iconFrame: CGRect?) {
+        guard !isAnimatingFloatingIconTransition else {
+            return
+        }
+
+        if let windowFrame {
+            window?.setFrame(windowFrame, display: false)
+            expandedWindowFrameBeforeCollapse = windowFrame
+        } else if let window {
+            expandedWindowFrameBeforeCollapse = window.frame
+        }
+
+        let resolvedIconFrame: CGRect
+        if let iconFrame {
+            resolvedIconFrame = iconFrame
+        } else if let expandedWindowFrameBeforeCollapse {
+            resolvedIconFrame = floatingIconFrame(alignedToTopLeft: expandedWindowFrameBeforeCollapse.topLeft)
+        } else if let window {
+            resolvedIconFrame = floatingIconFrame(alignedToTopLeft: window.frame.topLeft)
+        } else {
+            return
+        }
+
+        let panel = showFloatingIcon(frame: resolvedIconFrame)
+        window?.orderOut(nil)
+        eventSink?.webAppWindowDidUpdate(
+            appID: session.definition.id,
+            phase: .collapsedToFloatingIcon,
+            windowFrame: expandedWindowFrameBeforeCollapse,
+            floatingIconFrame: panel.frame
+        )
     }
 
     func updatePinnedState(_ isPinned: Bool) {
-        window?.level = isPinned ? .floating : .normal
+        window?.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
     }
 
     func windowDidMove(_ notification: Notification) {
@@ -69,11 +143,10 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
 
     func windowDidBecomeKey(_ notification: Notification) {
         session.focusWebView()
-        onFocusChange(session)
+        eventSink?.webAppWindowDidFocus(appID: session.definition.id, windowFrame: window?.frame)
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        onFocusChange(nil)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -83,7 +156,24 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
 
     func hideWindow() {
         persistWindowFrame()
+        hideFloatingIcon()
+        hideTransitionSnapshot()
+        collapsedWindowSnapshot = nil
         window?.orderOut(nil)
+        eventSink?.webAppWindowDidUpdate(
+            appID: session.definition.id,
+            phase: .hidden,
+            windowFrame: window?.frame,
+            floatingIconFrame: nil
+        )
+    }
+
+    func browserSessionDidRequestClose(_ session: BrowserSession) {
+        hideWindow()
+    }
+
+    func browserSessionDidRequestCollapse(_ session: BrowserSession) {
+        collapseToFloatingIcon()
     }
 
     private func configureWindow(_ window: NSWindow, definition: WebAppDefinition, isPinned: Bool) {
@@ -93,7 +183,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = false
         window.backgroundColor = BrowserChromeTheme.fallback.pageColor.nsColor
-        window.level = isPinned ? .floating : .normal
+        window.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         window.contentMinSize = WindowMetrics.minimumContentSize
         window.toolbar = nil
 
@@ -113,11 +203,312 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
         session.onPinnedChange = { [weak self] isPinned in
             self?.updatePinnedState(isPinned)
         }
-        session.onCloseRequest = { [weak self] in
-            self?.hideWindow()
-        }
+        session.commandHandler = self
 
         window.backgroundColor = session.chromeTheme.pageColor.nsColor
+    }
+
+    private func collapseToFloatingIcon() {
+        guard let window, !isAnimatingFloatingIconTransition else {
+            return
+        }
+
+        persistWindowFrame()
+        expandedWindowFrameBeforeCollapse = window.frame
+        let snapshotImage = captureWindowSnapshot(from: window)
+        collapsedWindowSnapshot = snapshotImage
+
+        let iconFrame = floatingIconFrame(alignedToTopLeft: window.frame.topLeft)
+        let panel = showFloatingIcon(frame: iconFrame)
+        panel.alphaValue = 0
+        let snapshotPanel = snapshotImage.map { showTransitionSnapshot(image: $0, frame: window.frame) }
+
+        isAnimatingFloatingIconTransition = true
+
+        if snapshotPanel != nil {
+            window.orderOut(nil)
+        }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = WindowMetrics.floatingIconTransitionDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+            panel.animator().alphaValue = 1
+            if let snapshotPanel {
+                snapshotPanel.animator().alphaValue = 0
+                snapshotPanel.animator().setFrame(iconFrame, display: false)
+            } else {
+                window.animator().alphaValue = 0
+            }
+        } completionHandler: { [weak self, weak window, weak panel, weak snapshotPanel] in
+            Task { @MainActor [weak self, weak window, weak panel, weak snapshotPanel] in
+                guard let self else {
+                    panel?.orderOut(nil)
+                    snapshotPanel?.orderOut(nil)
+                    return
+                }
+
+                if let window {
+                    window.orderOut(nil)
+                    window.alphaValue = 1
+                }
+                self.hideTransitionSnapshot()
+                panel?.orderFrontRegardless()
+                self.isAnimatingFloatingIconTransition = false
+                self.eventSink?.webAppWindowDidUpdate(
+                    appID: self.session.definition.id,
+                    phase: .collapsedToFloatingIcon,
+                    windowFrame: self.expandedWindowFrameBeforeCollapse,
+                    floatingIconFrame: panel?.frame
+                )
+                self.reactivateLastExternalApplicationIfPossible()
+            }
+        }
+    }
+
+    @discardableResult
+    private func showFloatingIcon(frame: CGRect) -> FloatingWebAppIconPanel {
+        let panel = floatingIconPanel ?? makeFloatingIconPanel()
+        floatingIconPanel = panel
+        panel.setFrame(frame, display: false)
+        panel.alphaValue = 1
+        panel.orderFrontRegardless()
+        return panel
+    }
+
+    private func expandFromFloatingIcon(shouldFocusWebView: Bool = true) {
+        guard let window, !isAnimatingFloatingIconTransition else {
+            hideFloatingIcon()
+            hideTransitionSnapshot()
+            return
+        }
+
+        let panel = floatingIconPanel
+        let iconFrame = panel?.frame
+
+        guard let iconFrame else {
+            if shouldFocusWebView {
+                showAndFocus()
+            } else {
+                NSApp.activate(ignoringOtherApps: true)
+                window.orderFrontRegardless()
+                window.makeKeyAndOrderFront(nil)
+            }
+            return
+        }
+
+        rememberFrontmostExternalApplication()
+        let iconTopLeft = floatingIconVisualTopLeft(from: iconFrame)
+        var restoredFrame = frameAlignedToTopLeft(
+            size: expandedWindowFrameBeforeCollapse?.size ?? window.frame.size,
+            topLeft: iconTopLeft
+        )
+        restoredFrame = clampToVisibleFrame(restoredFrame, around: iconTopLeft)
+        let snapshotPanel = collapsedWindowSnapshot.map { showTransitionSnapshot(image: $0, frame: iconFrame) }
+        snapshotPanel?.alphaValue = 0
+        window.setFrame(restoredFrame, display: false)
+        window.alphaValue = 1
+
+        isAnimatingFloatingIconTransition = true
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = WindowMetrics.floatingIconTransitionDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+            panel?.animator().alphaValue = 0
+            if let snapshotPanel {
+                snapshotPanel.animator().alphaValue = 1
+                snapshotPanel.animator().setFrame(restoredFrame, display: true)
+            }
+        } completionHandler: { [weak self, weak window, weak snapshotPanel] in
+            Task { @MainActor [weak self, weak window, weak snapshotPanel] in
+                guard let self, let window else {
+                    snapshotPanel?.orderOut(nil)
+                    return
+                }
+
+                self.hideTransitionSnapshot()
+                self.hideFloatingIcon()
+                self.collapsedWindowSnapshot = nil
+                NSApp.activate(ignoringOtherApps: true)
+                window.deminiaturize(nil)
+                window.orderFrontRegardless()
+                window.makeKeyAndOrderFront(nil)
+                window.alphaValue = 1
+                self.persistWindowFrame()
+                self.isAnimatingFloatingIconTransition = false
+                self.eventSink?.webAppWindowDidUpdate(
+                    appID: self.session.definition.id,
+                    phase: .windowVisible,
+                    windowFrame: window.frame,
+                    floatingIconFrame: nil
+                )
+                if shouldFocusWebView {
+                    self.session.focusWebView()
+                }
+            }
+        }
+    }
+
+    private func hideFloatingIcon() {
+        floatingIconPanel?.orderOut(nil)
+        floatingIconPanel = nil
+    }
+
+    @discardableResult
+    private func showTransitionSnapshot(image: NSImage, frame: CGRect) -> WindowSnapshotTransitionPanel {
+        let panel = transitionSnapshotPanel ?? makeTransitionSnapshotPanel()
+        transitionSnapshotPanel = panel
+        panel.snapshotImage = image
+        panel.setFrame(frame, display: false)
+        panel.alphaValue = 1
+        panel.orderFrontRegardless()
+        return panel
+    }
+
+    private func hideTransitionSnapshot() {
+        transitionSnapshotPanel?.orderOut(nil)
+        transitionSnapshotPanel = nil
+    }
+
+    private func floatingIconFrame(alignedToTopLeft topLeft: CGPoint) -> CGRect {
+        let panelSize = CGSize(
+            width: WindowMetrics.floatingIconDiameter + (WindowMetrics.floatingIconShadowPadding * 2),
+            height: WindowMetrics.floatingIconDiameter + (WindowMetrics.floatingIconShadowPadding * 2)
+        )
+        let proposedFrame = CGRect(
+            x: topLeft.x - WindowMetrics.floatingIconShadowPadding,
+            y: topLeft.y - panelSize.height + WindowMetrics.floatingIconShadowPadding,
+            width: panelSize.width,
+            height: panelSize.height
+        )
+
+        return FloatingIconSnapResolver.resolvePanelFrame(
+            proposedFrame: proposedFrame,
+            anchorPoint: topLeft,
+            availableScreens: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:)),
+            fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
+            shadowPadding: WindowMetrics.floatingIconShadowPadding
+        )
+    }
+
+    private func floatingIconVisualTopLeft(from panelFrame: CGRect) -> CGPoint {
+        CGPoint(
+            x: panelFrame.minX + WindowMetrics.floatingIconShadowPadding,
+            y: panelFrame.maxY - WindowMetrics.floatingIconShadowPadding
+        )
+    }
+
+    private func frameAlignedToTopLeft(size: CGSize, topLeft: CGPoint) -> CGRect {
+        CGRect(
+            x: topLeft.x,
+            y: topLeft.y - size.height,
+            width: size.width,
+            height: size.height
+        )
+    }
+
+    private func clampToVisibleFrame(_ frame: CGRect, around anchorPoint: CGPoint) -> CGRect {
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(anchorPoint) }) ?? NSScreen.main else {
+            return frame
+        }
+
+        let visibleFrame = screen.visibleFrame
+        guard visibleFrame.width >= frame.width, visibleFrame.height >= frame.height else {
+            return frame
+        }
+
+        let clampedX = min(max(frame.origin.x, visibleFrame.minX), visibleFrame.maxX - frame.width)
+        let clampedY = min(max(frame.origin.y, visibleFrame.minY), visibleFrame.maxY - frame.height)
+        return CGRect(x: clampedX, y: clampedY, width: frame.width, height: frame.height)
+    }
+
+    private func makeFloatingIconPanel() -> FloatingWebAppIconPanel {
+        let diameter = WindowMetrics.floatingIconDiameter + (WindowMetrics.floatingIconShadowPadding * 2)
+        let panel = FloatingWebAppIconPanel(
+            contentRect: CGRect(x: 0, y: 0, width: diameter, height: diameter),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.level = WindowMetrics.floatingIconLevel
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.hasShadow = false
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hidesOnDeactivate = false
+        panel.isMovableByWindowBackground = false
+
+        let iconImage = faviconStore.load(for: session.definition.id)
+        panel.contentView = FloatingWebAppIconView(
+            iconImage: iconImage,
+            appName: session.definition.name
+        ) { [weak self] in
+            self?.expandFromFloatingIcon()
+        }
+        return panel
+    }
+
+    private func makeTransitionSnapshotPanel() -> WindowSnapshotTransitionPanel {
+        let panel = WindowSnapshotTransitionPanel(
+            contentRect: .zero,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = false
+        panel.level = WindowMetrics.floatingIconLevel
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.hasShadow = true
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hidesOnDeactivate = false
+        panel.ignoresMouseEvents = true
+        return panel
+    }
+
+    private func captureWindowSnapshot(from window: NSWindow) -> NSImage? {
+        guard let contentView = window.contentView else {
+            return nil
+        }
+
+        let bounds = contentView.bounds
+        guard !bounds.isEmpty,
+              let bitmapRepresentation = contentView.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+
+        contentView.cacheDisplay(in: bounds, to: bitmapRepresentation)
+
+        let snapshot = NSImage(size: bounds.size)
+        snapshot.addRepresentation(bitmapRepresentation)
+        return snapshot
+    }
+
+    private func rememberFrontmostExternalApplication() {
+        guard let frontmostApplication = NSWorkspace.shared.frontmostApplication else {
+            return
+        }
+
+        guard frontmostApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+            return
+        }
+
+        lastExternalFrontmostApplication = frontmostApplication
+    }
+
+    private func reactivateLastExternalApplicationIfPossible() {
+        guard let application = lastExternalFrontmostApplication, !application.isTerminated else {
+            return
+        }
+
+        lastExternalFrontmostApplication = nil
+        application.activate(options: [])
     }
 
     private func persistWindowFrame() {
@@ -181,220 +572,8 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate {
     }
 }
 
-struct WebAppWindowPlacementScreen: Equatable, Sendable {
-    let displayID: UInt32?
-    let localizedName: String
-    let frame: CGRect
-    let visibleFrame: CGRect
-    let notchGeometry: ScreenNotchGeometry?
-
-    init(
-        displayID: UInt32?,
-        localizedName: String,
-        frame: CGRect,
-        visibleFrame: CGRect,
-        notchGeometry: ScreenNotchGeometry?
-    ) {
-        self.displayID = displayID
-        self.localizedName = localizedName
-        self.frame = frame
-        self.visibleFrame = visibleFrame
-        self.notchGeometry = notchGeometry
-    }
-
-    init(screen: NSScreen) {
-        self.init(
-            displayID: screen.displayID,
-            localizedName: screen.localizedName,
-            frame: screen.frame,
-            visibleFrame: screen.visibleFrame,
-            notchGeometry: ScreenNotchGeometry(screen: screen)
-        )
-    }
-}
-
-enum WebAppWindowPlacementResolver {
-    private static let notchSpacing: CGFloat = 80
-    private static let fallbackTopMargin: CGFloat = 84
-
-    static func resolveFrame(
-        preference: StoredWebAppPreference,
-        preferredGeometry: ScreenNotchGeometry?,
-        availableScreens: [WebAppWindowPlacementScreen],
-        fallbackDisplayID: UInt32?,
-        defaultFrameSize: CGSize,
-        minimumFrameSize: CGSize
-    ) -> CGRect {
-        let preferredScreen = resolvePreferredScreen(
-            preferredGeometry: preferredGeometry,
-            availableScreens: availableScreens,
-            fallbackDisplayID: fallbackDisplayID
-        )
-        let preferredNotch = resolvePreferredNotch(
-            preferredGeometry: preferredGeometry,
-            preferredScreen: preferredScreen
-        )
-
-        if let storedPlacement = preference.resolvedWindowPlacement,
-           let matchedScreen = resolveStoredScreen(for: storedPlacement, availableScreens: availableScreens) {
-            let size = clampedSize(
-                storedPlacement.frame.size,
-                within: matchedScreen.visibleFrame.size,
-                minimumFrameSize: minimumFrameSize
-            )
-            let frame = CGRect(origin: storedPlacement.frame.origin, size: size)
-            return clamp(frame, into: matchedScreen.visibleFrame)
-        }
-
-        let fallbackScreen = preferredScreen ?? availableScreens.first
-        let requestedSize = preference.resolvedWindowPlacement?.frame.size ?? defaultFrameSize
-        let placementBounds = fallbackPlacementBounds(
-            preferredNotch: preferredNotch ?? fallbackScreen?.notchGeometry,
-            visibleFrame: fallbackScreen?.visibleFrame
-        )
-        let size = clampedSize(
-            requestedSize,
-            within: placementBounds?.size ?? fallbackScreen?.visibleFrame.size ?? defaultFrameSize,
-            minimumFrameSize: minimumFrameSize
-        )
-
-        guard let fallbackScreen else {
-            return CGRect(origin: .zero, size: size)
-        }
-
-        return fallbackFrame(
-            size: size,
-            preferredNotch: preferredNotch ?? fallbackScreen.notchGeometry,
-            visibleFrame: fallbackScreen.visibleFrame,
-            placementBounds: placementBounds ?? fallbackScreen.visibleFrame
-        )
-    }
-
-    static func isFrameVisible(_ frame: CGRect, across screens: [WebAppWindowPlacementScreen]) -> Bool {
-        screens.contains { $0.visibleFrame.contains(frame) }
-    }
-
-    private static func resolveStoredScreen(
-        for placement: StoredWindowPlacement,
-        availableScreens: [WebAppWindowPlacementScreen]
-    ) -> WebAppWindowPlacementScreen? {
-        guard let storedDisplay = placement.display else {
-            return nil
-        }
-
-        return availableScreens.first(where: { screen in
-            if let storedDisplayID = storedDisplay.displayID,
-               let screenDisplayID = screen.displayID,
-               storedDisplayID == screenDisplayID {
-                return true
-            }
-
-            return storedDisplay.localizedName == screen.localizedName &&
-            storedDisplay.frame.size == screen.frame.size
-        })
-    }
-
-    private static func resolvePreferredScreen(
-        preferredGeometry: ScreenNotchGeometry?,
-        availableScreens: [WebAppWindowPlacementScreen],
-        fallbackDisplayID: UInt32?
-    ) -> WebAppWindowPlacementScreen? {
-        if let preferredGeometry,
-           let screen = availableScreens.first(where: { $0.frame == preferredGeometry.screenFrame }) {
-            return screen
-        }
-
-        if let fallbackDisplayID,
-           let screen = availableScreens.first(where: { $0.displayID == fallbackDisplayID }) {
-            return screen
-        }
-
-        return availableScreens.first(where: { $0.notchGeometry != nil }) ?? availableScreens.first
-    }
-
-    private static func resolvePreferredNotch(
-        preferredGeometry: ScreenNotchGeometry?,
-        preferredScreen: WebAppWindowPlacementScreen?
-    ) -> ScreenNotchGeometry? {
-        if let preferredGeometry {
-            return preferredGeometry
-        }
-
-        return preferredScreen?.notchGeometry
-    }
-
-    private static func clampedSize(
-        _ size: CGSize,
-        within availableSize: CGSize,
-        minimumFrameSize: CGSize
-    ) -> CGSize {
-        CGSize(
-            width: min(availableSize.width, max(minimumFrameSize.width, size.width)),
-            height: min(availableSize.height, max(minimumFrameSize.height, size.height))
-        )
-    }
-
-    private static func fallbackFrame(
-        size: CGSize,
-        preferredNotch: ScreenNotchGeometry?,
-        visibleFrame: CGRect,
-        placementBounds: CGRect
-    ) -> CGRect {
-        let origin: CGPoint
-
-        if let preferredNotch {
-            origin = CGPoint(
-                x: preferredNotch.notchRect.midX - (size.width / 2),
-                y: placementBounds.maxY - size.height
-            )
-        } else {
-            origin = CGPoint(
-                x: visibleFrame.midX - (size.width / 2),
-                y: visibleFrame.maxY - size.height - fallbackTopMargin
-            )
-        }
-
-        return clamp(CGRect(origin: origin, size: size), into: placementBounds)
-    }
-
-    private static func fallbackPlacementBounds(
-        preferredNotch: ScreenNotchGeometry?,
-        visibleFrame: CGRect?
-    ) -> CGRect? {
-        guard let visibleFrame else {
-            return nil
-        }
-
-        guard let preferredNotch else {
-            return visibleFrame
-        }
-
-        let maxY = max(visibleFrame.minY, preferredNotch.notchRect.minY - notchSpacing)
-        return CGRect(
-            x: visibleFrame.minX,
-            y: visibleFrame.minY,
-            width: visibleFrame.width,
-            height: maxY - visibleFrame.minY
-        )
-    }
-
-    private static func clamp(_ frame: CGRect, into visibleFrame: CGRect) -> CGRect {
-        let width = min(frame.width, visibleFrame.width)
-        let height = min(frame.height, visibleFrame.height)
-        let maxX = visibleFrame.maxX - width
-        let maxY = visibleFrame.maxY - height
-
-        return CGRect(
-            x: min(max(frame.minX, visibleFrame.minX), maxX),
-            y: min(max(frame.minY, visibleFrame.minY), maxY),
-            width: width,
-            height: height
-        )
-    }
-}
-
-private extension NSScreen {
-    var displayID: UInt32? {
-        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+private extension CGRect {
+    var topLeft: CGPoint {
+        CGPoint(x: minX, y: maxY)
     }
 }

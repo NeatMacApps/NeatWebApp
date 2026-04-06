@@ -7,18 +7,21 @@
 - 参考 MenubarX 的使用感，但更强调内容优先和窗口极简。
 - 基于系统浏览器内核 `WKWebView`，保留 Cookie 持久化、页面缩放、基础导航能力。
 - 鼠标移入新款 MacBook 刘海区域后，在刘海两侧展开纯黑 launcher。
-- 每个 WebApp 都可以独立开窗，并支持窗口置顶。
+- 每个 WebApp 都由独立 runtime helper 承载，支持窗口置顶与收起为悬浮图标。
 
 ## 当前脚手架已包含
 
 - `XcodeGen` 工程配置，最低支持 `macOS 15.0`
 - Swift 6 / Observation 宏风格的应用状态管理
+- Host / Runtime 拆分：`NeatWebApp` 负责 launcher 与调度，`NeatWebAppRuntime` 负责网页窗口运行时
 - `WKWebView` 容器与基础浏览器 overlay 控件
 - 默认 `WKWebsiteDataStore`，用于持久化 Cookie / 网站数据
-- 每个 WebApp 独立窗口管理与置顶状态持久化
+- 每个 WebApp 独立 runtime 窗口管理、收起为悬浮图标、窗口置顶状态持久化
 - 基于 `NSScreen.safeAreaInsets` / `auxiliaryTopLeftArea` / `auxiliaryTopRightArea` 的刘海几何推断
 - 基于全局 + 本地鼠标事件监听的 launcher 触发管线
 - launcher 横向滚动时基于真实滚动余量动态显示左右边缘渐隐提示
+- launcher 图标和悬浮图标优先使用真实网站 favicon
+- Host 启动后会刷新 runtime 注册表，并自动接管旧构建的 helper
 - 用于验证刘海几何算法的基础单元测试
 
 ## 技术栈
@@ -59,33 +62,31 @@ NeatWebApp/
 ├── README.md
 ├── docs/
 │   ├── architecture.md
+│   ├── webapp-runtime-isolation-refactor.md
 │   └── notch-activation-research.md
 ├── Sources/
-│   └── NeatWebApp/
-│       ├── App/                 # App 入口、命令菜单、Info.plist
-│       ├── Models/              # WebApp 定义、刘海几何模型
-│       ├── Services/            # overlay/window/事件监控/偏好持久化
-│       ├── Features/
-│       │   ├── Browser/         # Browser session、WebView bridge、内容窗口
-│       │   ├── Dashboard/       # 调试和配置首页
-│       │   └── Launcher/        # 刘海 launcher 视图
-│       └── Assets.xcassets
+│   ├── NeatWebApp/              # Host：App 入口、launcher、dashboard、runtime 调度
+│   ├── NeatWebAppRuntime/       # Helper：浏览器窗口、悬浮图标、运行时入口
+│   └── Shared/                  # Host / Runtime 共用模型、IPC、持久化
 └── Tests/
-    └── NeatWebAppTests/
+    ├── NeatWebAppTests/
+    └── NeatWebAppRuntimeTests/
 ```
 
 ## 当前实现假设
 
-- 当前 launcher 图标先用 SF Symbols 占位，后续再替换为真实网站 favicon。
+- launcher 图标和收起后的悬浮图标都会优先读取真实网站 favicon，缺失时才回退到默认字母图标。
+- runtime 默认复用 Host 的 favicon 缓存目录，因此两处图标会命中同一份缓存。
 - notch 触发使用 AppKit 暴露的安全区域和辅助区域几何信息推断，不依赖私有 API。
-- 当前浏览器窗口先支持单站点单窗口复用；后续可以扩展成多 profile、多 workspace。
+- 当前浏览器窗口按单站点单 runtime 单窗口复用；Host 刷新注册表时会自动接管旧构建的 helper。
+- 后续仍可以扩展成多 profile、多 workspace。
 
 ## 后续优先级建议
 
-1. 接 favicon 管线，并允许用户增删 launcher 中的网站。
+1. 允许用户增删 launcher 中的网站，并把 app catalog 从硬编码迁到持久化配置。
 2. 增加 per-site 偏好：UA、权限、默认窗口尺寸、固定位置。
 3. 给 launcher 增加 debug overlay，便于微调刘海触发热区。
-4. 再决定是否演进成 menu bar agent / LSUIElement 风格产品。
+4. 为旧 helper 自动接管补更多集成验证，再决定是否演进成更强的 agent 化产品。
 
 ## 待办事项 (Todo List)
 

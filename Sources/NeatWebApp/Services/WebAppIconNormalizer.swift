@@ -41,10 +41,6 @@ enum WebAppIconNormalizer {
         context.draw(renderedImage, in: imageRect)
         context.restoreGState()
 
-        context.setStrokeColor(NSColor.white.withAlphaComponent(0.12).cgColor)
-        context.setLineWidth(max(1, canvasSize / 128))
-        context.strokeEllipse(in: circleBounds.insetBy(dx: 0.5, dy: 0.5))
-
         return output
     }
 

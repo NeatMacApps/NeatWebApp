@@ -4,6 +4,12 @@ import Observation
 import AppKit
 import WebKit
 
+@MainActor
+protocol BrowserSessionCommandHandling: AnyObject {
+    func browserSessionDidRequestClose(_ session: BrowserSession)
+    func browserSessionDidRequestCollapse(_ session: BrowserSession)
+}
+
 @Observable
 @MainActor
 final class BrowserSession {
@@ -41,10 +47,10 @@ final class BrowserSession {
     private weak var webView: WKWebView?
 
     @ObservationIgnored
-    var onPinnedChange: ((Bool) -> Void)?
+    weak var commandHandler: (any BrowserSessionCommandHandling)?
 
     @ObservationIgnored
-    var onCloseRequest: (() -> Void)?
+    var onPinnedChange: ((Bool) -> Void)?
 
     @ObservationIgnored
     var onChromeThemeChange: ((BrowserChromeTheme) -> Void)?
@@ -137,7 +143,11 @@ final class BrowserSession {
     }
 
     func closeWindow() {
-        onCloseRequest?()
+        commandHandler?.browserSessionDidRequestClose(self)
+    }
+
+    func collapseWindow() {
+        commandHandler?.browserSessionDidRequestCollapse(self)
     }
 
     func updateChromeThemeColor(_ pageColor: BrowserThemeColor?) {
@@ -249,11 +259,5 @@ private extension StoredDisplayIdentity {
             localizedName: screen.localizedName,
             frame: screen.frame
         )
-    }
-}
-
-private extension NSScreen {
-    var displayID: UInt32? {
-        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
     }
 }

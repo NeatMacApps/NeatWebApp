@@ -9,17 +9,18 @@ final class WebAppFaviconStore {
     init(
         fileManager: FileManager = .default,
         directoryURL: URL? = nil,
-        bundleIdentifier: String = Bundle.main.bundleIdentifier ?? "NeatWebApp"
+        bundleIdentifier: String? = nil
     ) {
         self.fileManager = fileManager
 
         if let directoryURL {
             self.directoryURL = directoryURL
         } else {
+            let supportBundleIdentifier = bundleIdentifier ?? Self.defaultSupportBundleIdentifier()
             let applicationSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
                 ?? fileManager.homeDirectoryForCurrentUser.appending(path: "Library/Application Support", directoryHint: .isDirectory)
             self.directoryURL = applicationSupportURL
-                .appending(path: bundleIdentifier, directoryHint: .isDirectory)
+                .appending(path: supportBundleIdentifier, directoryHint: .isDirectory)
                 .appending(path: "Favicons", directoryHint: .isDirectory)
         }
     }
@@ -78,6 +79,18 @@ final class WebAppFaviconStore {
         }
         let baseName = sanitizedScalars.joined()
         return "\(baseName).png"
+    }
+
+    private static func defaultSupportBundleIdentifier() -> String {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier, !bundleIdentifier.isEmpty else {
+            return "NeatWebApp"
+        }
+
+        if bundleIdentifier.hasSuffix("Runtime") {
+            return String(bundleIdentifier.dropLast("Runtime".count))
+        }
+
+        return bundleIdentifier
     }
 }
 

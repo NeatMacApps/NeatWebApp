@@ -110,4 +110,5 @@ final class LauncherPresentationContextTests: XCTestCase {
             localizedName: "Built-in Display"
         )
     }
+
 }

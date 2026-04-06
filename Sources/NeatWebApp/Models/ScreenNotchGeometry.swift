@@ -1,16 +1,13 @@
 import AppKit
 
 struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
-    private static let activationHorizontalPadding: CGFloat = 8
-    private static let activationBottomPadding: CGFloat = 8
-    private static let activationTopOverflow: CGFloat = 2
-    private static let activationStickyTopOverflow: CGFloat = 12
     private static let launcherRetentionHorizontalPaddingRatio: CGFloat = 0.22
     private static let launcherRetentionTopPaddingRatio: CGFloat = 0.08
     private static let launcherRetentionBottomPaddingWidthRatio: CGFloat = 0.72
     private static let launcherRetentionBottomPaddingHeightRatio: CGFloat = 1.6
     private static let launcherRetentionHeightScale: CGFloat = 0.6
 
+    let displayID: UInt32?
     let screenFrame: CGRect
     let visibleFrame: CGRect
     let safeAreaInsets: NSEdgeInsets
@@ -26,6 +23,7 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         screen: NSScreen
     ) {
         self.init(
+            displayID: screen.displayID,
             screenFrame: screen.frame,
             visibleFrame: screen.visibleFrame,
             safeAreaInsets: screen.safeAreaInsets,
@@ -40,6 +38,7 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     }
 
     init(
+        displayID: UInt32? = nil,
         screenFrame: CGRect,
         visibleFrame: CGRect,
         safeAreaInsets: NSEdgeInsets,
@@ -47,6 +46,7 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         auxiliaryTopRightArea: CGRect,
         localizedName: String
     ) {
+        self.displayID = displayID
         self.screenFrame = screenFrame
         self.visibleFrame = visibleFrame
         self.safeAreaInsets = safeAreaInsets
@@ -79,28 +79,15 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     }
 
     var activationRect: CGRect {
-        var rect = notchRect
-        rect.origin.x -= Self.activationHorizontalPadding
-        rect.size.width += Self.activationHorizontalPadding * 2
-        rect.origin.y -= Self.activationBottomPadding
-        rect.size.height += Self.activationBottomPadding
-        return rect.intersection(screenFrame)
+        notchRect
     }
 
     func containsActivationPoint(_ point: CGPoint) -> Bool {
-        containsActivationPoint(point, topOverflow: Self.activationTopOverflow)
+        contains(point, in: activationRect)
     }
 
     func containsStickyActivationPoint(_ point: CGPoint) -> Bool {
-        containsActivationPoint(point, topOverflow: Self.activationStickyTopOverflow)
-    }
-
-    private func containsActivationPoint(_ point: CGPoint, topOverflow: CGFloat) -> Bool {
-        let rect = activationRect
-        return point.x >= rect.minX &&
-        point.x <= rect.maxX &&
-        point.y >= rect.minY &&
-        point.y <= rect.maxY + topOverflow
+        containsActivationPoint(point)
     }
 
     var launcherRetentionRect: CGRect {
@@ -172,6 +159,7 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     static func == (lhs: ScreenNotchGeometry, rhs: ScreenNotchGeometry) -> Bool {
         lhs.screenFrame == rhs.screenFrame &&
         lhs.visibleFrame == rhs.visibleFrame &&
+        lhs.displayID == rhs.displayID &&
         lhs.safeAreaInsets.top == rhs.safeAreaInsets.top &&
         lhs.safeAreaInsets.left == rhs.safeAreaInsets.left &&
         lhs.safeAreaInsets.bottom == rhs.safeAreaInsets.bottom &&

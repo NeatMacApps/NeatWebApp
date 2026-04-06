@@ -4,7 +4,7 @@ struct AppCommands: Commands {
     let appModel: AppModel
 
     var body: some Commands {
-        let activeSession = appModel.activeBrowserSession
+        let activeRuntimeAppID = appModel.activeRuntimeAppID
 
         CommandMenu("Launcher") {
             Button("Reveal Launcher") {
@@ -28,19 +28,19 @@ struct AppCommands: Commands {
                 appModel.zoomInActiveWebApp()
             }
             .keyboardShortcut("=", modifiers: [.command])
-            .disabled(activeSession == nil)
+            .disabled(activeRuntimeAppID == nil)
 
             Button("Zoom Out") {
                 appModel.zoomOutActiveWebApp()
             }
             .keyboardShortcut("-", modifiers: [.command])
-            .disabled(activeSession == nil)
+            .disabled(activeRuntimeAppID == nil)
 
             Button("Actual Size") {
                 appModel.resetZoomForActiveWebApp()
             }
             .keyboardShortcut("0", modifiers: [.command])
-            .disabled(activeSession == nil)
+            .disabled(activeRuntimeAppID == nil)
         }
     }
 }

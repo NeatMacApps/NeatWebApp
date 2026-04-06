@@ -27,12 +27,46 @@ targets:
     platform: macOS
     deploymentTarget: "15.0"
     sources:
-      - Sources/NeatWebApp
+      - path: Sources/NeatWebApp
+        excludes:
+          - Features/Browser/**
+          - Services/WebAppFloatingIconSupport.swift
+          - Services/WebAppWindowController.swift
+          - Services/WebAppWindowCoordinator.swift
+      - Sources/Shared
+    dependencies:
+      - target: NeatWebAppRuntime
+        embed: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Library/LoginItems
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebApp
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Sources/NeatWebApp/App/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  NeatWebAppRuntime:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - Sources/NeatWebAppRuntime
+      - Sources/Shared
+      - Sources/NeatWebApp/Assets.xcassets
+      - Sources/NeatWebApp/Features/Browser
+      - Sources/NeatWebApp/Services/WebAppFloatingIconSupport.swift
+      - Sources/NeatWebApp/Services/WebAppWindowController.swift
+      - Sources/NeatWebApp/Services/WebAppFaviconStore.swift
+      - Sources/NeatWebApp/Models/WebAppDefinition.swift
+      - Sources/NeatWebApp/Models/ScreenNotchGeometry.swift
+      - Sources/NeatWebApp/Services/WebAppPreferencesStore.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebAppRuntime
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/NeatWebAppRuntime/App/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   NeatWebAppTests:
@@ -50,12 +84,29 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NeatWebApp.app/Contents/MacOS/NeatWebApp"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
+  NeatWebAppRuntimeTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - Tests/NeatWebAppRuntimeTests
+    dependencies:
+      - target: NeatWebAppRuntime
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebAppRuntimeTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NeatWebAppRuntime.app/Contents/MacOS/NeatWebAppRuntime"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
 schemes:
   NeatWebApp:
     build:
       targets:
         NeatWebApp: all
+        NeatWebAppRuntime: all
         NeatWebAppTests: [test]
+        NeatWebAppRuntimeTests: [test]
     run:
       config: Debug
     test:
@@ -63,6 +114,7 @@ schemes:
       gatherCoverageData: true
       targets:
         - NeatWebAppTests
+        - NeatWebAppRuntimeTests
     profile:
       config: Release
     analyze:

@@ -1,5 +1,5 @@
 import XCTest
-@testable import NeatWebApp
+@testable import NeatWebAppRuntime
 
 final class BrowserChromeThemeTests: XCTestCase {
     func testDarkPageUsesLightForeground() {

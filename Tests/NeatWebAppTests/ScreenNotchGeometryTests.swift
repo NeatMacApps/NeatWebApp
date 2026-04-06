@@ -15,7 +15,7 @@ final class ScreenNotchGeometryTests: XCTestCase {
 
         XCTAssertTrue(geometry.hasNotch)
         XCTAssertEqual(geometry.notchRect, CGRect(x: 620, y: 908, width: 272, height: 74))
-        XCTAssertEqual(geometry.activationRect, CGRect(x: 612, y: 900, width: 288, height: 82))
+        XCTAssertEqual(geometry.activationRect, geometry.notchRect)
 
         let retentionRect = geometry.launcherRetentionRect
         XCTAssertEqual(retentionRect.midX, geometry.notchRect.midX, accuracy: 0.001)
@@ -38,7 +38,7 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertFalse(geometry.hasNotch)
     }
 
-    func testActivationContainsPointerAtTopEdgeWithSmallOverflow() {
+    func testActivationMatchesNotchBoundsExactly() {
         let geometry = ScreenNotchGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
             visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940),
@@ -49,11 +49,11 @@ final class ScreenNotchGeometryTests: XCTestCase {
         )
 
         XCTAssertTrue(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY)))
-        XCTAssertTrue(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 1)))
-        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 3)))
+        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 1)))
+        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: geometry.notchRect.minX - 1, y: geometry.notchRect.midY)))
     }
 
-    func testStickyActivationKeepsPointerNearTopEdgeInside() {
+    func testStickyActivationAlsoMatchesNotchBoundsExactly() {
         let geometry = ScreenNotchGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
             visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940),
@@ -63,8 +63,8 @@ final class ScreenNotchGeometryTests: XCTestCase {
             localizedName: "Built-in Display"
         )
 
-        XCTAssertTrue(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 8)))
-        XCTAssertFalse(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 13)))
+        XCTAssertTrue(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.notchRect.midY)))
+        XCTAssertFalse(geometry.containsStickyActivationPoint(CGPoint(x: geometry.notchRect.midX, y: geometry.screenFrame.maxY + 1)))
     }
 
     func testLauncherRetentionKeepsPointerBelowLauncherInside() {

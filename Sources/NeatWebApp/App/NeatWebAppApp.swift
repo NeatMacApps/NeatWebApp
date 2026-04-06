@@ -1,20 +1,25 @@
 import SwiftUI
 
+@MainActor
 @main
 struct NeatWebAppApp: App {
-    @State private var appModel = AppModel()
+    private let appModel: AppModel
 
     @Environment(\.openWindow) private var openWindow
+
+    init() {
+        let appModel = AppModel()
+        appModel.startIfNeeded()
+        self.appModel = appModel
+    }
 
     var body: some Scene {
         Window("NeatWebApp", id: "dashboard") {
             DashboardView()
                 .frame(minWidth: 900, minHeight: 620)
                 .environment(appModel)
-                .task {
-                    appModel.startIfNeeded()
-                }
         }
+        .defaultLaunchBehavior(.suppressed)
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1080, height: 720)
         .commands {
@@ -31,6 +36,14 @@ struct NeatWebAppApp: App {
                 appModel.revealLauncherManually()
             }
             .keyboardShortcut("k", modifiers: [.command, .option])
+
+            Toggle(
+                "Launch at Login",
+                isOn: Binding(
+                    get: { appModel.isLaunchAtLoginEnabled },
+                    set: { appModel.setLaunchAtLoginEnabled($0) }
+                )
+            )
 
             Divider()
 
