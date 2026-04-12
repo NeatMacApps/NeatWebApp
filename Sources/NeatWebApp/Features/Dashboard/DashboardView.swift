@@ -218,14 +218,14 @@ struct DashboardView: View {
 
     private var roadmapSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Scaffolded Next")
+            Text("Planned Improvements")
                 .font(.title2.weight(.semibold))
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("1. Persist fetched favicons to disk so launcher icons are available instantly offline.")
-                Text("2. Persist per-app permissions, last visited URL, and window restore state.")
-                Text("3. Tune the notch trigger with a visual debug overlay and optional dead-zone settings.")
-                Text("4. Add per-site user agents, menu bar presence, and app-bound permission rules.")
+                Text("1. Expand import and export support for user-managed web app catalogs.")
+                Text("2. Persist more per-site state, including permissions, last visited URL, and richer window restore details.")
+                Text("3. Refine notch-trigger behavior with better non-notched fallback handling and stronger diagnostics.")
+                Text("4. Add more per-site controls, such as custom user agents and tighter permission rules.")
             }
             .foregroundStyle(.secondary)
         }

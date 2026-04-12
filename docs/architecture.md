@@ -1,99 +1,115 @@
 # Architecture
 
-## Design Goals
+This document describes the current structure of NeatWebApp after the host/runtime split landed.
 
-- 内容优先：Web 内容尽量铺满窗口，控制条以 overlay 形式存在。
-- AppKit 只负责 SwiftUI 难以直接处理的部分：屏幕几何、全局鼠标事件、窗口级行为。
-- Host 只负责 launcher、dashboard、全局状态与 runtime 调度；浏览器窗口和悬浮图标不再运行在 Host 进程。
+## Goals
 
-## Runtime Split
+- Keep browser content front and center instead of wrapping it in a heavyweight shell
+- Use SwiftUI for application UI and AppKit only for macOS-specific window and screen behavior
+- Isolate each web app window in its own helper process so one runtime does not disturb another
+- Preserve persistent browsing state through the system WebKit data store
 
-- `NeatWebApp`
-  - Host 进程，负责 launcher、dashboard、WebApp 定义、favicon 缓存、runtime 注册表与命令分发。
-- `NeatWebAppRuntime`
-  - 每个 WebApp 一个 helper 进程，负责 `WKWebView`、内容窗口、收起/展开动画和悬浮图标。
-- `Sources/Shared`
-  - Host / runtime 共用的运行时模型、状态持久化、IPC、锁文件与窗口摆放辅助代码。
+## Process Model
 
-## High-Level Flow
+### `NeatWebApp`
 
-1. `AppModel` 启动时恢复 launcher 状态、加载网站定义和 favicon 缓存，并刷新 runtime 注册表。
-2. 用户从 launcher 打开网站时，Host 侧通过 `WebAppRuntimeCoordinator` 查询当前 `appID` 是否已有活跃 runtime。
-3. 若不存在活跃 runtime，Host 会写入 `RuntimeBootstrap` 并由 `RuntimeLauncher` 启动新的 `NeatWebAppRuntime` helper。
-4. Runtime 读取 bootstrap 后创建 `BrowserSession`、`WebAppWindowController`，并持续写入 `RuntimeState` 与分布式事件。
-5. Host 根据 runtime 状态变化更新 launcher 高亮、菜单命令和旧 helper 自动接管逻辑。
+The host app owns:
 
-## Layers
+- the dashboard window
+- the menu bar entry and commands
+- launcher presentation and notch activation monitoring
+- the custom web app catalog
+- favicon caching
+- runtime discovery, launch, takeover, and command dispatch
+
+### `NeatWebAppRuntime`
+
+The helper app owns:
+
+- a single web app runtime identified by `WebAppDefinition.id`
+- `WKWebView` and browser session state
+- the browser window and floating icon lifecycle
+- runtime event publication back to the host
+
+### `Sources/Shared`
+
+Shared code contains:
+
+- runtime bootstrap and state models
+- distributed notification names and payload helpers
+- runtime support-directory helpers and lock management
+- window placement utilities used by both targets
+
+## Launch Flow
+
+1. `AppModel` starts, loads the app catalog, restores cached favicons, refreshes screen state, and refreshes the runtime registry.
+2. When the user opens a web app, `WebAppRuntimeCoordinator` checks whether a runtime for that `appID` is already available.
+3. If needed, `RuntimeLauncher` writes a bootstrap payload and launches `NeatWebAppRuntime`.
+4. The runtime reads its bootstrap, creates `BrowserSession`, builds its window controller, and publishes runtime state.
+5. The host observes runtime changes to update launcher state, diagnostics, and helper takeover behavior.
+
+## Main Components
 
 ### App
 
-- `NeatWebAppApp.swift`
-  - 创建主 Dashboard 窗口
-  - 注入 `AppModel`
-  - 注册菜单命令
-- `NeatWebAppRuntimeApp.swift`
-  - 作为 helper app 入口
-  - 读取 `RuntimeBootstrap`
-  - 交给 runtime 侧窗口协调器创建单个网页 app 运行时
+- `Sources/NeatWebApp/App/NeatWebAppApp.swift`
+- `Sources/NeatWebApp/App/AppCommands.swift`
+- `Sources/NeatWebAppRuntime/App/NeatWebAppRuntimeApp.swift`
 
 ### Models
 
-- `WebAppDefinition`
-  - WebApp 基础元数据
-- `ScreenNotchGeometry`
-  - 将 `NSScreen` 暴露的信息转换成 notch 几何与触发区
-- `LauncherPresentationContext`
-  - overlay panel 的尺寸与布局上下文
+- `Sources/NeatWebApp/Models/WebAppDefinition.swift`
+- `Sources/NeatWebApp/Models/ScreenNotchGeometry.swift`
+- `Sources/NeatWebApp/Models/LauncherPresentationContext.swift`
 
-### Services
+### Host Services
 
-- `AppModel`
-  - 应用主状态
-  - 协调 notch monitor、overlay controller、runtime coordinator
-- `NotchActivationMonitor`
-  - 同时注册 local/global mouse monitor
-- `LauncherOverlayController`
-  - 管理非激活式 launcher panel
-- `WebAppRuntimeCoordinator`
-  - 按 `appID` 管理 runtime 注册表、命令分发和旧 helper 迁移
-- `RuntimeLauncher`
-  - 负责生成 bootstrap 并启动 `NeatWebAppRuntime`
-- `RuntimeRegistryStore`
-  - 负责 bootstrap/state 落盘、读取和 stale runtime 清理
-- `RuntimeCommandBus`
-  - 封装 host/runtime 之间的分布式通知命令与事件通道
-- `WebAppPreferencesStore`
-  - 持久化页面缩放、窗口置顶、窗口 frame
-- `WebAppFaviconStore`
-  - 统一 favicon 缓存目录；runtime 默认复用 Host 的缓存位置
+- `Sources/NeatWebApp/Services/AppModel.swift`
+- `Sources/NeatWebApp/Services/NotchActivationMonitor.swift`
+- `Sources/NeatWebApp/Services/LauncherOverlayController.swift`
+- `Sources/NeatWebApp/Services/WebAppRuntimeCoordinator.swift`
+- `Sources/NeatWebApp/Services/RuntimeLauncher.swift`
+- `Sources/NeatWebApp/Services/WebAppPreferencesStore.swift`
+- `Sources/NeatWebApp/Services/WebAppFaviconStore.swift`
 
-### Features
+### Runtime Services
 
-- `Dashboard`
-  - 当前阶段用于调试、验证几何与快速打开 WebApp
-- `Launcher`
-  - 刘海两侧展开的 launcher UI
-  - 横向溢出时根据真实滚动位置动态显示左右边缘渐隐反馈
-- `Browser`
-  - `BrowserSession`、`BrowserWebView`、`BrowserContainerView` 现由 runtime target 持有
+- `Sources/NeatWebAppRuntime/Services/RuntimeAppModel.swift`
+- `Sources/NeatWebAppRuntime/Services/RuntimeWindowCoordinator.swift`
+- `Sources/NeatWebAppRuntime/Services/RuntimeCommandListener.swift`
+- `Sources/NeatWebAppRuntime/Services/RuntimeEventPublisher.swift`
 
-## Floating Icon Lifecycle
+### Browser Runtime
 
-- 网页窗口收起发生在 runtime 内部的 `WebAppWindowController`，Host 只观察状态变化，不直接参与窗口层切换。
-- `FloatingIconSnapResolver` 负责把悬浮图标吸附到屏幕上边缘，`FloatingWebAppIconView` 负责点击展开和拖拽移动。
-- 悬浮图标素材优先读取 `WebAppFaviconStore` 的站点 favicon；若尚未缓存，再回退到基于站点首字母的默认图标。
-- Runtime 默认复用 Host 的 favicon 缓存目录，因此 launcher 图标和收起后的悬浮图标读取的是同一份缓存。
-- Host 刷新注册表时如果发现 runtime helper 构建版本过旧，会终止旧 helper 并带着原有窗口状态和悬浮图标位置重启。
+- `Sources/NeatWebApp/Features/Browser/BrowserSession.swift`
+- `Sources/NeatWebApp/Features/Browser/AppKitBridge/BrowserWebView.swift`
+- `Sources/NeatWebApp/Features/Browser/BrowserContainerView.swift`
+- `Sources/NeatWebApp/Services/WebAppWindowController.swift`
+- `Sources/NeatWebApp/Services/WebAppFloatingIconSupport.swift`
 
-## Why WKWebView Instead of Newer WebKit-Only Swift Types
+## Notch And Launcher Behavior
 
-- 当前 Xcode 26 SDK 中确实已经出现了新的 Swift-first `WebPage` API。
-- 但它要求更高平台版本，无法覆盖本项目的 `macOS 15` 最低支持目标。
-- 因此底层仍然选择 `WKWebView`，上层则用 Swift 6 Observation、现代 SwiftUI 组织代码。
+- `ScreenNotchGeometry` derives notch, activation, and retention rectangles from public `NSScreen` geometry APIs.
+- `NotchActivationMonitor` combines local and global mouse monitors so reveal behavior still works when the pointer moves over other apps.
+- `LauncherOverlayController` presents a non-activating panel for the launcher UI.
+- Launcher edge fades are driven by actual scroll headroom so the visual affordance always matches the remaining hidden content.
 
-## Next Refactors
+## Persistence
 
-1. 把 launcher app catalog 从硬编码迁移到 JSON / 用户配置。
-2. 为 `BrowserSession` 引入站点权限模型。
-3. 将 overlay panel 的 hover 保活从 frame 判断升级为真正的 tracking area。
-4. 为旧 runtime helper 自动接管补一层集成验证，并继续完善多显示器恢复策略。
+- `CustomWebAppStore` persists the user-managed app catalog.
+- `WebAppPreferencesStore` persists zoom, pinned state, and saved window placement.
+- `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
+- `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.
+
+## Testing
+
+Tests are split by ownership:
+
+- `Tests/NeatWebAppTests` covers host-side geometry, persistence, and catalog-related behavior.
+- `Tests/NeatWebAppRuntimeTests` covers runtime-side browser chrome and floating icon placement behavior.
+
+## Design Constraints
+
+- The project targets macOS 15, so it stays with `WKWebView` instead of newer WebKit APIs that require newer OS versions.
+- AppKit bridges are intentionally narrow and only used where SwiftUI cannot fully express the required behavior.
+- The host process should never directly own browser windows or floating icons again; that isolation is a core architectural boundary.

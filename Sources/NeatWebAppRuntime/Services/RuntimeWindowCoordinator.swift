@@ -11,6 +11,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private let commandListener: RuntimeCommandListener
     private let preferencesStore = WebAppPreferencesStore()
     private var windowController: WebAppWindowController?
+    private var duplicateWindowControllers: [WebAppWindowController] = []
     private var hasPreparedTermination = false
 
     init(
@@ -67,6 +68,11 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         commandListener.stop()
         let windowFrame = windowController?.window?.frame ?? appModel.windowFrame
         let floatingIconFrame = appModel.floatingIconFrame
+        for duplicateWindowController in duplicateWindowControllers {
+            duplicateWindowController.onDidHide = nil
+            duplicateWindowController.hideWindow()
+        }
+        duplicateWindowControllers.removeAll()
 
         eventPublisher.publish(
             eventName: .runtimeTerminating,
@@ -78,6 +84,25 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         appLock.release(appID: bootstrap.appID)
         registryStore.removeState(instanceID: bootstrap.instanceID)
         registryStore.removeBootstrap(instanceID: bootstrap.instanceID)
+    }
+
+    func webAppWindowDidRequestDuplicate(_ controller: WebAppWindowController) {
+        let duplicateWindowController = WebAppWindowController(
+            definition: bootstrap.definition,
+            preferencesStore: preferencesStore,
+            preferredGeometry: resolvePreferredGeometry(),
+            initialURL: controller.session.currentPageURL,
+            duplicateSourceFrame: controller.window?.frame,
+            publishesRuntimeEvents: false,
+            persistsWindowPlacement: false,
+            eventSink: self
+        )
+        duplicateWindowController.onDidHide = { [weak self] duplicateWindowController in
+            self?.removeDuplicateWindowController(duplicateWindowController)
+        }
+
+        duplicateWindowControllers.append(duplicateWindowController)
+        duplicateWindowController.showAndFocus(preferredGeometry: resolvePreferredGeometry())
     }
 
     func webAppWindowDidUpdate(
@@ -154,6 +179,10 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         case .resetZoom:
             windowController?.session.resetZoom()
         }
+    }
+
+    private func removeDuplicateWindowController(_ controller: WebAppWindowController) {
+        duplicateWindowControllers.removeAll { $0 === controller }
     }
 
     private func resolvePreferredGeometry() -> ScreenNotchGeometry? {

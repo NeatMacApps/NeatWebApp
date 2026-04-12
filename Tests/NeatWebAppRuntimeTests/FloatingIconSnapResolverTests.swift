@@ -68,6 +68,42 @@ final class FloatingIconSnapResolverTests: XCTestCase {
         XCTAssertLessThanOrEqual(snappedFrame.insetBy(dx: 10, dy: 10).maxX, rightScreen.visibleFrame.maxX)
     }
 
+    func testClampPanelOriginLetsVisibleIconReachLeftEdge() {
+        let screen = makeScreen(
+            frame: CGRect(x: 0, y: 0, width: 1440, height: 900),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1440, height: 860)
+        )
+
+        let clampedOrigin = FloatingIconSnapResolver.clampPanelOrigin(
+            CGPoint(x: -40, y: 200),
+            panelSize: CGSize(width: 62, height: 62),
+            anchorPoint: CGPoint(x: 2, y: 220),
+            availableScreens: [screen],
+            fallbackScreen: nil,
+            shadowPadding: 10
+        )
+
+        XCTAssertEqual(clampedOrigin.x + 10, screen.visibleFrame.minX, accuracy: 0.001)
+    }
+
+    func testClampPanelOriginLetsVisibleIconReachRightEdge() {
+        let screen = makeScreen(
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 940)
+        )
+
+        let clampedOrigin = FloatingIconSnapResolver.clampPanelOrigin(
+            CGPoint(x: 1490, y: 260),
+            panelSize: CGSize(width: 62, height: 62),
+            anchorPoint: CGPoint(x: 1510, y: 280),
+            availableScreens: [screen],
+            fallbackScreen: nil,
+            shadowPadding: 10
+        )
+
+        XCTAssertEqual(clampedOrigin.x + 62 - 10, screen.visibleFrame.maxX, accuracy: 0.001)
+    }
+
     private func makeScreen(
         displayID: UInt32? = nil,
         frame: CGRect,

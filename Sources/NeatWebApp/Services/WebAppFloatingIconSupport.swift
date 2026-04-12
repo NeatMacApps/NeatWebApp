@@ -18,22 +18,83 @@ enum FloatingIconSnapResolver {
             return proposedFrame
         }
 
-        let visualFrame = proposedFrame.insetBy(dx: shadowPadding, dy: shadowPadding)
+        let visualFrame = visualFrame(for: proposedFrame, shadowPadding: shadowPadding)
         guard screen.visibleFrame.width >= visualFrame.width,
               screen.visibleFrame.height >= visualFrame.height else {
             return proposedFrame
         }
 
-        let clampedFrame = clamp(visualFrame, into: screen.visibleFrame)
-        let topSnappedFrame = CGRect(
-            x: clampedFrame.minX,
-            y: screen.visibleFrame.maxY - clampedFrame.height,
-            width: clampedFrame.width,
-            height: clampedFrame.height
+        return panelFrame(
+            for: topSnappedVisualFrame(
+                from: clamp(visualFrame, into: screen.visibleFrame),
+                within: screen.visibleFrame
+            ),
+            shadowPadding: shadowPadding
         )
+    }
 
-        // Snap the visible icon body to the screen top while keeping shadow padding outside it.
-        return topSnappedFrame.insetBy(dx: -shadowPadding, dy: -shadowPadding)
+    static func clampPanelOrigin(
+        _ origin: CGPoint,
+        panelSize: CGSize,
+        anchorPoint: CGPoint,
+        availableScreens: [WebAppWindowPlacementScreen],
+        fallbackScreen: WebAppWindowPlacementScreen?,
+        shadowPadding: CGFloat
+    ) -> CGPoint {
+        let proposedFrame = CGRect(origin: origin, size: panelSize)
+        guard let screen = resolveScreen(
+            for: anchorPoint,
+            proposedFrame: proposedFrame,
+            availableScreens: availableScreens,
+            fallbackScreen: fallbackScreen
+        ) else {
+            return origin
+        }
+
+        let visualFrame = visualFrame(for: proposedFrame, shadowPadding: shadowPadding)
+        guard screen.visibleFrame.width >= visualFrame.width,
+              screen.visibleFrame.height >= visualFrame.height else {
+            return origin
+        }
+
+        let clampedVisualFrame = clamp(visualFrame, into: screen.visibleFrame)
+        return panelFrame(for: clampedVisualFrame, shadowPadding: shadowPadding).origin
+    }
+
+    static func normalizeRestoredPanelFrame(
+        _ restoredPanelFrame: CGRect,
+        availableScreens: [WebAppWindowPlacementScreen],
+        fallbackScreen: WebAppWindowPlacementScreen?,
+        shadowPadding: CGFloat
+    ) -> CGRect {
+        guard let screen = resolveScreen(
+            for: CGPoint(x: restoredPanelFrame.minX, y: restoredPanelFrame.maxY),
+            proposedFrame: restoredPanelFrame,
+            availableScreens: availableScreens,
+            fallbackScreen: fallbackScreen
+        ) else {
+            return restoredPanelFrame
+        }
+
+        var normalizedFrame = restoredPanelFrame
+
+        if abs(restoredPanelFrame.minX - screen.visibleFrame.minX) <= 1 {
+            normalizedFrame.origin.x -= shadowPadding
+        }
+
+        if abs(restoredPanelFrame.maxX - screen.visibleFrame.maxX) <= 1 {
+            normalizedFrame.origin.x += shadowPadding
+        }
+
+        if abs(restoredPanelFrame.minY - screen.visibleFrame.minY) <= 1 {
+            normalizedFrame.origin.y -= shadowPadding
+        }
+
+        let normalizedVisualFrame = clamp(
+            visualFrame(for: normalizedFrame, shadowPadding: shadowPadding),
+            into: screen.visibleFrame
+        )
+        return panelFrame(for: normalizedVisualFrame, shadowPadding: shadowPadding)
     }
 
     private static func resolveScreen(
@@ -62,6 +123,23 @@ enum FloatingIconSnapResolver {
             width: frame.width,
             height: frame.height
         )
+    }
+
+    private static func topSnappedVisualFrame(from frame: CGRect, within visibleFrame: CGRect) -> CGRect {
+        CGRect(
+            x: frame.minX,
+            y: visibleFrame.maxY - frame.height,
+            width: frame.width,
+            height: frame.height
+        )
+    }
+
+    private static func visualFrame(for panelFrame: CGRect, shadowPadding: CGFloat) -> CGRect {
+        panelFrame.insetBy(dx: shadowPadding, dy: shadowPadding)
+    }
+
+    private static func panelFrame(for visualFrame: CGRect, shadowPadding: CGFloat) -> CGRect {
+        visualFrame.insetBy(dx: -shadowPadding, dy: -shadowPadding)
     }
 
     private static func squaredDistance(from point: CGPoint, to rect: CGRect) -> CGFloat {
@@ -143,6 +221,14 @@ final class WindowSnapshotTransitionPanel: NSPanel {
 }
 
 final class FloatingWebAppIconView: NSView {
+    private enum AnimationMetrics {
+        static let rippleDuration: CFTimeInterval = 1
+        static let rippleStagger: CFTimeInterval = 0.22
+        static let rippleExpansion: CGFloat = 18
+        static let rippleLineWidth: CGFloat = 2
+        static let rippleOpacity: Float = 0.34
+    }
+
     private let onClick: () -> Void
     private var cursorTrackingArea: NSTrackingArea?
     private var mouseDownWindowOrigin: CGPoint = .zero
@@ -235,22 +321,40 @@ final class FloatingWebAppIconView: NSView {
     }
 
     private func clampWindowOrigin(_ origin: CGPoint, for window: NSWindow, around anchorPoint: CGPoint) -> CGPoint {
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(anchorPoint) })
-            ?? NSScreen.screens.first(where: { $0.frame.intersects(window.frame) })
-            ?? NSScreen.main else {
-            return origin
+        FloatingIconSnapResolver.clampPanelOrigin(
+            origin,
+            panelSize: window.frame.size,
+            anchorPoint: anchorPoint,
+            availableScreens: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:)),
+            fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
+            shadowPadding: WebAppWindowController.WindowMetrics.floatingIconShadowPadding
+        )
+    }
+
+    func playCollapseRippleAnimation() {
+        layoutSubtreeIfNeeded()
+
+        guard let layer, !bounds.isEmpty else {
+            return
         }
 
-        let visibleFrame = screen.visibleFrame
-        let frameSize = window.frame.size
+        layer.sublayers?
+            .filter { $0.name == "collapseRippleLayer" }
+            .forEach { $0.removeFromSuperlayer() }
 
-        guard visibleFrame.width >= frameSize.width, visibleFrame.height >= frameSize.height else {
-            return origin
-        }
-
-        let clampedX = min(max(origin.x, visibleFrame.minX), visibleFrame.maxX - frameSize.width)
-        let clampedY = min(max(origin.y, visibleFrame.minY), visibleFrame.maxY - frameSize.height)
-        return CGPoint(x: clampedX, y: clampedY)
+        let startTime = CACurrentMediaTime()
+        addRippleLayer(
+            to: layer,
+            delay: 0,
+            duration: AnimationMetrics.rippleDuration - AnimationMetrics.rippleStagger,
+            startTime: startTime
+        )
+        addRippleLayer(
+            to: layer,
+            delay: AnimationMetrics.rippleStagger,
+            duration: AnimationMetrics.rippleDuration - AnimationMetrics.rippleStagger,
+            startTime: startTime
+        )
     }
 
     private func setupUI(iconImage: NSImage?, appName: String) {
@@ -305,6 +409,61 @@ final class FloatingWebAppIconView: NSView {
         ])
     }
 
+    private func addRippleLayer(
+        to containerLayer: CALayer,
+        delay: CFTimeInterval,
+        duration: CFTimeInterval,
+        startTime: CFTimeInterval
+    ) {
+        let initialRect = CGRect(
+            x: (bounds.width - WebAppWindowController.WindowMetrics.floatingIconDiameter) / 2,
+            y: (bounds.height - WebAppWindowController.WindowMetrics.floatingIconDiameter) / 2,
+            width: WebAppWindowController.WindowMetrics.floatingIconDiameter,
+            height: WebAppWindowController.WindowMetrics.floatingIconDiameter
+        )
+        let expandedRect = initialRect.insetBy(
+            dx: -AnimationMetrics.rippleExpansion,
+            dy: -AnimationMetrics.rippleExpansion
+        )
+        let initialPath = CGPath(ellipseIn: initialRect, transform: nil)
+        let finalPath = CGPath(ellipseIn: expandedRect, transform: nil)
+
+        let rippleLayer = CAShapeLayer()
+        rippleLayer.name = "collapseRippleLayer"
+        rippleLayer.frame = bounds
+        rippleLayer.path = finalPath
+        rippleLayer.fillColor = NSColor.clear.cgColor
+        rippleLayer.strokeColor = NSColor.controlAccentColor.withAlphaComponent(0.45).cgColor
+        rippleLayer.lineWidth = AnimationMetrics.rippleLineWidth
+        rippleLayer.opacity = 0
+        containerLayer.addSublayer(rippleLayer)
+
+        let pathAnimation = CABasicAnimation(keyPath: "path")
+        pathAnimation.fromValue = initialPath
+        pathAnimation.toValue = finalPath
+
+        let opacityAnimation = CABasicAnimation(keyPath: "opacity")
+        opacityAnimation.fromValue = AnimationMetrics.rippleOpacity
+        opacityAnimation.toValue = 0
+
+        let lineWidthAnimation = CABasicAnimation(keyPath: "lineWidth")
+        lineWidthAnimation.fromValue = AnimationMetrics.rippleLineWidth
+        lineWidthAnimation.toValue = 0.6
+
+        let animationGroup = CAAnimationGroup()
+        animationGroup.animations = [pathAnimation, opacityAnimation, lineWidthAnimation]
+        animationGroup.beginTime = startTime + delay
+        animationGroup.duration = duration
+        animationGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animationGroup.isRemovedOnCompletion = false
+        animationGroup.fillMode = .forwards
+        rippleLayer.add(animationGroup, forKey: "collapseRipple")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay + duration) {
+            rippleLayer.removeFromSuperlayer()
+        }
+    }
+
     private func circularMaskedIcon(from image: NSImage?) -> NSImage? {
         guard let image else {
             return nil
@@ -339,7 +498,10 @@ final class FloatingWebAppIconView: NSView {
         NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).fill()
 
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 22, weight: .semibold),
+            .font: NSFont.systemFont(
+                ofSize: WebAppWindowController.WindowMetrics.floatingIconDiameter * 0.53,
+                weight: .semibold
+            ),
             .foregroundColor: NSColor.labelColor
         ]
         let textSize = letter.size(withAttributes: attributes)

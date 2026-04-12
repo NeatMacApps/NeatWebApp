@@ -32,7 +32,7 @@ private struct BrowserWindowDragBar: View {
                 .foregroundStyle(theme.foregroundColor.color.opacity(0.9))
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .padding(.horizontal, 84)
+                .padding(.horizontal, 112)
                 .allowsHitTesting(false)
 
             HStack {
@@ -70,6 +70,14 @@ private struct BrowserWindowDragBar: View {
                     action: session.reloadFromConfiguredURL
                 )
                 .help("Reset to Configured URL and Refresh")
+
+                BrowserChromeButton(
+                    systemImage: "plus.square.on.square",
+                    foregroundStyle: theme.foregroundColor.color.opacity(0.82),
+                    highlightedFillStyle: theme.highlightedFillColor.color,
+                    action: session.duplicateWindow
+                )
+                .help("Open Copy in New Window")
 
                 BrowserChromeButton(
                     systemImage: session.isMobileUA ? "laptopcomputer" : "iphone",

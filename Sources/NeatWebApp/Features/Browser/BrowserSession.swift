@@ -8,6 +8,7 @@ import WebKit
 protocol BrowserSessionCommandHandling: AnyObject {
     func browserSessionDidRequestClose(_ session: BrowserSession)
     func browserSessionDidRequestCollapse(_ session: BrowserSession)
+    func browserSessionDidRequestDuplicate(_ session: BrowserSession)
 }
 
 @Observable
@@ -22,6 +23,9 @@ final class BrowserSession {
     var canGoForward = false
     var isLoading = false
     private(set) var pageZoom: Double
+    var currentPageURL: URL {
+        webView?.url ?? currentURL
+    }
     var isPinned: Bool {
         didSet {
             onPinnedChange?(isPinned)
@@ -58,11 +62,12 @@ final class BrowserSession {
     init(
         definition: WebAppDefinition,
         preference: StoredWebAppPreference,
-        preferencesStore: WebAppPreferencesStore
+        preferencesStore: WebAppPreferencesStore,
+        initialURL: URL? = nil
     ) {
         self.definition = definition
         self.pageTitle = definition.name
-        self.currentURL = definition.homeURL
+        self.currentURL = initialURL ?? definition.homeURL
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
         self.isMobileUA = preference.isMobileUA
@@ -148,6 +153,10 @@ final class BrowserSession {
 
     func collapseWindow() {
         commandHandler?.browserSessionDidRequestCollapse(self)
+    }
+
+    func duplicateWindow() {
+        commandHandler?.browserSessionDidRequestDuplicate(self)
     }
 
     func updateChromeThemeColor(_ pageColor: BrowserThemeColor?) {
