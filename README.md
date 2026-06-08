@@ -10,7 +10,7 @@ The project currently targets Apple Silicon and Intel Macs running macOS 15 or l
 - Content-first `WKWebView` windows with per-site zoom, persistence, and favicon caching
 - Runtime isolation: each web app window is hosted by `NeatWebAppRuntime` instead of the main app process
 - Floating icon collapse / restore workflow handled by the runtime helper
-- Custom web app catalog with drag-to-reorder management in the dashboard
+- Custom web app catalog with add, delete, URL editing, and drag-to-reorder management in the dashboard
 - Public-API notch detection based on `NSScreen.safeAreaInsets` and auxiliary top areas
 
 ## Status
@@ -20,7 +20,7 @@ NeatWebApp is a real working prototype, not a polished end-user product yet.
 What is already in place:
 
 - Launcher reveal and retention behavior for notched displays
-- Dashboard for managing custom web apps and inspecting notch geometry
+- Dashboard for managing custom web apps, including configured URLs, and inspecting notch geometry
 - Runtime registry refresh and takeover of outdated helper builds
 - Persistent site data through `WKWebsiteDataStore.default()`
 - Unit tests for notch geometry, runtime registry persistence, favicon storage, browser chrome theme, and floating icon snap behavior

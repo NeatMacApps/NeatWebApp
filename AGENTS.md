@@ -184,3 +184,9 @@ done
 - 完成任意代码修改后，默认还要执行一次 app 启动验证：先用新构建产物替换 `/Applications/NeatWebApp.app`，再启动该版本。
 - 重启 App 时，必须从 `/Applications/NeatWebApp.app` 启动；如果 `open` 启动失败，必须再重试 2 次；只有连续 3 次都失败时，才可结束并明确说明启动失败。
 - 若你改动了测试或新增了测试设施，请同步更新本文件中的命令示例。
+
+## 文档导航
+
+- [docs/architecture.md](docs/architecture.md)：改应用架构、模块边界、WebKit/AppKit 协作方式前阅读。
+- [docs/notch-activation-research.md](docs/notch-activation-research.md)：调整刘海触发、屏幕几何识别或 launcher 激活逻辑前阅读。
+- [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前阅读。

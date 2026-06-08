@@ -15,8 +15,10 @@
 		15AFD1FED676491F3D4094EA /* NeatWebAppRuntimeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598C296D366948C8346E36D6 /* NeatWebAppRuntimeApp.swift */; };
 		1E605FE456B399F6831022C9 /* NeatWebAppRuntime.app in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2424A93CD84E461F797C6730 /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
+		28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */; };
 		2E76E497BEC0B2A99B1354D3 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
 		2F608A187B13024EB8D438F4 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
+		38CDA3B1E1182BF7F8B70EA2 /* RuntimeHealthMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */; };
 		39AD98562A2F730ED9F173E0 /* RuntimeRegistryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A914E86F1ECA2915BA025350 /* RuntimeRegistryStore.swift */; };
 		42BB40148402990AFA14688D /* LauncherPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */; };
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
@@ -27,6 +29,7 @@
 		62A03E5BBF4DA98830BD7735 /* RuntimeWindowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30FF2F672DE51BE72D9EDBC5 /* RuntimeWindowCoordinator.swift */; };
 		63AD3C45FA8BB7FB529986E6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
 		667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */; };
+		6936D1598B016139645685BE /* RuntimeHealthMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */; };
 		6C91A519FFB072AF843A9F3C /* RuntimeCommandBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B239093AFEBF2974ED7349 /* RuntimeCommandBus.swift */; };
 		6C94CC55D95577FE7CDDA210 /* WebAppRuntimeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */; };
 		74CA6CEF02CC7A7472803574 /* RuntimeBootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE823187BD8E760027A23AEA /* RuntimeBootstrapLoader.swift */; };
@@ -129,12 +132,14 @@
 		598C296D366948C8346E36D6 /* NeatWebAppRuntimeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatWebAppRuntimeApp.swift; sourceTree = "<group>"; };
 		5FB57677B77DDAA3883AD1B3 /* RuntimeRegistryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeRegistryStoreTests.swift; sourceTree = "<group>"; };
 		6535023594466573F6BD745C /* WebAppFaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconLoader.swift; sourceTree = "<group>"; };
+		67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHealthMonitorTests.swift; sourceTree = "<group>"; };
 		75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconStore.swift; sourceTree = "<group>"; };
 		763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowController.swift; sourceTree = "<group>"; };
 		7C0EC99CC12C2CF75E76E9D5 /* RuntimeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeModels.swift; sourceTree = "<group>"; };
 		87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometry.swift; sourceTree = "<group>"; };
 		96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeAppLock.swift; sourceTree = "<group>"; };
 		9D6A45B4921BAA3A28B06BED /* BrowserChromeThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeThemeTests.swift; sourceTree = "<group>"; };
+		A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHealthMonitor.swift; sourceTree = "<group>"; };
 		A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherPresentationContext.swift; sourceTree = "<group>"; };
 		A8B239093AFEBF2974ED7349 /* RuntimeCommandBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeCommandBus.swift; sourceTree = "<group>"; };
 		A914E86F1ECA2915BA025350 /* RuntimeRegistryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeRegistryStore.swift; sourceTree = "<group>"; };
@@ -148,6 +153,7 @@
 		D060C4D3DD8DC88849971C39 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		D153AAAC2CEBD9238FE58516 /* FloatingIconSnapResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingIconSnapResolverTests.swift; sourceTree = "<group>"; };
 		D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatWebApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppURLInputResolverTests.swift; sourceTree = "<group>"; };
 		D97408F059C53BA18814C526 /* NeatWebAppRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeEventPublisher.swift; sourceTree = "<group>"; };
@@ -192,9 +198,11 @@
 			isa = PBXGroup;
 			children = (
 				328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */,
+				67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */,
 				5FB57677B77DDAA3883AD1B3 /* RuntimeRegistryStoreTests.swift */,
 				257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */,
 				34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */,
+				D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */,
 			);
 			path = NeatWebAppTests;
 			sourceTree = "<group>";
@@ -341,6 +349,7 @@
 				249468F78ECB158EF76D893C /* LauncherOverlayController.swift */,
 				270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */,
 				C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */,
+				A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */,
 				EFB69C041590CEFEA4AF732C /* RuntimeLauncher.swift */,
 				6535023594466573F6BD745C /* WebAppFaviconLoader.swift */,
 				75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */,
@@ -531,9 +540,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				FF83C2338E69D5313467C47E /* LauncherPresentationContextTests.swift in Sources */,
+				38CDA3B1E1182BF7F8B70EA2 /* RuntimeHealthMonitorTests.swift in Sources */,
 				EF92116A31AAC5E5495BABF0 /* RuntimeRegistryStoreTests.swift in Sources */,
 				7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */,
 				B0C402224827E36022AB2A7A /* WebAppFaviconStoreTests.swift in Sources */,
+				28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -554,6 +565,7 @@
 				8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */,
 				CEF7C803632831529F7D9869 /* RuntimeAppLock.swift in Sources */,
 				6C91A519FFB072AF843A9F3C /* RuntimeCommandBus.swift in Sources */,
+				6936D1598B016139645685BE /* RuntimeHealthMonitor.swift in Sources */,
 				C6D0B64D83A5E03D8CFCFD8B /* RuntimeLauncher.swift in Sources */,
 				C114E7A96B75BC62B5042DD2 /* RuntimeModels.swift in Sources */,
 				39AD98562A2F730ED9F173E0 /* RuntimeRegistryStore.swift in Sources */,

@@ -18,7 +18,7 @@ The host app owns:
 - the dashboard window
 - the menu bar entry and commands
 - launcher presentation and notch activation monitoring
-- the custom web app catalog
+- the custom web app catalog（包括已配置 URL 的编辑）
 - favicon caching
 - runtime discovery, launch, takeover, and command dispatch
 
@@ -47,6 +47,12 @@ Shared code contains:
 3. If needed, `RuntimeLauncher` writes a bootstrap payload and launches `NeatWebAppRuntime`.
 4. The runtime reads its bootstrap, creates `BrowserSession`, builds its window controller, and publishes runtime state.
 5. The host observes runtime changes to update launcher state, diagnostics, and helper takeover behavior.
+
+## Runtime Window Lifecycle
+
+- Closing the primary browser window is a process-lifecycle action: the runtime prepares termination, publishes the terminating state, removes its state/bootstrap files, and exits the `NeatWebAppRuntime` process.
+- Hiding and floating-icon collapse remain window-lifecycle actions. They keep the runtime process alive so the host can show, focus, expand, or recover the same web app without launching a replacement.
+- Duplicate browser windows belong to the same runtime process. Closing a duplicate window only hides/removes that duplicate and must not terminate the primary runtime.
 
 ## Main Components
 
@@ -96,7 +102,7 @@ Shared code contains:
 
 ## Persistence
 
-- `CustomWebAppStore` persists the user-managed app catalog.
+- `CustomWebAppStore` 持久化用户管理的 app catalog，包括 Dashboard 中对每个 app 已配置 URL 的编辑。
 - `WebAppPreferencesStore` persists zoom, pinned state, and saved window placement.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
 - `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.

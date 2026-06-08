@@ -23,10 +23,15 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let onDiagnosticMessage: (String) -> Void
     private let hostVersion: String
     private let runtimeBuildIdentifier: String
+    private let runtimeHealthPolicy: RuntimeHealthPolicy
+    private let runtimeMetricsProvider: RuntimeProcessMetricsProviding
+    private let runtimeHealthMonitor: RuntimeHealthMonitor
     private var registry: [String: RuntimeState] = [:]
     private var nextSequence = 1
     private var eventObserver: NSObjectProtocol?
+    private var runtimeHealthCheckTask: Task<Void, Never>?
     private var migratingAppIDs: Set<String> = []
+    private var recoveringAppIDs: Set<String> = []
     private var activeAppID: String? {
         didSet {
             guard oldValue != activeAppID else {
@@ -41,12 +46,17 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         registryStore: RuntimeRegistryStore = RuntimeRegistryStore(),
         launcher: RuntimeLauncher? = nil,
         commandBus: RuntimeCommandBus = RuntimeCommandBus(),
+        runtimeHealthPolicy: RuntimeHealthPolicy = .standard,
+        runtimeMetricsProvider: RuntimeProcessMetricsProviding = DarwinRuntimeProcessMetricsProvider(),
         onActiveAppIDChange: @escaping (String?) -> Void,
         onDiagnosticMessage: @escaping (String) -> Void
     ) {
         self.registryStore = registryStore
         self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
         self.commandBus = commandBus
+        self.runtimeHealthPolicy = runtimeHealthPolicy
+        self.runtimeMetricsProvider = runtimeMetricsProvider
+        self.runtimeHealthMonitor = RuntimeHealthMonitor(policy: runtimeHealthPolicy)
         self.onActiveAppIDChange = onActiveAppIDChange
         self.onDiagnosticMessage = onDiagnosticMessage
         self.hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
@@ -55,6 +65,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             self?.handle(event)
         }
         refreshRegistry()
+        startRuntimeHealthChecks()
     }
 
     func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?) {
@@ -203,6 +214,88 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         defer {
             migratingAppIDs.remove(state.appID)
             refreshRegistry()
+        }
+
+        await restartRuntime(state: state, bootstrap: bootstrap, diagnosticMessage: nil)
+    }
+
+    private func startRuntimeHealthChecks() {
+        guard runtimeHealthPolicy.isEnabled else {
+            return
+        }
+
+        runtimeHealthCheckTask?.cancel()
+        let checkInterval = runtimeHealthPolicy.checkInterval
+        runtimeHealthCheckTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: checkInterval)
+                } catch {
+                    return
+                }
+
+                self?.checkRuntimeHealth()
+            }
+        }
+    }
+
+    private func checkRuntimeHealth(now: Date = .now) {
+        refreshRegistry()
+
+        for state in registry.values {
+            guard !migratingAppIDs.contains(state.appID),
+                  !recoveringAppIDs.contains(state.appID),
+                  let bootstrap = registryStore.loadBootstrap(instanceID: state.instanceID) else {
+                continue
+            }
+
+            guard let metrics = runtimeMetricsProvider.metrics(for: state.pid, at: now) else {
+                runtimeHealthMonitor.reset(instanceID: state.instanceID)
+                continue
+            }
+
+            guard let decision = runtimeHealthMonitor.evaluate(
+                state: state,
+                bootstrap: bootstrap,
+                metrics: metrics,
+                now: now
+            ) else {
+                continue
+            }
+
+            recoveringAppIDs.insert(state.appID)
+            Task { @MainActor [weak self] in
+                await self?.recoverUnhealthyRuntime(
+                    state: state,
+                    bootstrap: bootstrap,
+                    decision: decision
+                )
+            }
+        }
+    }
+
+    private func recoverUnhealthyRuntime(
+        state: RuntimeState,
+        bootstrap: RuntimeBootstrap,
+        decision: RuntimeHealthDecision
+    ) async {
+        defer {
+            recoveringAppIDs.remove(state.appID)
+            runtimeHealthMonitor.reset(instanceID: state.instanceID)
+            refreshRegistry()
+        }
+
+        let message = "Restarting \(bootstrap.definition.name) runtime after sustained resource pressure: \(decision.diagnosticDescription)."
+        await restartRuntime(state: state, bootstrap: bootstrap, diagnosticMessage: message)
+    }
+
+    private func restartRuntime(
+        state: RuntimeState,
+        bootstrap: RuntimeBootstrap,
+        diagnosticMessage: String?
+    ) async {
+        if let diagnosticMessage {
+            onDiagnosticMessage(diagnosticMessage)
         }
 
         terminateProcessIfNeeded(for: state)

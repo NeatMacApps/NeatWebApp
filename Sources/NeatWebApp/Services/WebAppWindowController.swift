@@ -4,6 +4,8 @@ import SwiftUI
 
 @MainActor
 protocol RuntimeWindowEventSink: AnyObject {
+    func webAppWindowDidRequestClose(_ controller: WebAppWindowController)
+
     func webAppWindowDidRequestDuplicate(_ controller: WebAppWindowController)
 
     func webAppWindowDidUpdate(
@@ -23,7 +25,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         static let minimumContentSize = NSSize(width: 390, height: 640)
         static let floatingIconDiameter: CGFloat = 52 * 0.8 * 0.9
         static let floatingIconShadowPadding: CGFloat = 10
-        static let floatingIconTransitionDuration: TimeInterval = 0.22
+        static let floatingIconTransitionDuration: TimeInterval = 0.3
         static let collapseDelayAfterResignKey: Duration = .seconds(180)
         static let duplicateWindowOffset = CGSize(width: 28, height: -28)
         static let pinnedWindowLevel = NSWindow.Level.floating
@@ -189,7 +191,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        hideWindow()
+        requestCloseWindow()
         return false
     }
 
@@ -205,7 +207,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func browserSessionDidRequestClose(_ session: BrowserSession) {
-        hideWindow()
+        requestCloseWindow()
     }
 
     func browserSessionDidRequestCollapse(_ session: BrowserSession) {
@@ -214,6 +216,20 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
     func browserSessionDidRequestDuplicate(_ session: BrowserSession) {
         eventSink?.webAppWindowDidRequestDuplicate(self)
+    }
+
+    private func requestCloseWindow() {
+        guard let eventSink else {
+            hideWindow()
+            return
+        }
+
+        cancelCollapseAfterResignKey()
+        persistWindowFrame()
+        hideFloatingIcon()
+        hideTransitionSnapshot()
+        collapsedWindowSnapshot = nil
+        eventSink.webAppWindowDidRequestClose(self)
     }
 
     private func configureWindow(_ window: NSWindow, definition: WebAppDefinition, isPinned: Bool) {
@@ -257,13 +273,28 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
         persistWindowFrame()
         expandedWindowFrameBeforeCollapse = window.frame
-        let snapshotImage = captureWindowSnapshot(from: window)
+        let shouldAnimateTransition = shouldAnimateFloatingIconTransition()
+        let snapshotImage = shouldAnimateTransition ? captureWindowSnapshot(from: window) : nil
         collapsedWindowSnapshot = snapshotImage
 
         let iconFrame = floatingIconFrame(alignedToTopLeft: window.frame.topLeft)
         let panel = showFloatingIcon(frame: iconFrame)
-        panel.alphaValue = 0
+        panel.alphaValue = shouldAnimateTransition ? 0 : 1
         let snapshotPanel = snapshotImage.map { showTransitionSnapshot(image: $0, frame: window.frame) }
+
+        guard shouldAnimateTransition else {
+            window.orderOut(nil)
+            window.alphaValue = 1
+            hideTransitionSnapshot()
+            (panel.contentView as? FloatingWebAppIconView)?.playCollapseRippleAnimation()
+            publishRuntimeUpdate(
+                phase: .collapsedToFloatingIcon,
+                windowFrame: expandedWindowFrameBeforeCollapse,
+                floatingIconFrame: panel.frame
+            )
+            reactivateLastExternalApplicationIfPossible()
+            return
+        }
 
         isAnimatingFloatingIconTransition = true
 
@@ -427,6 +458,14 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
             shadowPadding: WindowMetrics.floatingIconShadowPadding
         )
+    }
+
+    private func shouldAnimateFloatingIconTransition() -> Bool {
+        guard let frontmostApplication = NSWorkspace.shared.frontmostApplication else {
+            return NSApp.isActive
+        }
+
+        return frontmostApplication.processIdentifier == ProcessInfo.processInfo.processIdentifier
     }
 
     private func floatingIconVisualTopLeft(from panelFrame: CGRect) -> CGPoint {

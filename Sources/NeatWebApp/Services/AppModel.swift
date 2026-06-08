@@ -304,6 +304,29 @@ final class AppModel {
         ensureFaviconLoaded(for: app)
     }
 
+    func updateWebAppURL(_ app: WebAppDefinition, to homeURL: URL) {
+        guard let index = apps.firstIndex(where: { $0.id == app.id }) else {
+            return
+        }
+
+        let updatedApp = WebAppDefinition(
+            id: app.id,
+            name: app.name,
+            homeURL: homeURL,
+            accentColorName: app.accentColorName,
+            shortDescription: app.shortDescription
+        )
+
+        apps[index] = updatedApp
+        customAppStore.save(apps)
+        faviconLoadTasks[app.id]?.cancel()
+        faviconLoadTasks[app.id] = nil
+        faviconImages.removeValue(forKey: app.id)
+        failedFaviconAppIDs.remove(app.id)
+        faviconStore.delete(for: app.id)
+        ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
+    }
+
     func deleteCustomApp(_ app: WebAppDefinition) {
         apps.removeAll { $0.id == app.id }
         customAppStore.save(apps)

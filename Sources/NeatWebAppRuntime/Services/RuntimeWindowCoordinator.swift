@@ -86,6 +86,16 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         registryStore.removeBootstrap(instanceID: bootstrap.instanceID)
     }
 
+    func webAppWindowDidRequestClose(_ controller: WebAppWindowController) {
+        guard controller === windowController else {
+            controller.hideWindow()
+            return
+        }
+
+        prepareForTermination()
+        NSApplication.shared.terminate(nil)
+    }
+
     func webAppWindowDidRequestDuplicate(_ controller: WebAppWindowController) {
         let duplicateWindowController = WebAppWindowController(
             definition: bootstrap.definition,

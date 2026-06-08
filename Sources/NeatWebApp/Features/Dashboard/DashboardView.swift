@@ -8,6 +8,7 @@ struct DashboardView: View {
 
     @State private var isAddSheetPresented = false
     @State private var appToDelete: WebAppDefinition?
+    @State private var appToEdit: WebAppDefinition?
     @State private var draggedApp: WebAppDefinition?
 
     var body: some View {
@@ -28,6 +29,9 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $isAddSheetPresented) {
             AddWebAppSheet(appModel: appModel)
+        }
+        .sheet(item: $appToEdit) { app in
+            EditWebAppURLSheet(appModel: appModel, app: app)
         }
         .alert(
             "Delete \(appToDelete?.name ?? "")?",
@@ -147,6 +151,15 @@ struct DashboardView: View {
             .buttonStyle(.borderedProminent)
 
             Button {
+                appToEdit = app
+            } label: {
+                Image(systemName: "pencil")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Edit URL")
+
+            Button {
                 appToDelete = app
             } label: {
                 Image(systemName: "trash")
@@ -170,6 +183,9 @@ struct DashboardView: View {
         .contextMenu {
             Button("Open Window") {
                 appModel.openWebApp(app)
+            }
+            Button("Edit URL") {
+                appToEdit = app
             }
             Divider()
             Button("Delete", role: .destructive) {
@@ -304,11 +320,7 @@ private struct AddWebAppSheet: View {
             return nil
         }
 
-        if let url = URL(string: trimmed), url.scheme != nil {
-            return url
-        }
-
-        return URL(string: "https://\(trimmed)")
+        return WebAppURLInputResolver.resolve(trimmed)
     }
 
     var body: some View {
@@ -424,6 +436,109 @@ private struct AddWebAppSheet: View {
 
         appModel.addCustomApp(app)
         dismiss()
+    }
+}
+
+// MARK: - 编辑 Web App URL 弹窗
+
+private struct EditWebAppURLSheet: View {
+    let appModel: AppModel
+    let app: WebAppDefinition
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var urlString: String
+
+    init(appModel: AppModel, app: WebAppDefinition) {
+        self.appModel = appModel
+        self.app = app
+        _urlString = State(initialValue: app.homeURL.absoluteString)
+    }
+
+    private var resolvedURL: URL? {
+        WebAppURLInputResolver.resolve(urlString)
+    }
+
+    private var isValid: Bool {
+        resolvedURL != nil
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Edit URL")
+                        .font(.title3.weight(.semibold))
+                    Text(app.name)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(20)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("URL")
+                    .font(.subheadline.weight(.medium))
+                TextField("e.g. example.com", text: $urlString)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(20)
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button("Save") {
+                    save()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!isValid)
+            }
+            .padding(20)
+        }
+        .frame(width: 420)
+    }
+
+    private func save() {
+        guard let resolvedURL else {
+            return
+        }
+
+        appModel.updateWebAppURL(app, to: resolvedURL)
+        dismiss()
+    }
+}
+
+enum WebAppURLInputResolver {
+    static func resolve(_ input: String) -> URL? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        if let url = URL(string: trimmed), url.scheme != nil {
+            return url
+        }
+
+        return URL(string: "https://\(trimmed)")
     }
 }
 
