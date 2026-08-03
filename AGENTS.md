@@ -157,6 +157,7 @@ done
 - 窗口自动收进侧边 Dock 只有「系统判定窗口看不见」一个触发条件，没有闲置超时收起。改这块前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md)。
 - 置顶窗口行为通过 `NSWindow.Level.floating` 实现，并由偏好持久化保存。
 - 应用内自动更新由 `Sources/NeatWebApp/Services/AppUpdater.swift` 持有，只装在宿主上；更新覆盖安装前会调用 `AppModel.prepareForApplicationUpdate()` 收掉全部运行时进程，漏网的靠既有的运行时版本迁移逻辑在下次启动时重启。改运行时生命周期、`WebAppRuntimeCoordinating` 协议或菜单栏菜单时，一并确认这条链路没断。
+- 开机自启由 `Sources/NeatWebApp/Services/LaunchAtLoginService.swift` 封装 `SMAppService.mainApp`，设置窗口与菜单栏各有一个入口。**只有 `.enabled` 才算启用**：`.requiresApproval` 表示这台机器上它曾被关掉过，系统据此挂起，此时**应用无论怎么调都救不回来**——实测「注销后重新登记」同样无效，苹果是故意持久化这个「用户曾关掉它」的意图的，只能由用户去系统设置里重新打开。所以把 `.requiresApproval` 并进「已启用」是错的（会表现为开关看着开着、开机却不启动），在这里加重试也是错的，界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
 - 触碰这些逻辑时，要连同构建、测试、替换 `/Applications/NeatWebApp.app`、再启动验证一起执行。
 
 ## Agent 工作方式

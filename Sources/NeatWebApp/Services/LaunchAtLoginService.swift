@@ -26,6 +26,10 @@ final class LaunchAtLoginService {
 
     func setEnabled(_ enabled: Bool) throws {
         if enabled {
+            // 注意：状态是 requiresApproval 时，这里怎么调都救不回来。
+            // 实测「注销后重新登记」同样无效——苹果是**故意**把「用户曾关掉它」这个意图
+            // 持久化的，应用无权自行解除，只能由用户去系统设置里重新打开。
+            // 所以界面必须解释这件事，不要在这里加各种重试。
             if appService.status != .enabled {
                 try appService.register()
             }
