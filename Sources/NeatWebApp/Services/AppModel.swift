@@ -19,6 +19,9 @@ final class AppModel {
     private(set) var activeRuntimeAppID: String?
     private(set) var faviconImages: [String: NSImage] = [:]
     private(set) var isLaunchAtLoginEnabled = false
+    /// 登录项被系统挂起的例外状态：正常开启不会出现，只有它曾被关掉过才会。
+    /// 此时开关点了也不会生效，界面需要给出解释，否则表现为「怎么点都没反应」。
+    private(set) var isLaunchAtLoginBlockedBySystem = false
     private(set) var sideDockEdge: SideDockEdge = .right
     private(set) var sideDockVerticalPosition = SideDockPlacementResolver.defaultVerticalPosition
     private(set) var sideDockDisplayID: CGDirectDisplayID?
@@ -66,6 +69,9 @@ final class AppModel {
     private var screenObserver: NSObjectProtocol?
 
     @ObservationIgnored
+    private var activationObserver: NSObjectProtocol?
+
+    @ObservationIgnored
     private var hasStarted = false
 
     @ObservationIgnored
@@ -109,6 +115,18 @@ final class AppModel {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshScreenState()
+            }
+        }
+
+        // 用户是在系统设置里放行登录项的，应用收不到任何回调；
+        // 回到应用时重读一次，界面才不会一直停在「等待放行」。
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshLaunchAtLoginState()
             }
         }
     }
@@ -236,10 +254,15 @@ final class AppModel {
         do {
             try launchAtLoginService.setEnabled(isEnabled)
         } catch {
-            diagnosticsMessage = error.localizedDescription
+            diagnosticsMessage = "设置开机自启失败：\(error.localizedDescription)"
         }
 
         refreshLaunchAtLoginState()
+    }
+
+    /// 打开系统设置的登录项页面。用户在那里放行后回到应用，状态会自动刷新。
+    func openLoginItemsSettings() {
+        launchAtLoginService.openSystemSettings()
     }
 
     func setSideDockEdge(_ edge: SideDockEdge) {
@@ -605,11 +628,12 @@ final class AppModel {
         failedFaviconAppIDs.remove(appID)
     }
 
-    private func refreshLaunchAtLoginState() {
+    /// 重新读取系统侧的登录项状态。
+    ///
+    /// 用户是在系统设置里放行的，应用不会收到任何回调，所以每次应用重新变为活跃
+    /// （打开设置窗口、点菜单栏图标）都要重读一次，否则界面会一直停在「等待放行」。
+    func refreshLaunchAtLoginState() {
         isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
-
-        if launchAtLoginService.requiresApproval {
-            diagnosticsMessage = "Launch at Login is waiting for approval in System Settings > General > Login Items."
-        }
+        isLaunchAtLoginBlockedBySystem = launchAtLoginService.isBlockedBySystem
     }
 }

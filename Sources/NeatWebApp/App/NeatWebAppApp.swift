@@ -47,7 +47,7 @@ struct NeatWebAppApp: App {
             .keyboardShortcut("k", modifiers: [.command, .option])
 
             Toggle(
-                "Launch at Login",
+                "开机时自动启动",
                 isOn: Binding(
                     get: { appModel.isLaunchAtLoginEnabled },
                     set: { appModel.setLaunchAtLoginEnabled($0) }
