@@ -8,7 +8,6 @@ import WebKit
 protocol BrowserSessionCommandHandling: AnyObject {
     func browserSessionDidRequestClose(_ session: BrowserSession)
     func browserSessionDidRequestCollapse(_ session: BrowserSession)
-    func browserSessionDidRequestDuplicate(_ session: BrowserSession)
 }
 
 @Observable
@@ -19,13 +18,11 @@ final class BrowserSession {
     var pageTitle: String
     var currentURL: URL
     var chromeTheme = BrowserChromeTheme.fallback
+    var downloadItems: [BrowserDownloadItem] = []
     var canGoBack = false
     var canGoForward = false
     var isLoading = false
     private(set) var pageZoom: Double
-    var currentPageURL: URL {
-        webView?.url ?? currentURL
-    }
     var isPinned: Bool {
         didSet {
             onPinnedChange?(isPinned)
@@ -62,12 +59,11 @@ final class BrowserSession {
     init(
         definition: WebAppDefinition,
         preference: StoredWebAppPreference,
-        preferencesStore: WebAppPreferencesStore,
-        initialURL: URL? = nil
+        preferencesStore: WebAppPreferencesStore
     ) {
         self.definition = definition
         self.pageTitle = definition.name
-        self.currentURL = initialURL ?? definition.homeURL
+        self.currentURL = definition.homeURL
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
         self.isMobileUA = preference.isMobileUA
@@ -123,6 +119,21 @@ final class BrowserSession {
         webView?.reload()
     }
 
+    /// 绕过缓存重新拉取，对应浏览器里的"硬刷新"。
+    func reloadIgnoringCache() {
+        webView?.reloadFromOrigin()
+    }
+
+    func printPage() {
+        guard let webView, let window = webView.window else {
+            return
+        }
+
+        let printOperation = webView.printOperation(with: NSPrintInfo.shared)
+        printOperation.view?.frame = webView.bounds
+        printOperation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+    }
+
     func goHome() {
         loadConfiguredHomePage()
     }
@@ -155,8 +166,54 @@ final class BrowserSession {
         commandHandler?.browserSessionDidRequestCollapse(self)
     }
 
-    func duplicateWindow() {
-        commandHandler?.browserSessionDidRequestDuplicate(self)
+    @discardableResult
+    func startDownload(filename: String) -> UUID {
+        let item = BrowserDownloadItem(filename: filename)
+        downloadItems.insert(item, at: 0)
+        return item.id
+    }
+
+    func updateDownload(id: UUID, fractionCompleted: Double?) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        downloadItems[index].fractionCompleted = fractionCompleted
+    }
+
+    func updateDownload(id: UUID, filename: String) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        downloadItems[index].filename = filename
+    }
+
+    func finishDownload(id: UUID, destinationURL: URL) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        downloadItems[index].phase = .completed
+        downloadItems[index].destinationURL = destinationURL
+        downloadItems[index].fractionCompleted = 1
+    }
+
+    func failDownload(id: UUID, message: String) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        downloadItems[index].phase = .failed
+        downloadItems[index].message = message
+    }
+
+    func revealLatestDownload() {
+        guard let destinationURL = downloadItems.first(where: { $0.destinationURL != nil })?.destinationURL else {
+            return
+        }
+
+        NSWorkspace.shared.activateFileViewerSelecting([destinationURL])
     }
 
     func updateChromeThemeColor(_ pageColor: BrowserThemeColor?) {
@@ -258,6 +315,37 @@ private extension Double {
 private extension String {
     var nonEmpty: String? {
         isEmpty ? nil : self
+    }
+}
+
+enum BrowserDownloadPhase: Equatable {
+    case running
+    case completed
+    case failed
+}
+
+struct BrowserDownloadItem: Identifiable, Equatable {
+    let id: UUID
+    var filename: String
+    var phase: BrowserDownloadPhase
+    var fractionCompleted: Double?
+    var destinationURL: URL?
+    var message: String?
+
+    init(
+        id: UUID = UUID(),
+        filename: String,
+        phase: BrowserDownloadPhase = .running,
+        fractionCompleted: Double? = 0,
+        destinationURL: URL? = nil,
+        message: String? = nil
+    ) {
+        self.id = id
+        self.filename = filename
+        self.phase = phase
+        self.fractionCompleted = fractionCompleted
+        self.destinationURL = destinationURL
+        self.message = message
     }
 }
 

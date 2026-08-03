@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct NeatWebAppApp: App {
     private let appModel: AppModel
+    private let appUpdater: AppUpdater
 
     @Environment(\.openWindow) private var openWindow
 
@@ -11,6 +12,9 @@ struct NeatWebAppApp: App {
         let appModel = AppModel()
         appModel.startIfNeeded()
         self.appModel = appModel
+        appUpdater = AppUpdater {
+            appModel.prepareForApplicationUpdate()
+        }
     }
 
     var body: some Scene {
@@ -26,7 +30,12 @@ struct NeatWebAppApp: App {
             AppCommands(appModel: appModel)
         }
 
-        MenuBarExtra("NeatWebApp", systemImage: "menubar.dock.rectangle") {
+        Settings {
+            SettingsView()
+                .environment(appModel)
+        }
+
+        MenuBarExtra("NeatWebApp", image: .menuBarIcon) {
             Button("Open Dashboard") {
                 openWindow(id: "dashboard")
             }
@@ -44,6 +53,12 @@ struct NeatWebAppApp: App {
                     set: { appModel.setLaunchAtLoginEnabled($0) }
                 )
             )
+
+            SettingsLink {
+                Text("设置…")
+            }
+
+            CheckForUpdatesButton(appUpdater: appUpdater)
 
             Divider()
 

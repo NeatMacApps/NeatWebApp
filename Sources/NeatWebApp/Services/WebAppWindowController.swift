@@ -6,8 +6,6 @@ import SwiftUI
 protocol RuntimeWindowEventSink: AnyObject {
     func webAppWindowDidRequestClose(_ controller: WebAppWindowController)
 
-    func webAppWindowDidRequestDuplicate(_ controller: WebAppWindowController)
-
     func webAppWindowDidUpdate(
         appID: String,
         phase: RuntimePhase,
@@ -26,8 +24,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         static let floatingIconDiameter: CGFloat = 52 * 0.8 * 0.9
         static let floatingIconShadowPadding: CGFloat = 10
         static let floatingIconTransitionDuration: TimeInterval = 0.3
-        static let collapseDelayAfterResignKey: Duration = .seconds(180)
-        static let duplicateWindowOffset = CGSize(width: 28, height: -28)
+        static let collapseDelayAfterOcclusion: Duration = .seconds(2)
         static let pinnedWindowLevel = NSWindow.Level.floating
         static let floatingIconLevel = NSWindow.Level(rawValue: pinnedWindowLevel.rawValue + 1)
     }
@@ -35,8 +32,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     let session: BrowserSession
     private weak var eventSink: (any RuntimeWindowEventSink)?
     private let preferredGeometry: ScreenNotchGeometry?
-    private let publishesRuntimeEvents: Bool
-    private let persistsWindowPlacement: Bool
     private let faviconStore = WebAppFaviconStore()
     private var floatingIconPanel: FloatingWebAppIconPanel?
     private var transitionSnapshotPanel: WindowSnapshotTransitionPanel?
@@ -44,30 +39,22 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private var expandedWindowFrameBeforeCollapse: CGRect?
     private var isAnimatingFloatingIconTransition = false
     private var lastExternalFrontmostApplication: NSRunningApplication?
-    private var collapseAfterResignKeyTask: Task<Void, Never>?
-    var onDidHide: ((WebAppWindowController) -> Void)?
+    private var autoCollapseTask: Task<Void, Never>?
 
     init(
         definition: WebAppDefinition,
         preferencesStore: WebAppPreferencesStore,
         preferredGeometry: ScreenNotchGeometry?,
-        initialURL: URL? = nil,
-        duplicateSourceFrame: CGRect? = nil,
-        publishesRuntimeEvents: Bool = true,
-        persistsWindowPlacement: Bool = true,
         eventSink: (any RuntimeWindowEventSink)?
     ) {
         let preference = preferencesStore.load(for: definition.id)
         self.session = BrowserSession(
             definition: definition,
             preference: preference,
-            preferencesStore: preferencesStore,
-            initialURL: initialURL
+            preferencesStore: preferencesStore
         )
         self.eventSink = eventSink
         self.preferredGeometry = preferredGeometry
-        self.publishesRuntimeEvents = publishesRuntimeEvents
-        self.persistsWindowPlacement = persistsWindowPlacement
 
         let window = NSWindow(
             contentRect: CGRect(origin: .zero, size: WindowMetrics.defaultContentSize),
@@ -79,11 +66,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         super.init(window: window)
 
         configureWindow(window, definition: definition, isPinned: preference.isPinned)
-        if let duplicateSourceFrame {
-            window.setFrame(Self.duplicateWindowFrame(from: duplicateSourceFrame), display: false)
-        } else {
-            applyInitialFrame(using: preference, to: window, preferredGeometry: preferredGeometry)
-        }
+        applyInitialFrame(using: preference, to: window, preferredGeometry: preferredGeometry)
         wireSession(to: window)
     }
 
@@ -93,7 +76,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
 
         if floatingIconPanel != nil {
             expandFromFloatingIcon(shouldFocusWebView: true)
@@ -111,12 +94,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func collapseWindow() {
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
         collapseToFloatingIcon()
     }
 
-    func restoreCollapsedWindow(windowFrame: CGRect?, iconFrame: CGRect?) {
-        cancelCollapseAfterResignKey()
+    func restoreCollapsedWindow(windowFrame: CGRect?, iconFrame _: CGRect?) {
+        cancelAutoCollapse()
 
         guard !isAnimatingFloatingIconTransition else {
             return
@@ -129,35 +112,19 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             expandedWindowFrameBeforeCollapse = window.frame
         }
 
-        let resolvedIconFrame: CGRect
-        if let iconFrame {
-            resolvedIconFrame = FloatingIconSnapResolver.normalizeRestoredPanelFrame(
-                iconFrame,
-                availableScreens: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:)),
-                fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
-                shadowPadding: WindowMetrics.floatingIconShadowPadding
-            )
-        } else if let expandedWindowFrameBeforeCollapse {
-            resolvedIconFrame = floatingIconFrame(alignedToTopLeft: expandedWindowFrameBeforeCollapse.topLeft)
-        } else if let window {
-            resolvedIconFrame = floatingIconFrame(alignedToTopLeft: window.frame.topLeft)
-        } else {
-            return
-        }
-
-        let panel = showFloatingIcon(frame: resolvedIconFrame)
+        hideFloatingIcon()
         window?.orderOut(nil)
         publishRuntimeUpdate(
             phase: .collapsedToFloatingIcon,
             windowFrame: expandedWindowFrameBeforeCollapse,
-            floatingIconFrame: panel.frame
+            floatingIconFrame: nil
         )
     }
 
     func updatePinnedState(_ isPinned: Bool) {
         window?.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         if isPinned {
-            cancelCollapseAfterResignKey()
+            cancelAutoCollapse()
         }
     }
 
@@ -170,24 +137,27 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
         session.focusWebView()
-        if publishesRuntimeEvents {
-            eventSink?.webAppWindowDidFocus(appID: session.definition.id, windowFrame: window?.frame)
-        }
+        eventSink?.webAppWindowDidFocus(appID: session.definition.id, windowFrame: window?.frame)
     }
 
-    func windowDidResignKey(_ notification: Notification) {
-        guard Self.shouldCollapseWindowOnResignKey(
-            isPinned: session.isPinned,
-            hasFloatingIconPanel: floatingIconPanel != nil,
-            isAnimatingFloatingIconTransition: isAnimatingFloatingIconTransition,
-            isWindowVisible: window?.isVisible == true
-        ) else {
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        guard let window else {
             return
         }
 
-        scheduleCollapseAfterResignKey()
+        // 重新露出来就撤销待执行的收起。
+        guard !window.occlusionState.contains(.visible) else {
+            cancelAutoCollapse()
+            return
+        }
+
+        guard isEligibleForAutoCollapse else {
+            return
+        }
+
+        scheduleAutoCollapse()
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -196,14 +166,13 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func hideWindow() {
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
         persistWindowFrame()
         hideFloatingIcon()
         hideTransitionSnapshot()
         collapsedWindowSnapshot = nil
         window?.orderOut(nil)
         publishRuntimeUpdate(phase: .hidden, windowFrame: window?.frame, floatingIconFrame: nil)
-        onDidHide?(self)
     }
 
     func browserSessionDidRequestClose(_ session: BrowserSession) {
@@ -214,17 +183,13 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         collapseToFloatingIcon()
     }
 
-    func browserSessionDidRequestDuplicate(_ session: BrowserSession) {
-        eventSink?.webAppWindowDidRequestDuplicate(self)
-    }
-
     private func requestCloseWindow() {
         guard let eventSink else {
             hideWindow()
             return
         }
 
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
         persistWindowFrame()
         hideFloatingIcon()
         hideTransitionSnapshot()
@@ -242,6 +207,10 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         window.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         window.contentMinSize = WindowMetrics.minimumContentSize
         window.toolbar = nil
+
+        // 悬浮圆点在所有桌面空间都点得到，窗口必须跟着来找用户；
+        // 否则从别的桌面点圆点会把用户硬拽回窗口原来所在的桌面空间。
+        window.collectionBehavior.insert(.moveToActiveSpace)
 
         for buttonType in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
             window.standardWindowButton(buttonType)?.isHidden = true
@@ -265,7 +234,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     private func collapseToFloatingIcon() {
-        cancelCollapseAfterResignKey()
+        cancelAutoCollapse()
 
         guard let window, !isAnimatingFloatingIconTransition else {
             return
@@ -274,23 +243,17 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         persistWindowFrame()
         expandedWindowFrameBeforeCollapse = window.frame
         let shouldAnimateTransition = shouldAnimateFloatingIconTransition()
-        let snapshotImage = shouldAnimateTransition ? captureWindowSnapshot(from: window) : nil
-        collapsedWindowSnapshot = snapshotImage
-
-        let iconFrame = floatingIconFrame(alignedToTopLeft: window.frame.topLeft)
-        let panel = showFloatingIcon(frame: iconFrame)
-        panel.alphaValue = shouldAnimateTransition ? 0 : 1
-        let snapshotPanel = snapshotImage.map { showTransitionSnapshot(image: $0, frame: window.frame) }
+        collapsedWindowSnapshot = nil
+        hideFloatingIcon()
+        hideTransitionSnapshot()
 
         guard shouldAnimateTransition else {
             window.orderOut(nil)
             window.alphaValue = 1
-            hideTransitionSnapshot()
-            (panel.contentView as? FloatingWebAppIconView)?.playCollapseRippleAnimation()
             publishRuntimeUpdate(
                 phase: .collapsedToFloatingIcon,
                 windowFrame: expandedWindowFrameBeforeCollapse,
-                floatingIconFrame: panel.frame
+                floatingIconFrame: nil
             )
             reactivateLastExternalApplicationIfPossible()
             return
@@ -298,26 +261,13 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
         isAnimatingFloatingIconTransition = true
 
-        if snapshotPanel != nil {
-            window.orderOut(nil)
-        }
-
         NSAnimationContext.runAnimationGroup { context in
             context.duration = WindowMetrics.floatingIconTransitionDuration
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-
-            panel.animator().alphaValue = 1
-            if let snapshotPanel {
-                snapshotPanel.animator().alphaValue = 0
-                snapshotPanel.animator().setFrame(iconFrame, display: false)
-            } else {
-                window.animator().alphaValue = 0
-            }
-        } completionHandler: { [weak self, weak window, weak panel, weak snapshotPanel] in
-            Task { @MainActor [weak self, weak window, weak panel, weak snapshotPanel] in
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            window.animator().alphaValue = 0
+        } completionHandler: { [weak self, weak window] in
+            Task { @MainActor [weak self, weak window] in
                 guard let self else {
-                    panel?.orderOut(nil)
-                    snapshotPanel?.orderOut(nil)
                     return
                 }
 
@@ -325,14 +275,11 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
                     window.orderOut(nil)
                     window.alphaValue = 1
                 }
-                self.hideTransitionSnapshot()
-                panel?.orderFrontRegardless()
-                (panel?.contentView as? FloatingWebAppIconView)?.playCollapseRippleAnimation()
                 self.isAnimatingFloatingIconTransition = false
                 self.publishRuntimeUpdate(
                     phase: .collapsedToFloatingIcon,
                     windowFrame: self.expandedWindowFrameBeforeCollapse,
-                    floatingIconFrame: panel?.frame
+                    floatingIconFrame: nil
                 )
                 self.reactivateLastExternalApplicationIfPossible()
             }
@@ -588,10 +535,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     private func persistWindowFrame() {
-        guard persistsWindowPlacement else {
-            return
-        }
-
         guard let window else {
             return
         }
@@ -604,10 +547,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         windowFrame: CGRect?,
         floatingIconFrame: CGRect?
     ) {
-        guard publishesRuntimeEvents else {
-            return
-        }
-
         eventSink?.webAppWindowDidUpdate(
             appID: session.definition.id,
             phase: phase,
@@ -616,34 +555,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         )
     }
 
-    private static func duplicateWindowFrame(from sourceFrame: CGRect) -> CGRect {
-        let offsetFrame = sourceFrame.offsetBy(
-            dx: WindowMetrics.duplicateWindowOffset.width,
-            dy: WindowMetrics.duplicateWindowOffset.height
-        )
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(sourceFrame.center) }) ?? NSScreen.main else {
-            return offsetFrame
-        }
+    private func scheduleAutoCollapse() {
+        cancelAutoCollapse()
 
-        return clamp(offsetFrame, into: screen.visibleFrame)
-    }
-
-    private static func clamp(_ frame: CGRect, into visibleFrame: CGRect) -> CGRect {
-        guard visibleFrame.width >= frame.width, visibleFrame.height >= frame.height else {
-            return frame
-        }
-
-        let clampedX = min(max(frame.minX, visibleFrame.minX), visibleFrame.maxX - frame.width)
-        let clampedY = min(max(frame.minY, visibleFrame.minY), visibleFrame.maxY - frame.height)
-        return CGRect(x: clampedX, y: clampedY, width: frame.width, height: frame.height)
-    }
-
-    private func scheduleCollapseAfterResignKey() {
-        cancelCollapseAfterResignKey()
-
-        collapseAfterResignKeyTask = Task { @MainActor [weak self] in
+        autoCollapseTask = Task { @MainActor [weak self] in
             do {
-                try await Task.sleep(for: WindowMetrics.collapseDelayAfterResignKey)
+                try await Task.sleep(for: WindowMetrics.collapseDelayAfterOcclusion)
             } catch {
                 return
             }
@@ -652,40 +569,61 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
                 return
             }
 
-            self.collapseAfterResignKeyTask = nil
-            self.collapseAfterResignKeyDelayIfStillEligible()
+            self.autoCollapseTask = nil
+            self.collapseIfStillEligible()
         }
     }
 
-    private func cancelCollapseAfterResignKey() {
-        collapseAfterResignKeyTask?.cancel()
-        collapseAfterResignKeyTask = nil
+    private func cancelAutoCollapse() {
+        autoCollapseTask?.cancel()
+        autoCollapseTask = nil
     }
 
-    private func collapseAfterResignKeyDelayIfStillEligible() {
-        guard Self.shouldCollapseWindowOnResignKey(
-            isPinned: session.isPinned,
-            hasFloatingIconPanel: floatingIconPanel != nil,
-            isAnimatingFloatingIconTransition: isAnimatingFloatingIconTransition,
-            isWindowVisible: window?.isVisible == true
-        ), window?.isKeyWindow != true else {
+    /// 延时到点后重新判定一次，避免这段时间里窗口已经被重新激活、置顶或收起。
+    private func collapseIfStillEligible() {
+        guard isEligibleForAutoCollapse else {
             return
         }
 
+        // 刷新“收起后该把焦点还给谁”，否则会把焦点抢给一个早已不在前台的旧应用。
         rememberFrontmostExternalApplication()
         collapseToFloatingIcon()
     }
 
-    static func shouldCollapseWindowOnResignKey(
+    private var isEligibleForAutoCollapse: Bool {
+        guard let window else {
+            return false
+        }
+
+        return Self.shouldCollapseWindowWhenOccluded(
+            isPinned: session.isPinned,
+            hasFloatingIconPanel: floatingIconPanel != nil,
+            isAnimatingFloatingIconTransition: isAnimatingFloatingIconTransition,
+            isWindowVisible: window.isVisible,
+            isKeyWindow: window.isKeyWindow,
+            isMiniaturized: window.isMiniaturized,
+            isOccluded: !window.occlusionState.contains(.visible)
+        )
+    }
+
+    /// 只要系统报告窗口看不见就收起，被别的窗口盖住、切到别的桌面空间、别的应用进入全屏都算。
+    /// 唯二排除的是最小化到程序坞（用户主动放进坞里的）和窗口本就没有显示出来（已经收起或已隐藏）。
+    static func shouldCollapseWindowWhenOccluded(
         isPinned: Bool,
         hasFloatingIconPanel: Bool,
         isAnimatingFloatingIconTransition: Bool,
-        isWindowVisible: Bool
+        isWindowVisible: Bool,
+        isKeyWindow: Bool,
+        isMiniaturized: Bool,
+        isOccluded: Bool
     ) -> Bool {
         !isPinned &&
         !hasFloatingIconPanel &&
         !isAnimatingFloatingIconTransition &&
-        isWindowVisible
+        isWindowVisible &&
+        !isKeyWindow &&
+        !isMiniaturized &&
+        isOccluded
     }
 
     private func applyInitialFrame(
@@ -742,10 +680,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 }
 
 private extension CGRect {
-    var center: CGPoint {
-        CGPoint(x: midX, y: midY)
-    }
-
     var topLeft: CGPoint {
         CGPoint(x: minX, y: maxY)
     }

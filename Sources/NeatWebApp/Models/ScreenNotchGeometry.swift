@@ -1,11 +1,23 @@
 import AppKit
 
+/// 刘海区域的来源：真实硬件刘海，或无刘海屏幕上由应用自己画出来的虚拟热区。
+enum ScreenNotchKind: String, Sendable {
+    case hardware
+    case virtual
+}
+
 struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     private static let launcherRetentionHorizontalPaddingRatio: CGFloat = 0.22
     private static let launcherRetentionTopPaddingRatio: CGFloat = 0.08
     private static let launcherRetentionBottomPaddingWidthRatio: CGFloat = 0.72
     private static let launcherRetentionBottomPaddingHeightRatio: CGFloat = 1.6
     private static let launcherRetentionHeightScale: CGFloat = 0.6
+    private static let virtualNotchWidthRatio: CGFloat = 0.18
+    private static let virtualNotchMinimumWidth: CGFloat = 180
+    private static let virtualNotchMaximumWidth: CGFloat = 320
+    private static let virtualNotchMaximumWidthRatio: CGFloat = 0.6
+    private static let virtualNotchFallbackHeight: CGFloat = 26
+    private static let virtualNotchMaximumHeight: CGFloat = 38
 
     let displayID: UInt32?
     let screenFrame: CGRect
@@ -14,9 +26,14 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     let auxiliaryTopLeftArea: CGRect
     let auxiliaryTopRightArea: CGRect
     let localizedName: String
+    let kind: ScreenNotchKind
 
     var id: String {
-        "\(localizedName)-\(Int(screenFrame.origin.x))-\(Int(screenFrame.origin.y))-\(Int(screenFrame.width))x\(Int(screenFrame.height))"
+        "\(kind.rawValue)-\(localizedName)-\(Int(screenFrame.origin.x))-\(Int(screenFrame.origin.y))-\(Int(screenFrame.width))x\(Int(screenFrame.height))"
+    }
+
+    var isVirtual: Bool {
+        kind == .virtual
     }
 
     init?(
@@ -44,7 +61,8 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         safeAreaInsets: NSEdgeInsets,
         auxiliaryTopLeftArea: CGRect,
         auxiliaryTopRightArea: CGRect,
-        localizedName: String
+        localizedName: String,
+        kind: ScreenNotchKind = .hardware
     ) {
         self.displayID = displayID
         self.screenFrame = screenFrame
@@ -53,6 +71,76 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         self.auxiliaryTopLeftArea = auxiliaryTopLeftArea
         self.auxiliaryTopRightArea = auxiliaryTopRightArea
         self.localizedName = localizedName
+        self.kind = kind
+    }
+
+    /// 无硬件刘海的屏幕用顶部居中的虚拟刘海兜底。
+    /// 这里刻意复用与硬件刘海完全相同的字段来描述虚拟区域，
+    /// 让热区判定、启动器布局和调试叠层都不需要再区分两种来源。
+    /// 屏幕本身带刘海时返回 `nil`，避免同一块屏幕出现两个热区。
+    static func virtual(screen: NSScreen) -> ScreenNotchGeometry? {
+        guard ScreenNotchGeometry(screen: screen) == nil else {
+            return nil
+        }
+
+        return virtual(
+            displayID: screen.displayID,
+            screenFrame: screen.frame,
+            visibleFrame: screen.visibleFrame,
+            localizedName: screen.localizedName
+        )
+    }
+
+    static func virtual(
+        displayID: UInt32?,
+        screenFrame: CGRect,
+        visibleFrame: CGRect,
+        localizedName: String
+    ) -> ScreenNotchGeometry? {
+        guard screenFrame.width > 0, screenFrame.height > 0 else {
+            return nil
+        }
+
+        // 高度对齐菜单栏：虚拟刘海展开时正好盖住菜单栏中段，不会额外压到窗口内容。
+        // 菜单栏自动隐藏、或这块屏幕根本没有菜单栏时差值为 0，退回一个仍然好点中的兜底高度。
+        let menuBarHeight = screenFrame.maxY - visibleFrame.maxY
+        let height = menuBarHeight > 0
+        ? min(menuBarHeight, virtualNotchMaximumHeight)
+        : virtualNotchFallbackHeight
+        let maximumWidth = min(virtualNotchMaximumWidth, screenFrame.width * virtualNotchMaximumWidthRatio)
+        let width = min(
+            max(screenFrame.width * virtualNotchWidthRatio, min(virtualNotchMinimumWidth, maximumWidth)),
+            maximumWidth
+        )
+
+        guard width > 0, height > 0 else {
+            return nil
+        }
+
+        let topStripMinY = screenFrame.maxY - height
+        let notchMinX = (screenFrame.midX - (width / 2)).rounded()
+        let notchMaxX = notchMinX + width
+
+        return ScreenNotchGeometry(
+            displayID: displayID,
+            screenFrame: screenFrame,
+            visibleFrame: visibleFrame,
+            safeAreaInsets: NSEdgeInsets(top: height, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(
+                x: screenFrame.minX,
+                y: topStripMinY,
+                width: notchMinX - screenFrame.minX,
+                height: height
+            ),
+            auxiliaryTopRightArea: CGRect(
+                x: notchMaxX,
+                y: topStripMinY,
+                width: screenFrame.maxX - notchMaxX,
+                height: height
+            ),
+            localizedName: localizedName,
+            kind: .virtual
+        )
     }
 
     var hasNotch: Bool {
@@ -166,6 +254,7 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
         lhs.safeAreaInsets.right == rhs.safeAreaInsets.right &&
         lhs.auxiliaryTopLeftArea == rhs.auxiliaryTopLeftArea &&
         lhs.auxiliaryTopRightArea == rhs.auxiliaryTopRightArea &&
-        lhs.localizedName == rhs.localizedName
+        lhs.localizedName == rhs.localizedName &&
+        lhs.kind == rhs.kind
     }
 }

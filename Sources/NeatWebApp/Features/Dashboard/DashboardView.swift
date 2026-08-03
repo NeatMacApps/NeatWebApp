@@ -200,7 +200,9 @@ struct DashboardView: View {
                 .font(.title2.weight(.semibold))
 
             if appModel.detectedNotchScreens.isEmpty {
-                Text("No notched screens are currently exposed by AppKit.")
+                Text(appModel.isVirtualNotchEnabled
+                     ? "No usable notch zone is currently available."
+                     : "No notched screens are currently exposed by AppKit. Enable the virtual notch in Settings to use non-notched displays.")
                     .foregroundStyle(.secondary)
             } else {
                 Text(appModel.isNotchDebugOverlayVisible ? "Debug overlay is visible on detected notched screens." : "Debug overlay is currently hidden.")
@@ -209,8 +211,14 @@ struct DashboardView: View {
 
                 ForEach(appModel.detectedNotchScreens) { screen in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(screen.localizedName)
-                            .font(.headline)
+                        HStack(spacing: 8) {
+                            Text(screen.localizedName)
+                                .font(.headline)
+
+                            Text(screen.isVirtual ? "Virtual notch" : "Hardware notch")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
 
                         Text("notchRect: \(screen.notchRect.debugSummary)")
                             .font(.footnote.monospaced())

@@ -17,7 +17,7 @@ The problem was architectural, not just an animation or timing bug. As long as e
 The repository now uses a split runtime model:
 
 - `NeatWebApp` stays focused on launcher UI, dashboard UI, catalog state, favicon caching, and runtime orchestration
-- `NeatWebAppRuntime` hosts a single browser window runtime and its floating icon lifecycle
+- `NeatWebAppRuntime` hosts a single browser window runtime and publishes its lifecycle state; the host collects collapsed runtimes in one side Dock
 - shared bootstrap/state models and IPC helpers live in `Sources/Shared`
 
 That boundary is what makes per-web-app window isolation workable.
@@ -38,7 +38,7 @@ flowchart LR
     Host --> RuntimeB
 ```
 
-The host launches a runtime by writing bootstrap data, starting `NeatWebAppRuntime`, and then observing published runtime state. Each runtime owns its own browser session, window controller, and floating icon behavior.
+The host launches a runtime by writing bootstrap data, starting `NeatWebAppRuntime`, and then observing published runtime state. Each runtime owns its own browser session and window controller. Cross-runtime collapsed navigation belongs to the host-owned side Dock, so helpers no longer place independent floating circles.
 
 ## What This Document No Longer Tries To Be
 

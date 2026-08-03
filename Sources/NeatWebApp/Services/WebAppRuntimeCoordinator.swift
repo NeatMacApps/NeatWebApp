@@ -8,6 +8,7 @@ protocol WebAppRuntimeCoordinating {
     func collapse(appID: String)
     func expand(appID: String)
     func terminate(appID: String)
+    func terminateAll()
     func increaseZoom(appID: String)
     func decreaseZoom(appID: String)
     func resetZoom(appID: String)
@@ -21,6 +22,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let commandBus: RuntimeCommandBus
     private let onActiveAppIDChange: (String?) -> Void
     private let onDiagnosticMessage: (String) -> Void
+    private let onRuntimeStatesChange: ([RuntimeState]) -> Void
     private let hostVersion: String
     private let runtimeBuildIdentifier: String
     private let runtimeHealthPolicy: RuntimeHealthPolicy
@@ -49,7 +51,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         runtimeHealthPolicy: RuntimeHealthPolicy = .standard,
         runtimeMetricsProvider: RuntimeProcessMetricsProviding = DarwinRuntimeProcessMetricsProvider(),
         onActiveAppIDChange: @escaping (String?) -> Void,
-        onDiagnosticMessage: @escaping (String) -> Void
+        onDiagnosticMessage: @escaping (String) -> Void,
+        onRuntimeStatesChange: @escaping ([RuntimeState]) -> Void = { _ in }
     ) {
         self.registryStore = registryStore
         self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
@@ -59,6 +62,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.runtimeHealthMonitor = RuntimeHealthMonitor(policy: runtimeHealthPolicy)
         self.onActiveAppIDChange = onActiveAppIDChange
         self.onDiagnosticMessage = onDiagnosticMessage
+        self.onRuntimeStatesChange = onRuntimeStatesChange
         self.hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
         self.runtimeBuildIdentifier = (try? self.launcher.currentRuntimeBuildIdentifier()) ?? hostVersion
         self.eventObserver = commandBus.observeEvents { [weak self] event in
@@ -120,6 +124,18 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         sendCommand(.terminateRuntime, state: state)
     }
 
+    /// 收掉全部运行时。用在应用即将被更新覆盖之前：运行时是从应用包里启动的独立进程，
+    /// 应用包被整体替换后它们仍会跑在旧代码上，且注册表里的状态会失效。
+    /// 这里不等它们退干净——宿主马上就要退出，等不了；漏网的会在下次启动时
+    /// 由 refreshRegistry 的版本迁移逻辑重启到新版本。
+    func terminateAll() {
+        refreshRegistry()
+
+        for state in registry.values {
+            terminateProcessIfNeeded(for: state)
+        }
+    }
+
     func increaseZoom(appID: String) {
         guard let state = registry[appID] else {
             return
@@ -154,6 +170,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         if let activeAppID, registry[activeAppID] == nil {
             self.activeAppID = nil
         }
+
+        publishRuntimeStates()
     }
 
     private func launchNewRuntime(
@@ -420,5 +438,19 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                 activeAppID = nil
             }
         }
+
+        publishRuntimeStates()
+    }
+
+    private func publishRuntimeStates() {
+        onRuntimeStatesChange(
+            registry.values.sorted {
+                if $0.lastUpdatedAt == $1.lastUpdatedAt {
+                    return $0.appID < $1.appID
+                }
+
+                return $0.lastUpdatedAt < $1.lastUpdatedAt
+            }
+        )
     }
 }

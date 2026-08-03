@@ -20,13 +20,13 @@ xcodegen generate
 Build:
 
 ```bash
-xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData build
+xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex build
 ```
 
 Run tests:
 
 ```bash
-xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData test
+xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex test
 ```
 
 Install the current debug build into `/Applications` and launch it:
@@ -34,7 +34,7 @@ Install the current debug build into `/Applications` and launch it:
 ```bash
 pkill -x "NeatWebApp" || true
 rm -rf "/Applications/NeatWebApp.app"
-ditto "build/DerivedData/Build/Products/Debug/NeatWebApp.app" "/Applications/NeatWebApp.app"
+ditto "build/DerivedData.noindex/Build/Products/Debug/NeatWebApp.app" "/Applications/NeatWebApp.app"
 for attempt in 1 2 3; do
     if open "/Applications/NeatWebApp.app"; then
         break

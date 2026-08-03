@@ -38,6 +38,78 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertFalse(geometry.hasNotch)
     }
 
+    func testVirtualNotchIsCenteredUnderMenuBarOnNonNotchedDisplay() {
+        let screenFrame = CGRect(x: 0, y: 0, width: 1728, height: 1117)
+        let visibleFrame = CGRect(x: 0, y: 25, width: 1728, height: 1067)
+
+        guard let geometry = ScreenNotchGeometry.virtual(
+            displayID: 9,
+            screenFrame: screenFrame,
+            visibleFrame: visibleFrame,
+            localizedName: "Studio Display"
+        ) else {
+            return XCTFail("A non-notched display should still produce a virtual notch geometry.")
+        }
+
+        XCTAssertTrue(geometry.isVirtual)
+        XCTAssertTrue(geometry.hasNotch)
+        XCTAssertEqual(geometry.notchRect.height, 25, accuracy: 0.001)
+        XCTAssertEqual(geometry.notchRect.maxY, screenFrame.maxY, accuracy: 0.001)
+        XCTAssertEqual(geometry.notchRect.midX, screenFrame.midX, accuracy: 1)
+        XCTAssertEqual(geometry.notchRect.width, 1728 * 0.18, accuracy: 1)
+        XCTAssertTrue(geometry.containsActivationPoint(CGPoint(x: screenFrame.midX, y: screenFrame.maxY - 1)))
+        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: screenFrame.minX + 10, y: screenFrame.maxY - 1)))
+        XCTAssertFalse(geometry.containsActivationPoint(CGPoint(x: screenFrame.midX, y: visibleFrame.maxY - 1)))
+    }
+
+    func testVirtualNotchClampsWidthAndHeightOnExtremeDisplays() {
+        guard let wideGeometry = ScreenNotchGeometry.virtual(
+            displayID: 2,
+            screenFrame: CGRect(x: 0, y: 0, width: 5120, height: 2160),
+            visibleFrame: CGRect(x: 0, y: 0, width: 5120, height: 2160),
+            localizedName: "Ultra Wide"
+        ) else {
+            return XCTFail("A wide display should still produce a virtual notch geometry.")
+        }
+
+        // 菜单栏自动隐藏时高度差为 0，热区仍要保留可命中的最小高度。
+        XCTAssertEqual(wideGeometry.notchRect.height, 26, accuracy: 0.001)
+        XCTAssertEqual(wideGeometry.notchRect.width, 320, accuracy: 0.001)
+
+        guard let narrowGeometry = ScreenNotchGeometry.virtual(
+            displayID: 3,
+            screenFrame: CGRect(x: 0, y: 0, width: 240, height: 400),
+            visibleFrame: CGRect(x: 0, y: 0, width: 240, height: 320),
+            localizedName: "Tiny Display"
+        ) else {
+            return XCTFail("A narrow display should still produce a virtual notch geometry.")
+        }
+
+        XCTAssertEqual(narrowGeometry.notchRect.width, 144, accuracy: 0.001)
+        XCTAssertTrue(narrowGeometry.hasNotch)
+    }
+
+    func testVirtualNotchLayoutStaysUsableForLauncherIcons() {
+        guard let geometry = ScreenNotchGeometry.virtual(
+            displayID: 9,
+            screenFrame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1728, height: 1067),
+            localizedName: "Studio Display"
+        ) else {
+            return XCTFail("A non-notched display should still produce a virtual notch geometry.")
+        }
+
+        let layout = LauncherPresentationContext(
+            geometry: geometry,
+            apps: WebAppDefinition.examples
+        ).layout
+
+        XCTAssertEqual(layout.barSize.width, geometry.notchRect.width, accuracy: 0.001)
+        XCTAssertGreaterThan(layout.barSize.height, geometry.notchRect.height)
+        XCTAssertGreaterThanOrEqual(layout.iconSize, 24)
+        XCTAssertGreaterThanOrEqual(layout.visibleAppCount, 1)
+    }
+
     func testActivationMatchesNotchBoundsExactly() {
         let geometry = ScreenNotchGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),

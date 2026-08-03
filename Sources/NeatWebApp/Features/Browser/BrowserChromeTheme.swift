@@ -3,10 +3,9 @@ import SwiftUI
 
 struct BrowserChromeTheme: Equatable {
     let pageColor: BrowserThemeColor
-    let barTopColor: BrowserThemeColor
-    let barBottomColor: BrowserThemeColor
     let foregroundColor: BrowserThemeColor
-    let dividerColor: BrowserThemeColor
+    /// 顶部渐变的起始色：反着页面明暗压一层，越往下越透明，给图标托底又不形成一条横条。
+    let chromeScrimColor: BrowserThemeColor
     let highlightedFillColor: BrowserThemeColor
 
     static let fallback = BrowserChromeTheme(pageColor: .fallbackBackground)
@@ -16,20 +15,13 @@ struct BrowserChromeTheme: Equatable {
         let usesLightForeground = resolvedPageColor.relativeLuminance < 0.5
 
         self.pageColor = resolvedPageColor
-        self.barTopColor = resolvedPageColor.blended(
-            with: usesLightForeground ? .white : .black,
-            amount: usesLightForeground ? 0.1 : 0.03
-        )
-        self.barBottomColor = resolvedPageColor.blended(
-            with: usesLightForeground ? .white : .black,
-            amount: usesLightForeground ? 0.04 : 0.08
-        )
         self.foregroundColor = usesLightForeground
             ? BrowserThemeColor(red: 0.97, green: 0.98, blue: 1)
             : BrowserThemeColor(red: 0.1, green: 0.12, blue: 0.16)
-        self.dividerColor = usesLightForeground
-            ? BrowserThemeColor(red: 1, green: 1, blue: 1, alpha: 0.14)
-            : BrowserThemeColor(red: 0, green: 0, blue: 0, alpha: 0.1)
+        // 渐变要"看得出来"但不能变成一条横条：只在页面色基础上推一小步，
+        // 方向按页面明暗决定——已经很深的页面再压黑就没有变化了，改为提亮。
+        self.chromeScrimColor = resolvedPageColor
+            .blended(with: resolvedPageColor.relativeLuminance > 0.06 ? .black : .white, amount: 0.12)
         self.highlightedFillColor = usesLightForeground
             ? BrowserThemeColor(red: 1, green: 1, blue: 1, alpha: 0.16)
             : BrowserThemeColor(red: 0, green: 0, blue: 0, alpha: 0.1)
@@ -44,7 +36,9 @@ struct BrowserThemeColor: Equatable, Sendable {
 
     static let white = BrowserThemeColor(red: 1, green: 1, blue: 1)
     static let black = BrowserThemeColor(red: 0, green: 0, blue: 0)
-    static let fallbackBackground = BrowserThemeColor(red: 0.11, green: 0.12, blue: 0.14)
+    /// 网页没有任何显式背景时浏览器实际绘制的颜色。必须是白色：
+    /// 用深色兜底会让顶部让位带在绝大多数站点上变成一条突兀的黑条。
+    static let fallbackBackground = BrowserThemeColor(red: 1, green: 1, blue: 1)
 
     init(red: Double, green: Double, blue: Double, alpha: Double = 1) {
         self.red = red.clamped(to: 0 ... 1)
@@ -83,6 +77,10 @@ struct BrowserThemeColor: Equatable, Sendable {
             blue: (blue * remainingAmount) + (other.blue * clampedAmount),
             alpha: (alpha * remainingAmount) + (other.alpha * clampedAmount)
         )
+    }
+
+    func withAlpha(_ newAlpha: Double) -> BrowserThemeColor {
+        BrowserThemeColor(red: red, green: green, blue: blue, alpha: newAlpha)
     }
 
     func resolved(over background: BrowserThemeColor) -> BrowserThemeColor {

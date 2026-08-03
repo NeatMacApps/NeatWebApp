@@ -15,11 +15,37 @@ settings:
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
     DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+    DEVELOPMENT_TEAM: SHZQ3MWP3B
+    # 版本号的唯一来源：两个 Info.plist 都通过构建变量取值，不再各写各的。
+    # MARKETING_VERSION 是给人看的展示版本（SemVer）；
+    # CURRENT_PROJECT_VERSION 是 Sparkle 判断新旧的唯一权威值，必须是严格递增的正整数。
+    MARKETING_VERSION: 0.3.0
+    CURRENT_PROJECT_VERSION: 3000
   configs:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
     Release:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+      # 对外分发：Developer ID 签名 + 加固运行时 + 可信时间戳，缺一样苹果公证都会打回。
+      # 本应用的权限只有摄像头与麦克风，属于加固运行时的资源访问权限，
+      # 不需要苹果背书，因此不配描述文件（留空是为了避免自动签名反过来去找一份）。
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGN_IDENTITY: "Developer ID Application"
+      PROVISIONING_PROFILE_SPECIFIER: ""
+      OTHER_CODE_SIGN_FLAGS: "--timestamp"
+      # 不注入调试权限：带 get-task-allow 的包苹果一定拒绝公证
+      CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.9.4"
+
+fileGroups:
+  - scripts
+  - README.md
+  - AGENTS.md
+  - CLAUDE.md
 
 targets:
   NeatWebApp:
@@ -40,6 +66,9 @@ targets:
         copy:
           destination: wrapper
           subpath: Contents/Library/LoginItems
+      # 自动更新只装在宿主上：运行时是被宿主整包替换的，不需要也不能自己更新
+      - package: Sparkle
+        product: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebApp
@@ -65,8 +94,14 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebAppRuntime
+        # 运行时只以「被宿主内嵌」的形式存在，不是独立分发的产品。
+        # 不设这一项，归档里 Products/Applications 下会同时出现宿主和运行时两个应用，
+        # Xcode 判定不出该按哪种方式分发：导出时报 "Unknown Distribution Error"、
+        # method 的可选值列表为空，发版在导出这一步直接卡死。
+        SKIP_INSTALL: YES
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Sources/NeatWebAppRuntime/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/NeatWebAppRuntime/App/NeatWebAppRuntime.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   NeatWebAppTests:

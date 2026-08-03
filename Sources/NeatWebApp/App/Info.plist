@@ -15,9 +15,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
     <key>LSMinimumSystemVersion</key>
@@ -27,6 +27,30 @@
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>LSUIElement</key>
+    <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>网页应用需要在你授权后使用摄像头，例如视频通话或拍摄。</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>网页应用需要在你授权后使用麦克风，例如语音通话或录音。</string>
+    <!-- 应用内自动更新（Sparkle）。更新清单只放在公开更新仓，不含源码，匿名可读。 -->
+    <key>SUFeedURL</key>
+    <string>https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml</string>
+    <!-- EdDSA 更新公钥。私钥只存在发版机钥匙串里，仓库里永远只有公钥。
+         首次发版前必须在 Mac 上用 Sparkle 的 generate_keys 生成并把公钥填到这里，
+         发版脚本会检查这个占位值还在不在，没换掉就直接退出。 -->
+    <key>SUPublicEDKey</key>
+    <string>Gx3Vl5E1hvlkO7ufw7HhqmxxLDikBG6JQSb3Ok8qL6Q=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUAutomaticallyUpdate</key>
+    <true/>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
+    <!-- 这两项必须成对开启：更新清单本身与版本说明也要验签，不只验安装包。
+         开启后任何对已签名文件的手工改动都必须重新签名，发版脚本里不得再有「生成完再改两下」的步骤。 -->
+    <key>SURequireSignedFeed</key>
+    <true/>
+    <key>SUVerifyUpdateBeforeExtraction</key>
     <true/>
 </dict>
 </plist>

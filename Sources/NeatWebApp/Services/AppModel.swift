@@ -7,6 +7,7 @@ import AppKit
 final class AppModel {
     private static let launcherHideDelay: Duration = .milliseconds(800)
     private static let launcherTransitionDuration: Duration = .milliseconds(220)
+    private static let virtualNotchHoverIntentDelay: Duration = .milliseconds(260)
 
     private(set) var apps: [WebAppDefinition] = []
     private(set) var detectedNotchScreens: [ScreenNotchGeometry] = []
@@ -18,6 +19,11 @@ final class AppModel {
     private(set) var activeRuntimeAppID: String?
     private(set) var faviconImages: [String: NSImage] = [:]
     private(set) var isLaunchAtLoginEnabled = false
+    private(set) var sideDockEdge: SideDockEdge = .right
+    private(set) var sideDockVerticalPosition = SideDockPlacementResolver.defaultVerticalPosition
+    private(set) var sideDockDisplayID: CGDirectDisplayID?
+    private(set) var isVirtualNotchEnabled = AppPreferencesStore.defaultVirtualNotchEnabled
+    private(set) var collapsedWebApps: [WebAppDefinition] = []
 
     @ObservationIgnored
     private let overlayController = LauncherOverlayController()
@@ -29,7 +35,6 @@ final class AppModel {
     private let notchDebugOverlayController = NotchDebugOverlayController()
 
     @ObservationIgnored
-    @ObservationIgnored
     private let customAppStore = CustomWebAppStore()
 
     @ObservationIgnored
@@ -39,12 +44,21 @@ final class AppModel {
     private let launchAtLoginService = LaunchAtLoginService()
 
     @ObservationIgnored
+    private let appPreferencesStore = AppPreferencesStore()
+
+    @ObservationIgnored
+    private let sideDockOverlayController = SideDockOverlayController()
+
+    @ObservationIgnored
     private lazy var runtimeCoordinator = WebAppRuntimeCoordinator(
         onActiveAppIDChange: { [weak self] appID in
             self?.activeRuntimeAppID = appID
         },
         onDiagnosticMessage: { [weak self] message in
             self?.diagnosticsMessage = message
+        },
+        onRuntimeStatesChange: { [weak self] states in
+            self?.handleRuntimeStatesChange(states)
         }
     )
 
@@ -63,6 +77,12 @@ final class AppModel {
     @ObservationIgnored
     private var hideLauncherTask: Task<Void, Never>?
 
+    @ObservationIgnored
+    private var pendingActivationTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var pendingActivationGeometryID: String?
+
     func startIfNeeded() {
         guard !hasStarted else {
             return
@@ -71,6 +91,8 @@ final class AppModel {
         hasStarted = true
         loadApps()
         restoreCachedFavicons()
+        // 虚拟刘海开关会影响屏幕热区的识别结果，必须先恢复偏好再做首次识别。
+        loadAppPreferences()
         refreshScreenState()
         refreshLaunchAtLoginState()
         runtimeCoordinator.refreshRegistry()
@@ -92,12 +114,33 @@ final class AppModel {
     }
 
     func refreshScreenState() {
-        detectedNotchScreens = NSScreen.screens.compactMap(ScreenNotchGeometry.init(screen:))
-        notchDebugOverlayController.update(with: detectedNotchScreens, isVisible: isNotchDebugOverlayVisible)
+        detectedNotchScreens = NSScreen.screens.compactMap { screen in
+            if let hardwareGeometry = ScreenNotchGeometry(screen: screen) {
+                return hardwareGeometry
+            }
 
-        diagnosticsMessage = detectedNotchScreens.isEmpty
-        ? "No notched display was detected. The launcher scaffold still works, but notch-triggered reveal will stay inactive."
-        : "Detected \(detectedNotchScreens.count) notched display(s). Hover the notch area to reveal the launcher."
+            guard isVirtualNotchEnabled else {
+                return nil
+            }
+
+            return ScreenNotchGeometry.virtual(screen: screen)
+        }
+
+        // 屏幕参数变化在启动瞬间也会触发，这里只清理已经消失的热区，
+        // 否则会顺手取消掉刚排上的悬停等待，指针停着不动就再也等不到展开。
+        if let pendingActivationGeometryID,
+           !detectedNotchScreens.contains(where: { $0.id == pendingActivationGeometryID }) {
+            cancelPendingActivation()
+        }
+
+        if let launcherGeometry = launcherContext?.geometry,
+           !detectedNotchScreens.contains(where: { $0.id == launcherGeometry.id }) {
+            hideLauncher(immediately: true)
+        }
+
+        notchDebugOverlayController.update(with: detectedNotchScreens, isVisible: isNotchDebugOverlayVisible)
+        syncSideDockOverlay()
+        diagnosticsMessage = screenDiagnosticsMessage
     }
 
     func toggleNotchDebugOverlay() {
@@ -108,16 +151,32 @@ final class AppModel {
     func revealLauncherManually() {
         refreshScreenState()
 
-        guard let geometry = detectedNotchScreens.first else {
-            diagnosticsMessage = "Manual reveal needs a notched display, or a future fallback mode."
+        guard let geometry = mainScreenPreferredGeometry else {
+            diagnosticsMessage = "Manual reveal found no usable notch zone. Enable the virtual notch in Settings to use non-notched displays."
             return
         }
 
         showLauncher(for: geometry)
     }
 
+    func setVirtualNotchEnabled(_ isEnabled: Bool) {
+        guard isVirtualNotchEnabled != isEnabled else {
+            return
+        }
+
+        isVirtualNotchEnabled = isEnabled
+        saveAppPreferences()
+
+        // 关掉虚拟刘海时，正挂在虚拟热区上的启动器必须立刻撤掉，否则会留在菜单栏上。
+        if !isEnabled, launcherContext?.geometry.isVirtual == true {
+            hideLauncher(immediately: true)
+        }
+
+        refreshScreenState()
+    }
+
     func openWebApp(_ app: WebAppDefinition) {
-        let preferredGeometry = launcherContext?.geometry ?? defaultWebAppOpenGeometry
+        let preferredGeometry = launcherContext?.geometry ?? mainScreenPreferredGeometry
         hideLauncher(afterDelay: .zero)
         runtimeCoordinator.open(app, preferredGeometry: preferredGeometry)
     }
@@ -183,8 +242,43 @@ final class AppModel {
         refreshLaunchAtLoginState()
     }
 
+    func setSideDockEdge(_ edge: SideDockEdge) {
+        guard sideDockEdge != edge else {
+            return
+        }
+
+        sideDockEdge = edge
+        saveAppPreferences()
+        syncSideDockOverlay()
+    }
+
+    func updateSideDockPlacement(
+        verticalPosition: CGFloat,
+        displayID: CGDirectDisplayID?
+    ) {
+        sideDockVerticalPosition = min(max(verticalPosition, 0), 1)
+        sideDockDisplayID = displayID
+        saveAppPreferences()
+        syncSideDockOverlay()
+    }
+
+    func expandCollapsedWebApp(_ app: WebAppDefinition) {
+        runtimeCoordinator.expand(appID: app.id)
+    }
+
+    func closeCollapsedWebApp(_ app: WebAppDefinition) {
+        runtimeCoordinator.terminate(appID: app.id)
+    }
+
+    /// 应用即将被自动更新覆盖安装：先收掉所有 WebApp 运行时，
+    /// 否则它们会继续跑在被替换掉的旧应用包上。
+    func prepareForApplicationUpdate() {
+        runtimeCoordinator.terminateAll()
+    }
+
     func dismissLauncherVoluntarily() {
         isTemporarilySuppressed = true
+        cancelPendingActivation()
         hideLauncher(afterDelay: .zero)
     }
 
@@ -277,16 +371,68 @@ final class AppModel {
         }
 
         if let geometry = geometryForActivation {
+            requestLauncher(for: geometry, isClick: isClick)
+            return
+        }
+
+        cancelPendingActivation()
+        hideLauncher()
+    }
+
+    /// 硬件刘海背后没有任何系统控件，指针一进入就可以展开。
+    /// 虚拟热区压在菜单栏上，必须先要求指针停留一小段时间，
+    /// 否则用户只是路过去点菜单，也会被启动器抢走。
+    private func requestLauncher(for geometry: ScreenNotchGeometry, isClick: Bool) {
+        guard geometry.isVirtual, !isLauncherVisible else {
+            cancelPendingActivation()
             showLauncher(for: geometry)
             return
         }
 
-        hideLauncher()
+        // 虚拟热区上的点击一律让给菜单栏，不在这里抢焦点。
+        guard !isClick else {
+            cancelPendingActivation()
+            return
+        }
+
+        guard pendingActivationGeometryID != geometry.id else {
+            return
+        }
+
+        cancelPendingActivation()
+        pendingActivationGeometryID = geometry.id
+        pendingActivationTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: Self.virtualNotchHoverIntentDelay)
+            } catch {
+                return
+            }
+
+            guard let self, !Task.isCancelled else {
+                return
+            }
+
+            self.pendingActivationTask = nil
+            self.pendingActivationGeometryID = nil
+
+            guard geometry.containsActivationPoint(NSEvent.mouseLocation) else {
+                return
+            }
+
+            self.showLauncher(for: geometry)
+        }
+    }
+
+    private func cancelPendingActivation() {
+        pendingActivationTask?.cancel()
+        pendingActivationTask = nil
+        pendingActivationGeometryID = nil
     }
 
     private func showLauncher(for geometry: ScreenNotchGeometry) {
         hideLauncherTask?.cancel()
         hideLauncherTask = nil
+        cancelPendingActivation()
 
         if isLauncherVisible, launcherContext?.geometry == geometry {
             return
@@ -302,6 +448,7 @@ final class AppModel {
         apps.append(app)
         customAppStore.save(apps)
         ensureFaviconLoaded(for: app)
+        runtimeCoordinator.refreshRegistry()
     }
 
     func updateWebAppURL(_ app: WebAppDefinition, to homeURL: URL) {
@@ -325,6 +472,7 @@ final class AppModel {
         failedFaviconAppIDs.remove(app.id)
         faviconStore.delete(for: app.id)
         ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
+        runtimeCoordinator.refreshRegistry()
     }
 
     func deleteCustomApp(_ app: WebAppDefinition) {
@@ -333,11 +481,13 @@ final class AppModel {
         faviconImages.removeValue(forKey: app.id)
         failedFaviconAppIDs.remove(app.id)
         faviconStore.delete(for: app.id)
+        runtimeCoordinator.refreshRegistry()
     }
 
     func moveCustomApps(from source: IndexSet, to destination: Int) {
         apps.move(fromOffsets: source, toOffset: destination)
         customAppStore.save(apps)
+        runtimeCoordinator.refreshRegistry()
     }
 
     private func loadApps() {
@@ -348,6 +498,52 @@ final class AppModel {
             apps = WebAppDefinition.examples + legacyApps
             customAppStore.save(apps)
         }
+    }
+
+    private func loadAppPreferences() {
+        let fallbackScreen = NSScreen.main ?? NSScreen.screens.first
+        let defaultEdge = fallbackScreen.map {
+            SideDockPlacementResolver.recommendedDefaultEdge(
+                screenFrame: $0.frame,
+                visibleFrame: $0.visibleFrame
+            )
+        } ?? .right
+        let preferences = appPreferencesStore.load(defaultEdge: defaultEdge)
+        sideDockEdge = preferences.sideDockEdge
+        sideDockVerticalPosition = preferences.sideDockVerticalPosition
+        sideDockDisplayID = preferences.sideDockDisplayID
+        isVirtualNotchEnabled = preferences.isVirtualNotchEnabled
+    }
+
+    private func saveAppPreferences() {
+        appPreferencesStore.save(
+            AppPreferences(
+                sideDockEdge: sideDockEdge,
+                sideDockVerticalPosition: sideDockVerticalPosition,
+                sideDockDisplayID: sideDockDisplayID,
+                isVirtualNotchEnabled: isVirtualNotchEnabled
+            )
+        )
+    }
+
+    private func handleRuntimeStatesChange(_ states: [RuntimeState]) {
+        let collapsedAppIDs = Set(
+            states.lazy
+                .filter { $0.phase == .collapsedToFloatingIcon }
+                .map(\.appID)
+        )
+        collapsedWebApps = apps.filter { collapsedAppIDs.contains($0.id) }
+        syncSideDockOverlay()
+    }
+
+    private func syncSideDockOverlay() {
+        sideDockOverlayController.update(
+            apps: collapsedWebApps,
+            edge: sideDockEdge,
+            verticalPosition: sideDockVerticalPosition,
+            preferredDisplayID: sideDockDisplayID,
+            appModel: self
+        )
     }
 
     private func preloadFavicons() {
@@ -366,7 +562,25 @@ final class AppModel {
         }
     }
 
-    private var defaultWebAppOpenGeometry: ScreenNotchGeometry? {
+    private var screenDiagnosticsMessage: String {
+        let hardwareCount = detectedNotchScreens.count(where: { !$0.isVirtual })
+        let virtualCount = detectedNotchScreens.count(where: \.isVirtual)
+
+        switch (hardwareCount, virtualCount) {
+        case (0, 0):
+            return isVirtualNotchEnabled
+            ? "No usable notch zone was detected on any display."
+            : "No notched display was detected. Enable the virtual notch in Settings to reveal the launcher on non-notched displays."
+        case (let hardware, 0):
+            return "Detected \(hardware) notched display(s). Hover the notch area to reveal the launcher."
+        case (0, let virtual):
+            return "No hardware notch was detected. \(virtual) display(s) use a virtual notch zone: rest the pointer on the top center of the screen to reveal the launcher."
+        case (let hardware, let virtual):
+            return "Detected \(hardware) notched display(s) and \(virtual) display(s) with a virtual notch zone at the top center."
+        }
+    }
+
+    private var mainScreenPreferredGeometry: ScreenNotchGeometry? {
         guard let mainScreen = NSScreen.main else {
             return detectedNotchScreens.first
         }

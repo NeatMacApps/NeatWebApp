@@ -17,10 +17,11 @@ struct BrowserWebView: NSViewRepresentable {
         configuration.userContentController.add(context.coordinator, name: BrowserThemeObserver.messageHandlerName)
         configuration.userContentController.addUserScript(BrowserThemeObserver.makeUserScript())
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = BrowserKeyCommandWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.underPageBackgroundColor = session.chromeTheme.pageColor.nsColor
+        webView.session = session
 
         session.attach(webView: webView)
         return webView
@@ -33,9 +34,11 @@ struct BrowserWebView: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         private let session: BrowserSession
+        private let downloadManager: BrowserDownloadManager
 
         init(session: BrowserSession) {
             self.session = session
+            self.downloadManager = BrowserDownloadManager(session: session)
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -71,6 +74,59 @@ struct BrowserWebView: NSViewRepresentable {
 
         func webView(
             _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void
+        ) {
+            if navigationAction.shouldPerformDownload {
+                decisionHandler(.download)
+                return
+            }
+
+            switch BrowserExternalNavigationPolicy.decision(
+                for: navigationAction.request.url,
+                isUserInitiated: navigationAction.navigationType == .linkActivated
+            ) {
+            case .allowInWebView:
+                decisionHandler(.allow)
+            case .openExternally:
+                openExternally(navigationAction.request.url)
+                decisionHandler(.cancel)
+            case .confirmBeforeOpening:
+                if confirmExternalNavigation(url: navigationAction.request.url, sourceURL: webView.url) {
+                    openExternally(navigationAction.request.url)
+                }
+                decisionHandler(.cancel)
+            case .reject:
+                decisionHandler(.cancel)
+            }
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationResponse: WKNavigationResponse,
+            decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void
+        ) {
+            if navigationResponse.canShowMIMEType {
+                decisionHandler(.allow)
+            } else {
+                decisionHandler(.download)
+            }
+        }
+
+        func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+            download.delegate = downloadManager
+            downloadManager.track(download, suggestedFilename: navigationAction.request.url?.lastPathComponent)
+            session.syncNavigationState(from: webView)
+        }
+
+        func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+            download.delegate = downloadManager
+            downloadManager.track(download, suggestedFilename: navigationResponse.response.suggestedFilename)
+            session.syncNavigationState(from: webView)
+        }
+
+        func webView(
+            _ webView: WKWebView,
             createWebViewWith configuration: WKWebViewConfiguration,
             for navigationAction: WKNavigationAction,
             windowFeatures: WKWindowFeatures
@@ -81,6 +137,10 @@ struct BrowserWebView: NSViewRepresentable {
 
             webView.load(navigationAction.request)
             return nil
+        }
+
+        func webViewDidClose(_ webView: WKWebView) {
+            session.closeWindow()
         }
 
         func webView(
@@ -111,12 +171,55 @@ struct BrowserWebView: NSViewRepresentable {
             )
         }
 
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptTextInputPanelWithPrompt prompt: String,
+            defaultText: String?,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping @MainActor (String?) -> Void
+        ) {
+            completionHandler(
+                presentTextInput(
+                    messageText: webView.title ?? session.definition.name,
+                    informativeText: prompt,
+                    defaultText: defaultText
+                )
+            )
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runOpenPanelWith parameters: WKOpenPanelParameters,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping @MainActor ([URL]?) -> Void
+        ) {
+            let openPanel = NSOpenPanel()
+            openPanel.canChooseDirectories = parameters.allowsDirectories
+            openPanel.canChooseFiles = true
+            openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection
+            openPanel.canCreateDirectories = false
+            openPanel.message = "选择要上传到网页的文件"
+
+            let response = openPanel.runModal()
+            completionHandler(response == .OK ? openPanel.urls : nil)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(.prompt)
+        }
+
         private func presentAlert(messageText: String, informativeText: String, style: NSAlert.Style) {
             let alert = NSAlert()
             alert.messageText = messageText
             alert.informativeText = informativeText
             alert.alertStyle = style
-            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: "确定")
             alert.runModal()
         }
 
@@ -125,10 +228,91 @@ struct BrowserWebView: NSViewRepresentable {
             alert.messageText = messageText
             alert.informativeText = informativeText
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "OK")
-            alert.addButton(withTitle: "Cancel")
+            alert.addButton(withTitle: "确定")
+            alert.addButton(withTitle: "取消")
             return alert.runModal() == .alertFirstButtonReturn
         }
+
+        private func presentTextInput(messageText: String, informativeText: String, defaultText: String?) -> String? {
+            let alert = NSAlert()
+            alert.messageText = messageText
+            alert.informativeText = informativeText
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "确定")
+            alert.addButton(withTitle: "取消")
+
+            let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+            textField.stringValue = defaultText ?? ""
+            alert.accessoryView = textField
+
+            guard alert.runModal() == .alertFirstButtonReturn else {
+                return nil
+            }
+
+            return textField.stringValue
+        }
+
+        private func confirmExternalNavigation(url: URL?, sourceURL: URL?) -> Bool {
+            let target = url?.absoluteString ?? "未知地址"
+            let source = sourceURL?.host(percentEncoded: false) ?? session.definition.name
+            return presentConfirmation(
+                messageText: "打开外部应用？",
+                informativeText: "\(source) 想打开：\n\(target)"
+            )
+        }
+
+        private func openExternally(_ url: URL?) {
+            guard let url else {
+                return
+            }
+
+            if NSWorkspace.shared.open(url) == false {
+                presentAlert(
+                    messageText: "无法打开外部链接",
+                    informativeText: url.absoluteString,
+                    style: .warning
+                )
+            }
+        }
+    }
+}
+
+/// 承载浏览器级快捷键的 WebView。
+///
+/// 快捷键必须在 `performKeyEquivalent` 阶段拦截：网页内的输入框拿到焦点时，
+/// 普通 `keyDown` 会先被网页消费，用户就按不动刷新、前进后退和缩放了。
+final class BrowserKeyCommandWebView: WKWebView {
+    weak var session: BrowserSession?
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard let session, let command = BrowserKeyCommand.resolve(event: event) else {
+            return super.performKeyEquivalent(with: event)
+        }
+
+        switch command {
+        case .zoomIn:
+            session.increaseZoom()
+        case .zoomOut:
+            session.decreaseZoom()
+        case .resetZoom:
+            session.resetZoom()
+        case .reload:
+            session.reload()
+        case .reloadIgnoringCache:
+            session.reloadIgnoringCache()
+        case .goBack:
+            session.goBack()
+        case .goForward:
+            session.goForward()
+        case .goHome:
+            session.goHome()
+        case .printPage:
+            session.printPage()
+        case .collapseWindow:
+            session.collapseWindow()
+        }
+
+        return true
     }
 }
 
@@ -191,17 +375,39 @@ private enum BrowserThemeObserver {
                     };
                 };
 
+                // 顶栏让位带要和页面顶端严丝合缝，所以直接取视口最上沿真正被绘制出来的颜色：
+                // 从顶端中点向上找第一个不透明背景，命中的往往就是站点自己的顶部导航底色。
+                const readTopEdgeBackground = () => {
+                    const width = window.innerWidth || document.documentElement?.clientWidth || 0;
+                    if (width <= 0) {
+                        return null;
+                    }
+
+                    let node = document.elementFromPoint(Math.floor(width / 2), 1);
+                    while (node) {
+                        const backgroundColor = getComputedStyle(node).backgroundColor;
+                        const parsed = parseColor(backgroundColor);
+                        if (parsed && parsed.alpha > 0.95) {
+                            return backgroundColor;
+                        }
+                        node = node.parentElement;
+                    }
+
+                    return null;
+                };
+
                 const readCandidateColors = () => {
                     const candidates = [];
-                    const themeColor = document.head?.querySelector('meta[name="theme-color"]')?.content;
-                    if (themeColor) {
-                        candidates.push(themeColor);
+
+                    const topEdgeBackground = readTopEdgeBackground();
+                    if (topEdgeBackground) {
+                        candidates.push(topEdgeBackground);
                     }
 
                     const nodes = [
-                        document.querySelector(candidateSelector),
                         document.body,
-                        document.documentElement
+                        document.documentElement,
+                        document.querySelector(candidateSelector)
                     ].filter(Boolean);
 
                     for (const node of nodes) {
@@ -210,6 +416,16 @@ private enum BrowserThemeObserver {
                             candidates.push(backgroundColor);
                         }
                     }
+
+                    // 站点声明的主题色是给浏览器界面用的提示色，常常故意和页面背景不同
+                    // （例如页面是白的、主题色却是品牌蓝或深灰），只能当兜底，不能优先。
+                    const themeColor = document.head?.querySelector('meta[name="theme-color"]')?.content;
+                    if (themeColor) {
+                        candidates.push(themeColor);
+                    }
+
+                    // 页面没有任何显式背景时，浏览器实际画的是白色；退回深色会让让位带变成一条黑条。
+                    candidates.push('rgb(255, 255, 255)');
 
                     return candidates;
                 };
