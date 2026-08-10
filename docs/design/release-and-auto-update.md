@@ -40,15 +40,11 @@
 - **「另一台电脑收不到更新」先查公开 appcast，再查本机构建号。** 匿名打开 `https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml`，看最新 `sparkle:version`；若本地 `project.yml` 已抬版本但 appcast 仍是旧号，说明**还没跑完整 `publish-release.sh`**，不是客户端坏了。本机构建号 ≥ 线上最新时，Sparkle 正确表现为「已是最新」。
 - **一上来就开签名清单校验。** `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction` 成对开启（Sparkle 要求必须成对），不只签更新包，连更新清单本身和版本说明也验签。清单自身的签名不是 XML 属性，而是 `generate_appcast` 追加在文件末尾的 `<!-- sparkle-signatures: … -->` 注释块，发版脚本按这个特征做检查。**开启后不允许再手工改已签名的 appcast**，脚本里不得出现「生成完再 sed 改两下」这种步骤。
 
-## Mac 接手：发 v0.3.2（2026-08-10 会话未完成）
+## v0.3.2 发布与升级验证（2026-08-10）
 
-本地已备好 `project.yml` 的 `0.3.2` / `3020` 与 `scripts/release-notes/0.3.2.md`，但公开仓仍停在 **0.3.1**（无 `v0.3.2` tag / Release / zip）。在 Mac 上执行：
+`v0.3.2`（内部构建号 `3020`）已完成签名、公证、装订、两仓发布。公开更新仓的 appcast、zip 与 dmg 均已用匿名请求验证可访问。
 
-```bash
-cd ~/Codes/NeatWebApp/app-macos && scripts/publish-release.sh
-```
-
-发完后用匿名请求确认 appcast 含 `3020`，再在装有 0.3.1 的机器上点「检查更新…」验证。
+已用从公开仓下载的 `0.3.1` 独立副本做真实升级：旧版完成检查后正常退出，应用包被替换为 `0.3.2` / `3020`。因此自动检查、下载和安装链路已完成首次端到端验证。
 
 ## 换发版机时要人手做的两步
 
@@ -79,12 +75,10 @@ scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不�
 
 **在家里的网络下公证会卡死**，判别与临时绕过（换手机热点）见 [苹果公证上传在家里网络下必定卡死](../../../../.config/agentsync/docs/troubleshooting/2026-07-31-apple-notary-upload-stall.md)；这条修好之前发版要么换网络、要么先解决路由器分流，别误判成签名配置问题反复重交。
 
-## 首次发版的验证结果（2026-08-03）
-
-首次发版时逐条确认过的判断，除最后一条外均已被真机证实：
+## 发布与升级验证结果
 
 - 两处 `Info.plist` 的版本号确实取自构建变量，归档 `Info.plist` 的 `ApplicationProperties` 显示 `0.3.0` / `3000`。✅
 - 内嵌运行时、Sparkle 框架及其内部 4 个辅助程序，导出后全部为 Developer ID 签名 + 加固运行时 + 可信时间戳。✅（**但这只在走 archive + export 时成立**，见上节）
 - `spctl -a -vvv -t exec` 对应用包判定为 `accepted`，正式 dmg 匿名下载后 `stapler validate` 通过。✅
 - `generate_appcast` 的构建号取到了实际值，线上 appcast 终检通过，防回退检查有效。✅
-- **仍未验证**：Sparkle 的两个安装回调是否真的被调用到（`@objc` 可选协议方法签名写错时不报编译错误，只会静默不触发）。验证方式是从 0.3.1 起观察一次真实的应用内升级，看升级过程中 WebApp 窗口是否被正常收掉。0.3.0 → 0.3.1 是本项目第一次具备验证条件的升级。
+- Sparkle 更新链路已由 `0.3.1 → 0.3.2` 的真实应用内升级验证：旧版能发现、下载并在退出时替换为新版本。✅
