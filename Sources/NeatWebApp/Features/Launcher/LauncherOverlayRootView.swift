@@ -6,12 +6,17 @@ struct LauncherOverlayRootView: View {
     @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
     @State private var edgeFadeState = LauncherEdgeFadeState.none
+    /// 拖动时的应用顺序工作副本：拖动过程中实时换位，松手时整份写回持久层。
+    @State private var orderedApps: [WebAppDefinition] = []
+    @State private var draggingAppID: String?
+    @State private var draggingStartIndex = 0
+    @State private var dragOffsetX: CGFloat = 0
 
     let context: LauncherPresentationContext
     let onSelectApp: (WebAppDefinition) -> Void
 
     private var launcherItems: [LauncherItem] {
-        context.apps.map(LauncherItem.webApp) + [.dashboard]
+        orderedApps.map(LauncherItem.webApp) + [.dashboard]
     }
 
     var body: some View {
@@ -32,6 +37,7 @@ struct LauncherOverlayRootView: View {
         }
         .frame(width: context.panelSize.width, height: context.panelSize.height)
         .onAppear {
+            orderedApps = context.apps
             isExpanded = false
             resetEdgeFadeState(for: layout)
             updateExpandedState(for: appModel.isLauncherVisible, animated: true)
@@ -40,6 +46,7 @@ struct LauncherOverlayRootView: View {
             updateExpandedState(for: isLauncherVisible, animated: true)
         }
         .onChange(of: context.apps.count) { _, _ in
+            orderedApps = context.apps
             resetEdgeFadeState(for: context.layout)
         }
         .onChange(of: context.panelSize) { _, _ in
@@ -116,16 +123,115 @@ struct LauncherOverlayRootView: View {
     private func iconButtons(layout: LauncherPresentationContext.Layout) -> some View {
         HStack(alignment: .top, spacing: layout.iconSpacing) {
             ForEach(launcherItems) { item in
-                Button {
-                    handleSelection(for: item)
-                } label: {
-                    launcherIcon(for: item, layout: layout)
-                }
-                .buttonStyle(.plain)
-                .help(item.helpText)
-                .accessibilityLabel(item.helpText)
+                iconButton(item: item, layout: layout)
             }
         }
+    }
+
+    /// 图标入口。不能再用 `Button`：macOS 的 Button 按下后会自己跟踪鼠标，
+    /// 拖动手势的滑动事件会被它吞掉，导致「拖动不跟手」。这里用
+    /// 普通点击 + 拖动手势的组合，两者由手势系统按位移竞争。
+    private func iconButton(item: LauncherItem, layout: LauncherPresentationContext.Layout) -> some View {
+        launcherIcon(for: item, layout: layout)
+            .contentShape(Rectangle())
+            .help(item.helpText)
+            .accessibilityLabel(item.helpText)
+            .accessibilityAddTraits(.isButton)
+            .offset(x: dragOffsetX(for: item))
+            .zIndex(draggingAppID == item.id ? 1 : 0)
+            .onTapGesture {
+                handleSelection(for: item)
+            }
+            .gesture(itemDragGesture(for: item))
+    }
+
+    private func itemDragGesture(for item: LauncherItem) -> some Gesture {
+        switch item {
+        case .webApp(let app):
+            DragGesture(minimumDistance: 3)
+                .onChanged { value in
+                    handleDragChanged(for: app, value: value)
+                }
+                .onEnded { _ in
+                    handleDragEnded()
+                }
+        case .dashboard:
+            // 加号入口固定在最右，不参与换位。
+            DragGesture(minimumDistance: .greatestFiniteMagnitude)
+                .onChanged { _ in }
+                .onEnded { _ in }
+        }
+    }
+
+    private func dragOffsetX(for item: LauncherItem) -> CGFloat {
+        switch item {
+        case .webApp(let app) where app.id == draggingAppID:
+            return dragOffsetX
+        default:
+            return 0
+        }
+    }
+
+    private func handleDragChanged(for app: WebAppDefinition, value: DragGesture.Value) {
+        debugDragLog("BEGIN app=\(app.name) orderedCount=\(orderedApps.count) trans=\(value.translation.width)")
+
+        if draggingAppID != app.id {
+            draggingAppID = app.id
+            draggingStartIndex = orderedApps.firstIndex(of: app) ?? 0
+            dragOffsetX = 0
+        }
+
+        let slotWidth = context.layout.iconSize + context.layout.iconSpacing
+        guard slotWidth > 0, let currentIndex = orderedApps.firstIndex(of: app) else {
+            debugDragLog("EARLY-RETURN slotWidth=\(slotWidth) found=\(orderedApps.contains(app))")
+            return
+        }
+
+        let targetIndex = LauncherRowReorder.targetIndex(
+            startIndex: draggingStartIndex,
+            translationX: value.translation.width,
+            slotWidth: slotWidth,
+            itemCount: orderedApps.count
+        )
+
+        if targetIndex != currentIndex {
+            // 拖动中必须即时换位：带过渡动画时图标会慢半拍，表现出「不跟手」。
+            orderedApps.move(
+                fromOffsets: IndexSet(integer: currentIndex),
+                toOffset: targetIndex > currentIndex ? targetIndex + 1 : targetIndex
+            )
+        }
+
+        dragOffsetX = LauncherRowReorder.offset(
+            translationX: value.translation.width,
+            targetIndex: targetIndex,
+            startIndex: draggingStartIndex,
+            slotWidth: slotWidth
+        )
+
+        debugDragLog("MOVE start=\(draggingStartIndex) current=\(currentIndex) target=\(targetIndex) offset=\(dragOffsetX) order=\(orderedApps.map(\.name).joined(separator: ","))")
+    }
+
+    private func handleDragEnded() {
+        let finalOrder = orderedApps
+        draggingAppID = nil
+        dragOffsetX = 0
+        appModel.applyAppOrder(finalOrder)
+    }
+
+    private func debugDragLog(_ message: String) {
+        let url = URL(fileURLWithPath: "/tmp/neatwebapp_drag.log")
+        if !FileManager.default.fileExists(atPath: url.path) {
+            FileManager.default.createFile(atPath: url.path, contents: nil)
+        }
+        guard let handle = try? FileHandle(forWritingTo: url) else {
+            return
+        }
+        try? handle.seekToEnd()
+        if let data = "[\(Date().timeIntervalSince1970)] \(message)\n".data(using: .utf8) {
+            try? handle.write(contentsOf: data)
+        }
+        try? handle.close()
     }
 
     @ViewBuilder
@@ -154,7 +260,7 @@ struct LauncherOverlayRootView: View {
             onSelectApp(app)
         case .dashboard:
             appModel.hideLauncher(immediately: true)
-            openWindow(id: "dashboard")
+            openWindow(id: AppWindowID.main)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
@@ -205,7 +311,7 @@ private enum LauncherItem: Identifiable {
         case .webApp(let app):
             return app.name
         case .dashboard:
-            return "Open Dashboard"
+            return "打开主窗口"
         }
     }
 }

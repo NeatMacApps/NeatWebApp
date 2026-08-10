@@ -1,0 +1,62 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "settings.login.startup.blocked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "macOS has suspended this login item. Turn it back on once in System Settings." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "系统已挂起该登录项，需要在系统设置里重新打开一次。" } }
+      }
+    },
+    "settings.login.startup.open_system_settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open System Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开设置" } }
+      }
+    },
+    "settings.login.startup.open_system_settings.accessibility_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open System Settings to re-enable launch at login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开系统设置以重新启用开机启动" } }
+      }
+    },
+    "settings.login.startup.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开机时自动启动" } }
+      }
+    },
+    "settings.section.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置" } }
+      }
+    },
+    "settings.side_dock.edge.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Side Dock Position" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "侧边刘海位置" } }
+      }
+    },
+    "settings.virtual_notch.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "External displays, Mac mini, Mac Studio, and older MacBooks don’t have a hardware notch. When enabled, hovering briefly at the top center of the screen opens the launcher." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "外接显示器、Mac mini / Studio 与旧款 MacBook 没有硬件刘海。开启后屏幕顶部中央会有一块等效热区，指针停留一下即可唤出启动器。" } }
+      }
+    },
+    "settings.virtual_notch.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable on Displays Without a Notch" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在没有刘海的屏幕上启用" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

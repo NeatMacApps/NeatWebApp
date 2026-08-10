@@ -15,7 +15,7 @@ This document describes the current structure of NeatWebApp after the host/runti
 
 The host app owns:
 
-- the dashboard window
+- the main window, which also hosts every app-level setting (there is no separate Settings window)
 - the menu bar entry and commands
 - launcher presentation and notch activation monitoring
 - the side notch Dock, its left/right setting, and edge position persistence
@@ -149,7 +149,7 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 
 ## Persistence
 
-- `CustomWebAppStore` 持久化用户管理的 app catalog，包括 Dashboard 中对每个 app 已配置 URL 的编辑。
+- `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
 - `WebAppPreferencesStore` persists zoom, pinned state, and saved window placement.
 - `AppPreferencesStore` persists the side Dock edge, normalized vertical position, and target display.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.

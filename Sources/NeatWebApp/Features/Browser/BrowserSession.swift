@@ -36,6 +36,13 @@ final class BrowserSession {
         }
     }
 
+    /// 用户手动隐藏掉的元素，按站点归属，跨页面生效。
+    private(set) var hiddenElementRules: [HiddenElementRule]
+    /// 是否正处在"点一下就隐藏"的挑选模式。
+    private(set) var isPickingElement = false
+    /// 挑选失败时给用户的一句话解释，展示过一次就清掉。
+    var elementHidingNotice: String?
+
     private static let mobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 
     @ObservationIgnored
@@ -46,6 +53,9 @@ final class BrowserSession {
 
     @ObservationIgnored
     private weak var webView: WKWebView?
+
+    @ObservationIgnored
+    private weak var userContentController: WKUserContentController?
 
     @ObservationIgnored
     weak var commandHandler: (any BrowserSessionCommandHandling)?
@@ -67,12 +77,14 @@ final class BrowserSession {
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
         self.isMobileUA = preference.isMobileUA
+        self.hiddenElementRules = preference.resolvedHiddenElements
         self.preferencesStore = preferencesStore
         self.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.websiteDataStoreIdentifier(for: definition.id))
     }
 
     func attach(webView: WKWebView) {
         self.webView = webView
+        self.userContentController = webView.configuration.userContentController
         webView.allowsMagnification = true
         webView.allowsBackForwardNavigationGestures = true
         webView.pageZoom = pageZoom
@@ -158,6 +170,127 @@ final class BrowserSession {
         isPinned.toggle()
     }
 
+    // MARK: - 手动隐藏网页元素
+
+    var currentSiteHost: String {
+        HiddenElementRule.normalizedHost(currentURL.host())
+    }
+
+    /// 当前站点已隐藏的元素，最近隐藏的排在最前。
+    var hiddenElementRulesForCurrentSite: [HiddenElementRule] {
+        hiddenElementRules
+            .filter { $0.host == currentSiteHost }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// 其他站点上隐藏的元素——同一个网页应用里跨站跳转很常见，这些也要能还原。
+    var hiddenElementRulesForOtherSites: [HiddenElementRule] {
+        hiddenElementRules
+            .filter { $0.host != currentSiteHost }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func beginElementPicking() {
+        guard !currentSiteHost.isEmpty else {
+            elementHidingNotice = "当前页面不是普通网页，没法在上面隐藏元素"
+            return
+        }
+
+        elementHidingNotice = nil
+        isPickingElement = true
+        focusWebView()
+        webView?.evaluateJavaScript(BrowserElementHidingScript.startPickingScript)
+    }
+
+    func cancelElementPicking() {
+        guard isPickingElement else {
+            return
+        }
+
+        isPickingElement = false
+        webView?.evaluateJavaScript(BrowserElementHidingScript.stopPickingScript)
+    }
+
+    func handleElementHidingMessage(_ message: BrowserElementHidingScript.IncomingMessage) {
+        switch message {
+        case let .picked(selector, label, host):
+            isPickingElement = false
+            hideElement(selector: selector, label: label, host: host)
+        case .cancelled:
+            isPickingElement = false
+        case .undoLatest:
+            restoreMostRecentlyHiddenElement()
+        case let .failed(reason):
+            isPickingElement = false
+            elementHidingNotice = reason
+        }
+    }
+
+    func restoreHiddenElement(id: UUID) {
+        guard hiddenElementRules.contains(where: { $0.id == id }) else {
+            return
+        }
+
+        hiddenElementRules.removeAll { $0.id == id }
+        commitHiddenElementRules()
+    }
+
+    func restoreAllHiddenElements() {
+        guard !hiddenElementRules.isEmpty else {
+            return
+        }
+
+        hiddenElementRules.removeAll()
+        commitHiddenElementRules()
+    }
+
+    private func hideElement(selector: String, label: String, host: String) {
+        let resolvedHost = host.isEmpty ? currentSiteHost : HiddenElementRule.normalizedHost(host)
+        guard
+            !resolvedHost.isEmpty,
+            BrowserElementHidingScript.isUsableSelector(selector)
+        else {
+            elementHidingNotice = "这个元素没法被稳定定位，换一块试试"
+            return
+        }
+
+        // 同一块东西点两次不该攒出两条规则。
+        guard !hiddenElementRules.contains(where: { $0.host == resolvedHost && $0.selector == selector }) else {
+            return
+        }
+
+        hiddenElementRules.append(
+            HiddenElementRule(host: resolvedHost, selector: selector, label: label)
+        )
+        commitHiddenElementRules()
+
+        webView?.evaluateJavaScript(BrowserElementHidingScript.undoToastScript(label: label))
+    }
+
+    private func restoreMostRecentlyHiddenElement() {
+        guard let latest = hiddenElementRules.max(by: { $0.createdAt < $1.createdAt }) else {
+            return
+        }
+
+        restoreHiddenElement(id: latest.id)
+    }
+
+    /// 规则一变就要做三件事：存盘、把已经打开的页面立刻改过来、把后续页面的注入脚本也换掉。
+    private func commitHiddenElementRules() {
+        persistPreference()
+
+        webView?.evaluateJavaScript(
+            BrowserElementHidingScript.applyRulesScript(rules: hiddenElementRules)
+        )
+
+        if let userContentController {
+            BrowserUserScripts.install(
+                into: userContentController,
+                hiddenElementRules: hiddenElementRules
+            )
+        }
+    }
+
     func closeWindow() {
         commandHandler?.browserSessionDidRequestClose(self)
     }
@@ -228,6 +361,12 @@ final class BrowserSession {
     }
 
     func syncNavigationState(from webView: WKWebView) {
+        // 页面一换，注入到旧文档里的挑选模式就跟着没了，按钮状态必须复位，
+        // 否则魔法棒会一直亮着、再点一次只是"取消"，用户按不出挑选来。
+        if isPickingElement, let url = webView.url, url != currentURL {
+            isPickingElement = false
+        }
+
         pageTitle = webView.title?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty ?? definition.name
         currentURL = webView.url ?? currentURL
         canGoBack = webView.canGoBack
@@ -251,6 +390,7 @@ final class BrowserSession {
         preference.pageZoom = pageZoom
         preference.isPinned = isPinned
         preference.isMobileUA = isMobileUA
+        preference.hiddenElements = hiddenElementRules
         if let windowPlacement {
             preference.windowPlacement = windowPlacement
             preference.windowFrame = windowPlacement.frame

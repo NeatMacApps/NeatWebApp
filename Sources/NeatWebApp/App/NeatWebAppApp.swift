@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// 窗口标识：启动器、菜单栏和快捷键都要打开同一个主窗口。
+enum AppWindowID {
+    static let main = "main"
+}
+
 @MainActor
 @main
 struct NeatWebAppApp: App {
@@ -18,30 +23,24 @@ struct NeatWebAppApp: App {
     }
 
     var body: some Scene {
-        Window("NeatWebApp", id: "dashboard") {
+        // 主窗口同时承担设置界面，不再提供独立的设置窗口。
+        Window("NeatWebApp", id: AppWindowID.main) {
             DashboardView()
-                .frame(minWidth: 900, minHeight: 620)
                 .environment(appModel)
         }
         .defaultLaunchBehavior(.suppressed)
-        .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 1080, height: 720)
+        .windowResizability(.contentSize)
         .commands {
             AppCommands(appModel: appModel)
         }
 
-        Settings {
-            SettingsView()
-                .environment(appModel)
-        }
-
         MenuBarExtra("NeatWebApp", image: .menuBarIcon) {
-            Button("Open Dashboard") {
-                openWindow(id: "dashboard")
+            Button("打开主窗口") {
+                openMainWindow()
             }
             .keyboardShortcut("d", modifiers: [.command])
 
-            Button("Reveal Launcher") {
+            Button("唤出启动器") {
                 appModel.revealLauncherManually()
             }
             .keyboardShortcut("k", modifiers: [.command, .option])
@@ -54,18 +53,21 @@ struct NeatWebAppApp: App {
                 )
             )
 
-            SettingsLink {
-                Text("设置…")
-            }
-
             CheckForUpdatesButton(appUpdater: appUpdater)
 
             Divider()
 
-            Button("Quit NeatWebApp") {
+            Button("退出 NeatWebApp") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: [.command])
         }
     }
+
+    /// 常驻菜单栏的应用打开窗口后不会自动激活，要手动抢一次前台，否则窗口会压在别的应用下面。
+    private func openMainWindow() {
+        openWindow(id: AppWindowID.main)
+        NSApplication.shared.activate()
+    }
+
 }

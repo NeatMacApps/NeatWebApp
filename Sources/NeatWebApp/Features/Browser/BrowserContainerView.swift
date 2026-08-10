@@ -50,17 +50,19 @@ private struct BrowserChromeBand: View {
                     BrowserChromeButton(
                         systemImage: "xmark",
                         theme: theme,
+                        accessibilityLabel: localized("browser.chrome.collapse"),
                         action: session.collapseWindow
                     )
-                    .help("收进侧边刘海")
+                    .help(Text("browser.chrome.collapse"))
 
                     BrowserChromeButton(
                         systemImage: session.isPinned ? "pin.fill" : "pin",
                         theme: theme,
                         isHighlighted: session.isPinned,
+                        accessibilityLabel: localized(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin"),
                         action: session.togglePinned
                     )
-                    .help(session.isPinned ? "取消窗口置顶" : "窗口置顶")
+                    .help(Text(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin"))
                 }
 
                 Spacer(minLength: 0)
@@ -68,19 +70,23 @@ private struct BrowserChromeBand: View {
                 HStack(spacing: BrowserChromeLayout.buttonSpacing) {
                     BrowserDownloadIndicator(session: session, theme: theme)
 
+                    BrowserElementHidingControl(session: session, theme: theme)
+
                     BrowserChromeButton(
                         systemImage: "arrow.clockwise",
                         theme: theme,
+                        accessibilityLabel: localized("browser.chrome.reload"),
                         action: session.reloadFromConfiguredURL
                     )
-                    .help("回到配置地址并刷新")
+                    .help(Text("browser.chrome.reload"))
 
                     BrowserChromeButton(
                         systemImage: session.isMobileUA ? "laptopcomputer" : "iphone",
                         theme: theme,
+                        accessibilityLabel: localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"),
                         action: session.toggleUA
                     )
-                    .help(session.isMobileUA ? "切换为桌面网页标识" : "切换为手机网页标识")
+                    .help(Text(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"))
                 }
             }
             .padding(.horizontal, BrowserChromeLayout.windowMargin)
@@ -92,6 +98,7 @@ private struct BrowserChromeBand: View {
 private struct BrowserDownloadIndicator: View {
     let session: BrowserSession
     let theme: BrowserChromeTheme
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         if let latestDownload = session.downloadItems.first {
@@ -114,8 +121,16 @@ private struct BrowserDownloadIndicator: View {
             }
             .buttonStyle(.plain)
             .focusEffectDisabled()
+            .focused($isFocused)
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(theme.foregroundColor.color.opacity(isFocused ? 0.8 : 0), lineWidth: 2)
+                    .padding(-2)
+            }
             .disabled(latestDownload.destinationURL == nil)
             .help(helpText(for: latestDownload))
+            .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
+            .accessibilityHint(helpText(for: latestDownload))
         }
     }
 
@@ -124,16 +139,16 @@ private struct BrowserDownloadIndicator: View {
         case .running:
             let activeCount = session.downloadItems.filter { $0.phase == .running }.count
             if activeCount > 1 {
-                return "下载中 \(activeCount)"
+                return String(format: localized("browser.download.status.multiple"), activeCount)
             }
             if let fractionCompleted = item.fractionCompleted, fractionCompleted > 0, fractionCompleted < 1 {
-                return "下载中 \(Int(fractionCompleted * 100))%"
+                return String(format: localized("browser.download.status.progress"), Int(fractionCompleted * 100))
             }
-            return "下载中"
+            return localized("browser.download.status.running")
         case .completed:
-            return "下载完成"
+            return localized("browser.download.status.completed")
         case .failed:
-            return "下载失败"
+            return localized("browser.download.status.failed")
         }
     }
 
@@ -151,22 +166,156 @@ private struct BrowserDownloadIndicator: View {
     private func helpText(for item: BrowserDownloadItem) -> String {
         switch item.phase {
         case .running:
-            return "正在下载 \(item.filename)"
+            return String(format: localized("browser.download.help.running"), item.filename)
         case .completed:
-            return "在访达中显示 \(item.filename)"
+            return String(format: localized("browser.download.help.reveal"), item.filename)
         case .failed:
-            return item.message ?? "下载失败"
+            return item.message ?? localized("browser.download.status.failed")
         }
     }
+}
+
+/// 魔法棒：进入"点一下就隐藏"的挑选模式，以及还原这个网页应用已经隐藏掉的元素。
+private struct BrowserElementHidingControl: View {
+    let session: BrowserSession
+    let theme: BrowserChromeTheme
+
+    @State private var isPanelPresented = false
+
+    var body: some View {
+        BrowserChromeButton(
+            systemImage: "wand.and.sparkles",
+            theme: theme,
+            isHighlighted: session.isPickingElement,
+            accessibilityLabel: localized(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"),
+            action: toggle
+        )
+        .help(Text(session.isPickingElement ? "browser.element_hiding.exit.help" : "browser.element_hiding.enter"))
+        .popover(isPresented: $isPanelPresented, arrowEdge: .bottom) {
+            BrowserElementHidingPanel(session: session) {
+                isPanelPresented = false
+            }
+        }
+    }
+
+    private func toggle() {
+        // 已经在挑选中时，再点一次就是"算了"，不必先弹面板。
+        if session.isPickingElement {
+            session.cancelElementPicking()
+            return
+        }
+
+        session.elementHidingNotice = nil
+        isPanelPresented = true
+    }
+}
+
+private struct BrowserElementHidingPanel: View {
+    let session: BrowserSession
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button(action: startPicking) {
+                Label("browser.element_hiding.pick", systemImage: "wand.and.sparkles")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .focusEffectDisabled()
+
+            if let notice = session.elementHidingNotice {
+                Text(notice)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Divider()
+
+            if session.hiddenElementRules.isEmpty {
+                Text("browser.element_hiding.empty")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        section(title: "browser.element_hiding.section.current", rules: session.hiddenElementRulesForCurrentSite, showsHost: false)
+                        section(title: "browser.element_hiding.section.other", rules: session.hiddenElementRulesForOtherSites, showsHost: true)
+                    }
+                }
+                .frame(maxHeight: 220)
+
+                Button("browser.element_hiding.restore_all", action: session.restoreAllHiddenElements)
+                    .font(.system(size: 11))
+                    .buttonStyle(.link)
+                    .focusEffectDisabled()
+            }
+        }
+        .padding(14)
+        .frame(width: 260)
+    }
+
+    @ViewBuilder
+    private func section(title: String, rules: [HiddenElementRule], showsHost: Bool) -> some View {
+        if !rules.isEmpty {
+            Text(LocalizedStringKey(title))
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.tertiary)
+
+            ForEach(rules) { rule in
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(rule.label)
+                            .font(.system(size: 11))
+                            .lineLimit(1)
+
+                        if showsHost {
+                            Text(rule.host)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        session.restoreHiddenElement(id: rule.id)
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(.borderless)
+                    .focusEffectDisabled()
+                    .help(Text("browser.element_hiding.restore"))
+                }
+            }
+        }
+    }
+
+    private func startPicking() {
+        dismiss()
+        session.beginElementPicking()
+    }
+}
+
+private func localized(_ key: String) -> String {
+    String(localized: LocalizedStringResource(stringLiteral: key))
 }
 
 private struct BrowserChromeButton: View {
     let systemImage: String
     let theme: BrowserChromeTheme
     var isHighlighted = false
+    let accessibilityLabel: String
     let action: () -> Void
 
     @State private var isHovered = false
+    @FocusState private var isFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -182,12 +331,19 @@ private struct BrowserChromeButton: View {
                                 : .clear
                         )
                 }
+                .overlay {
+                    Circle()
+                        .stroke(theme.foregroundColor.color.opacity(isFocused ? 0.8 : 0), lineWidth: 2)
+                        .padding(-2)
+                }
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
+        .focused($isFocused)
         .contentShape(Circle())
         .onHover { isHovered = $0 }
-        .animation(.easeOut(duration: 0.12), value: isHovered)
+        .animation(accessibilityReduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
+        .accessibilityLabel(accessibilityLabel)
     }
 }
 

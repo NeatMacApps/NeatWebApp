@@ -36,8 +36,19 @@
 - **内嵌运行时必须设 `SKIP_INSTALL: YES`。** 不设的话它会作为独立产品进归档，`Products/Applications/` 下同时出现宿主与运行时两个应用，Xcode 判定不出分发方式，导出报「`method` 的可选值列表为空」，看起来像参数写错，实际是归档不合法。判据：正常归档的 `Info.plist` 含 `ApplicationProperties`。设了之后运行时照常作为宿主依赖被内嵌进 `Contents/Library/LoginItems`。
 - **签名自检必须逐个核对嵌套组件的签发者与时间戳。** `codesign --verify --deep --strict` 对临时签名的嵌套组件照样返回通过（它只看结构完整性），本地查不出任何异常，唯一反馈渠道是几十分钟后苹果的公证结果。脚本的 `assert_nested_helpers_signed` 就是补这个洞的。
 - **首装用 dmg、更新用 zip**，两者挂在公开更新仓同一版本的 Release 下；dmg 内不放任何 Gatekeeper 绕过脚本。
-- **Sparkle 行为**：每天自动检查，默认自动下载并安装；菜单栏保留「检查更新…」手动入口；宿主是 `LSUIElement`（常驻菜单栏、无主窗口），所以打开了温和提醒——只有用户主动触发时才让更新窗口抢焦点。
+- **Sparkle 行为**：每天自动检查，默认自动下载并安装；菜单栏保留「检查更新…」手动入口；宿主是 `LSUIElement`（常驻菜单栏、无主窗口），所以打开了温和提醒——只有用户主动触发时才让更新窗口抢焦点。**后台发现更新时不会弹窗**，只把菜单改成「安装 NeatWebApp x.x.x 更新…」；别把「没弹窗」当成「没更新」。
+- **「另一台电脑收不到更新」先查公开 appcast，再查本机构建号。** 匿名打开 `https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml`，看最新 `sparkle:version`；若本地 `project.yml` 已抬版本但 appcast 仍是旧号，说明**还没跑完整 `publish-release.sh`**，不是客户端坏了。本机构建号 ≥ 线上最新时，Sparkle 正确表现为「已是最新」。
 - **一上来就开签名清单校验。** `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction` 成对开启（Sparkle 要求必须成对），不只签更新包，连更新清单本身和版本说明也验签。清单自身的签名不是 XML 属性，而是 `generate_appcast` 追加在文件末尾的 `<!-- sparkle-signatures: … -->` 注释块，发版脚本按这个特征做检查。**开启后不允许再手工改已签名的 appcast**，脚本里不得出现「生成完再 sed 改两下」这种步骤。
+
+## Mac 接手：发 v0.3.2（2026-08-10 会话未完成）
+
+本地已备好 `project.yml` 的 `0.3.2` / `3020` 与 `scripts/release-notes/0.3.2.md`，但公开仓仍停在 **0.3.1**（无 `v0.3.2` tag / Release / zip）。在 Mac 上执行：
+
+```bash
+cd ~/Codes/NeatWebApp/app-macos && scripts/publish-release.sh
+```
+
+发完后用匿名请求确认 appcast 含 `3020`，再在装有 0.3.1 的机器上点「检查更新…」验证。
 
 ## 换发版机时要人手做的两步
 

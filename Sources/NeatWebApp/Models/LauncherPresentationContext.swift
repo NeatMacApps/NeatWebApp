@@ -83,3 +83,37 @@ struct LauncherPresentationContext: Equatable, Sendable {
         )
     }
 }
+
+/// 启动器图标行左右拖动换位的纯数学：把横向位移折算成图标槽位数，
+/// 再推算出目标下标与「贴住光标」的视觉偏移，独立出来便于单测。
+enum LauncherRowReorder {
+    /// 拖动后的目标下标：从起始下标按整槽位移偏移，并夹在有效范围内。
+    static func targetIndex(
+        startIndex: Int,
+        translationX: CGFloat,
+        slotWidth: CGFloat,
+        itemCount: Int
+    ) -> Int {
+        guard slotWidth > 0, itemCount > 0 else {
+            return startIndex
+        }
+
+        let slotShift = Int((translationX / slotWidth).rounded())
+        return min(max(startIndex + slotShift, 0), itemCount - 1)
+    }
+
+    /// 拖动中的图标相对它当前所在槽位的贴手偏移：
+    /// 真实位移减去「换位造成的新槽位平移」，图标才跟得上光标而不跳变。
+    static func offset(
+        translationX: CGFloat,
+        targetIndex: Int,
+        startIndex: Int,
+        slotWidth: CGFloat
+    ) -> CGFloat {
+        guard slotWidth > 0 else {
+            return translationX
+        }
+
+        return translationX - CGFloat(targetIndex - startIndex) * slotWidth
+    }
+}

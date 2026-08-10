@@ -37,19 +37,20 @@ struct SideDockOverlayRootView: View {
                             startLocation: startLocation,
                             currentLocation: mouseLocation
                         )
-                        let verticalTravel = SideDockDragResolver.verticalTravel(
+                        let alongEdgeTravel = SideDockDragResolver.alongEdgeTravel(
+                            edge: context.edge,
                             startLocation: startLocation,
                             currentLocation: mouseLocation
                         )
                         closeProgress = SideDockDragResolver.closeProgress(
                             inwardDistance: inwardDistance,
-                            verticalTravel: verticalTravel
+                            alongEdgeTravel: alongEdgeTravel
                         )
                         onDragChange(
                             SideDockDragUpdate(
                                 mouseLocation: mouseLocation,
                                 inwardDistance: inwardDistance,
-                                verticalTravel: verticalTravel,
+                                alongEdgeTravel: alongEdgeTravel,
                                 app: app
                             )
                         )
@@ -73,17 +74,30 @@ struct SideDockOverlayRootView: View {
     }
 
     private var sideNotch: some View {
-        iconColumn
-        .padding(.vertical, SideDockPresentationContext.Layout.verticalPadding)
-        .padding(.top, SideDockPresentationContext.Layout.edgeTransitionDepth)
-        .padding(.bottom, SideDockPresentationContext.Layout.edgeTransitionDepth)
+        iconRow
+            .padding(
+                context.edge.isSide
+                    ? .vertical : .horizontal,
+                SideDockPresentationContext.Layout.verticalPadding
+            )
+            .padding(
+                context.edge.isSide ? .top : .leading,
+                SideDockPresentationContext.Layout.edgeTransitionDepth
+            )
+            .padding(
+                context.edge.isSide ? .bottom : .trailing,
+                SideDockPresentationContext.Layout.edgeTransitionDepth
+            )
     }
 
-    private var iconColumn: some View {
+    private var iconRow: some View {
         // 图标放得下时不套滚动容器：滚动视图会吃掉整块 Dock 的拖动手势。
         Group {
             if context.layout.shouldScroll {
-                ScrollView(.vertical, showsIndicators: false) {
+                ScrollView(
+                    context.edge.isSide ? .vertical : .horizontal,
+                    showsIndicators: false
+                ) {
                     iconStack
                 }
                 .scrollClipDisabled()
@@ -95,12 +109,24 @@ struct SideDockOverlayRootView: View {
     }
 
     private var iconStack: some View {
-        VStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
-            ForEach(context.apps) { app in
-                iconButton(for: app)
+        Group {
+            if context.edge.isSide {
+                VStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
+                    iconList
+                }
+            } else {
+                HStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
+                    iconList
+                }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var iconList: some View {
+        ForEach(context.apps) { app in
+            iconButton(for: app)
+        }
     }
 
     private func app(at location: CGPoint) -> WebAppDefinition? {
@@ -136,6 +162,9 @@ struct SideDockOverlayRootView: View {
             size: SideDockPresentationContext.Layout.iconSize,
             font: .system(size: 13, weight: .semibold)
         )
+        // Soft edge shadow so light/white favicons stay readable on liquid glass.
+        .shadow(color: .black.opacity(0.28), radius: 1.25, x: 0, y: 0.5)
+        .shadow(color: .black.opacity(0.14), radius: 2.5, x: 0, y: 1)
         .frame(
             width: SideDockPresentationContext.Layout.iconSlotSize,
             height: SideDockPresentationContext.Layout.iconSlotSize
@@ -186,7 +215,7 @@ private struct SideDockGlassBackground: View {
 struct SideDockDragUpdate {
     let mouseLocation: CGPoint
     let inwardDistance: CGFloat
-    let verticalTravel: CGFloat
+    let alongEdgeTravel: CGFloat
     let app: WebAppDefinition?
 }
 

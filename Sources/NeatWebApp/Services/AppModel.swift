@@ -305,6 +305,22 @@ final class AppModel {
         hideLauncher(afterDelay: .zero)
     }
 
+    /// 临时：事件日志，验证合成拖拽是否送达本应用。
+    private func debugMouseLog(_ message: String) {
+        let url = URL(fileURLWithPath: "/tmp/neatwebapp_mouse.log")
+        if !FileManager.default.fileExists(atPath: url.path) {
+            FileManager.default.createFile(atPath: url.path, contents: nil)
+        }
+        guard let handle = try? FileHandle(forWritingTo: url) else {
+            return
+        }
+        try? handle.seekToEnd()
+        if let data = "[\(Date().timeIntervalSince1970)] \(message)\n".data(using: .utf8) {
+            try? handle.write(contentsOf: data)
+        }
+        try? handle.close()
+    }
+
     func hideLauncher(immediately: Bool = false) {
         if immediately {
             hideLauncherTask?.cancel()
@@ -362,6 +378,7 @@ final class AppModel {
 
     private func handleMouseEvent(_ mouseLocation: CGPoint, _ eventType: NSEvent.EventType) {
         let isClick = (eventType == .leftMouseDown || eventType == .rightMouseDown)
+        debugMouseLog("\(eventType.rawValue) @ (\(Int(mouseLocation.x)), \(Int(mouseLocation.y)))")
         
         let geometryForActivation = detectedNotchScreens.first(where: { $0.containsActivationPoint(mouseLocation) })
         let activationContains = geometryForActivation != nil
@@ -474,27 +491,37 @@ final class AppModel {
         runtimeCoordinator.refreshRegistry()
     }
 
-    func updateWebAppURL(_ app: WebAppDefinition, to homeURL: URL) {
+    func updateWebApp(
+        _ app: WebAppDefinition,
+        name: String,
+        homeURL: URL,
+        accentColorName: String
+    ) {
         guard let index = apps.firstIndex(where: { $0.id == app.id }) else {
             return
         }
 
         let updatedApp = WebAppDefinition(
             id: app.id,
-            name: app.name,
+            name: name,
             homeURL: homeURL,
-            accentColorName: app.accentColorName,
+            accentColorName: accentColorName,
             shortDescription: app.shortDescription
         )
 
         apps[index] = updatedApp
         customAppStore.save(apps)
-        faviconLoadTasks[app.id]?.cancel()
-        faviconLoadTasks[app.id] = nil
-        faviconImages.removeValue(forKey: app.id)
-        failedFaviconAppIDs.remove(app.id)
-        faviconStore.delete(for: app.id)
-        ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
+
+        // 只有网址变了才值得丢掉站点图标缓存重新抓，改名或换底色没必要。
+        if app.homeURL != homeURL {
+            faviconLoadTasks[app.id]?.cancel()
+            faviconLoadTasks[app.id] = nil
+            faviconImages.removeValue(forKey: app.id)
+            failedFaviconAppIDs.remove(app.id)
+            faviconStore.delete(for: app.id)
+            ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
+        }
+
         runtimeCoordinator.refreshRegistry()
     }
 
@@ -509,6 +536,20 @@ final class AppModel {
 
     func moveCustomApps(from source: IndexSet, to destination: Int) {
         apps.move(fromOffsets: source, toOffset: destination)
+        customAppStore.save(apps)
+        runtimeCoordinator.refreshRegistry()
+    }
+
+    /// 用启动器拖动排好的整份顺序覆盖应用顺序并持久化。
+    /// 只接受与当前列表同源（同集合同数量）的顺序，避免把启动器
+    /// 快照里已不存在的应用写回去，或覆盖掉并发的增删。
+    func applyAppOrder(_ orderedApps: [WebAppDefinition]) {
+        guard orderedApps.map(\.id) != apps.map(\.id),
+              Set(orderedApps.map(\.id)) == Set(apps.map(\.id)) else {
+            return
+        }
+
+        apps = orderedApps
         customAppStore.save(apps)
         runtimeCoordinator.refreshRegistry()
     }

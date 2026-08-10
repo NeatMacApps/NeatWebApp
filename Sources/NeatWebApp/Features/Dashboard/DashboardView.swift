@@ -2,465 +2,267 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// 主窗口：网页应用管理与应用设置合在同一个窗口里，没有独立的设置窗口。
 struct DashboardView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppModel.self) private var appModel
 
-    @State private var isAddSheetPresented = false
+    @State private var editorTarget: WebAppEditorTarget?
     @State private var appToDelete: WebAppDefinition?
-    @State private var appToEdit: WebAppDefinition?
     @State private var draggedApp: WebAppDefinition?
+    @State private var hoveredAppID: String?
+    @FocusState private var focusedAppID: String?
 
     var body: some View {
-        ZStack {
-            backgroundGradient
-                .ignoresSafeArea()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    header
-                    appsSection
-                    screensSection
-                    roadmapSection
-                }
-                .padding(28)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                appsSection
+                SettingsSectionView()
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .sheet(isPresented: $isAddSheetPresented) {
-            AddWebAppSheet(appModel: appModel)
-        }
-        .sheet(item: $appToEdit) { app in
-            EditWebAppURLSheet(appModel: appModel, app: app)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .frame(width: 520, height: 620)
+        .focusEffectDisabled()
+        .sheet(item: $editorTarget) { target in
+            WebAppEditorSheet(appModel: appModel, target: target)
         }
         .alert(
-            "Delete \(appToDelete?.name ?? "")?",
+            "删除「\(appToDelete?.name ?? "")」？",
             isPresented: Binding(
                 get: { appToDelete != nil },
                 set: { if !$0 { appToDelete = nil } }
             )
         ) {
-            Button("Delete", role: .destructive) {
-                if let app = appToDelete {
-                    appModel.deleteCustomApp(app)
+            Button("删除", role: .destructive) {
+                if let appToDelete {
+                    appModel.deleteCustomApp(appToDelete)
                 }
                 appToDelete = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button("取消", role: .cancel) {
                 appToDelete = nil
             }
-        } message: {
-            Text("This web app will be removed from the list.")
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("NeatWebApp")
-                .font(.system(size: 42, weight: .bold, design: .rounded))
-
-            Text("A MenubarX-inspired macOS web app shell built on the system browser engine, with a notch-triggered launcher and content-first windows.")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 12) {
-                Button("Reveal Launcher") {
-                    appModel.revealLauncherManually()
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button("Refresh Geometry") {
-                    appModel.refreshScreenState()
-                }
-                .buttonStyle(.bordered)
-
-                Button(appModel.isNotchDebugOverlayVisible ? "Hide Debug Overlay" : "Show Debug Overlay") {
-                    appModel.toggleNotchDebugOverlay()
-                }
-                .buttonStyle(.bordered)
-            }
-
-            Text(appModel.diagnosticsMessage)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .padding(24)
-        .background(primaryPanelBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(panelBorder, lineWidth: 1)
         }
     }
 
     private var appsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Web Apps")
-                    .font(.title2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("网页应用")
+                    .panelSectionTitle()
 
                 Spacer()
 
                 Button {
-                    isAddSheetPresented = true
+                    editorTarget = .new
                 } label: {
-                    Label("Add Web App", systemImage: "plus")
+                    Label("添加", systemImage: "plus")
                 }
-                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .focusEffectDisabled()
+                .accessibilityLabel("添加网页应用")
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 ForEach(appModel.apps) { app in
-                    appListItem(for: app)
+                    if app.id != appModel.apps.first?.id {
+                        Divider()
+                            .padding(.leading, 50)
+                    }
+
+                    appRow(for: app)
                 }
             }
+            .panelCard()
         }
     }
 
-    private func appListItem(for app: WebAppDefinition) -> some View {
-        HStack(spacing: 16) {
-            Image(systemName: "line.3.horizontal")
-                .foregroundStyle(.tertiary)
-                .imageScale(.large)
-                .frame(width: 24)
+    private func appRow(for app: WebAppDefinition) -> some View {
+        let isHovered = hoveredAppID == app.id
+        let isFocused = focusedAppID == app.id
 
+        return HStack(spacing: 12) {
             WebAppIconView(
                 app: app,
-                size: 32,
-                font: .system(size: 16, weight: .semibold)
+                size: 24,
+                font: .system(size: 12, weight: .semibold)
             )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(app.name)
-                    .font(.headline)
-                Text(app.shortDescription)
-                    .font(.subheadline)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+
+                Text(app.homeURL.host ?? app.homeURL.absoluteString)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            
-            Spacer()
 
-            Text(app.homeURL.host ?? app.homeURL.absoluteString)
-                .font(.footnote.monospaced())
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            Spacer(minLength: 12)
 
-            Button("Open Window") {
-                appModel.openWebApp(app)
-            }
-            .buttonStyle(.borderedProminent)
-
-            Button {
-                appToEdit = app
-            } label: {
-                Image(systemName: "pencil")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Edit URL")
-
-            Button {
-                appToDelete = app
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Delete this web app")
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(secondaryPanelBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(panelBorder, lineWidth: 1)
-        }
-        .onDrag {
-            self.draggedApp = app
-            return NSItemProvider(object: app.id as NSString)
-        }
-        .onDrop(of: [.text], delegate: AppDropDelegate(item: app, items: appModel.apps, draggedItem: $draggedApp, appModel: appModel))
-        .contextMenu {
-            Button("Open Window") {
-                appModel.openWebApp(app)
-            }
-            Button("Edit URL") {
-                appToEdit = app
-            }
-            Divider()
-            Button("Delete", role: .destructive) {
-                appToDelete = app
-            }
-        }
-    }
-
-    private var screensSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Notch Diagnostics")
-                .font(.title2.weight(.semibold))
-
-            if appModel.detectedNotchScreens.isEmpty {
-                Text(appModel.isVirtualNotchEnabled
-                     ? "No usable notch zone is currently available."
-                     : "No notched screens are currently exposed by AppKit. Enable the virtual notch in Settings to use non-notched displays.")
-                    .foregroundStyle(.secondary)
-            } else {
-                Text(appModel.isNotchDebugOverlayVisible ? "Debug overlay is visible on detected notched screens." : "Debug overlay is currently hidden.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-
-                ForEach(appModel.detectedNotchScreens) { screen in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Text(screen.localizedName)
-                                .font(.headline)
-
-                            Text(screen.isVirtual ? "Virtual notch" : "Hardware notch")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Text("notchRect: \(screen.notchRect.debugSummary)")
-                            .font(.footnote.monospaced())
-                            .foregroundStyle(.secondary)
-
-                        Text("activationRect: \(screen.activationRect.debugSummary)")
-                            .font(.footnote.monospaced())
-                            .foregroundStyle(.secondary)
-
-                        Text("launcherRetentionRect: \(screen.launcherRetentionRect.debugSummary)")
-                            .font(.footnote.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(secondaryPanelBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            // 操作按钮只在指针移到该行时出现，静态列表保持干净。
+            HStack(spacing: 4) {
+                Button("打开") {
+                    appModel.openWebApp(app)
                 }
-            }
-        }
-    }
+                .controlSize(.small)
+                .focusEffectDisabled()
 
-    private var roadmapSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Planned Improvements")
-                .font(.title2.weight(.semibold))
+                Menu {
+                    Button("编辑…") {
+                        editorTarget = .existing(app)
+                    }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("1. Expand import and export support for user-managed web app catalogs.")
-                Text("2. Persist more per-site state, including permissions, last visited URL, and richer window restore details.")
-                Text("3. Refine notch-trigger behavior with better non-notched fallback handling and stronger diagnostics.")
-                Text("4. Add more per-site controls, such as custom user agents and tighter permission rules.")
-            }
-            .foregroundStyle(.secondary)
-        }
-        .padding(20)
-        .background(primaryPanelBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-    }
+                    Divider()
 
-    private var backgroundGradient: LinearGradient {
-        LinearGradient(
-            colors: [backgroundBaseColor, backgroundAccentColor],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var backgroundBaseColor: Color {
-        Color(nsColor: .windowBackgroundColor)
-    }
-
-    private var backgroundAccentColor: Color {
-        let accent = colorScheme == .dark ? NSColor.underPageBackgroundColor : NSColor.controlBackgroundColor
-        return Color(nsColor: accent)
-    }
-
-    private var primaryPanelBackground: Color {
-        Color(nsColor: .controlBackgroundColor)
-            .opacity(colorScheme == .dark ? 0.82 : 0.78)
-    }
-
-    private var secondaryPanelBackground: Color {
-        Color(nsColor: .controlBackgroundColor)
-            .opacity(colorScheme == .dark ? 0.9 : 0.86)
-    }
-
-    private var panelBorder: Color {
-        Color(nsColor: .separatorColor)
-            .opacity(colorScheme == .dark ? 0.4 : 0.22)
-    }
-}
-
-private extension CGRect {
-    var debugSummary: String {
-        "[x:\(Int(origin.x)) y:\(Int(origin.y)) w:\(Int(width)) h:\(Int(height))]"
-    }
-}
-
-// MARK: - Add Web App Sheet
-
-private struct AddWebAppSheet: View {
-    let appModel: AppModel
-
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var name = ""
-    @State private var urlString = ""
-    @State private var shortDescription = ""
-    @State private var selectedAccentColor = "WebAppAccentBlue"
-
-    private static let accentColors: [(name: String, label: String, color: Color)] = [
-        ("WebAppAccentBlue", "Blue", .blue),
-        ("WebAppAccentGreen", "Green", .green),
-        ("WebAppAccentOrange", "Orange", .orange),
-        ("WebAppAccentRed", "Red", .red),
-        ("WebAppAccentPurple", "Purple", .indigo),
-        ("WebAppAccentGray", "Gray", .gray)
-    ]
-
-    private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
-        && resolvedURL != nil
-    }
-
-    private var resolvedURL: URL? {
-        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return nil
-        }
-
-        return WebAppURLInputResolver.resolve(trimmed)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Add Web App")
-                    .font(.title3.weight(.semibold))
-                Spacer()
-                Button {
-                    dismiss()
+                    Button("删除", role: .destructive) {
+                        appToDelete = app
+                    }
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .frame(width: 18)
+                .focusEffectDisabled()
             }
-            .padding(20)
-
-            Divider()
-
-            // Form
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Name")
-                        .font(.subheadline.weight(.medium))
-                    TextField("e.g. YouTube", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("URL")
-                        .font(.subheadline.weight(.medium))
-                    TextField("e.g. youtube.com", text: $urlString)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Description")
-                        .font(.subheadline.weight(.medium))
-                    TextField("Short description (optional)", text: $shortDescription)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Accent Color")
-                        .font(.subheadline.weight(.medium))
-
-                    HStack(spacing: 8) {
-                        ForEach(Self.accentColors, id: \.name) { item in
-                            Button {
-                                selectedAccentColor = item.name
-                            } label: {
-                                Circle()
-                                    .fill(item.color)
-                                    .frame(width: 24, height: 24)
-                                    .overlay {
-                                        if selectedAccentColor == item.name {
-                                            Circle()
-                                                .stroke(.white, lineWidth: 2)
-                                                .frame(width: 18, height: 18)
-                                        }
-                                    }
-                            }
-                            .buttonStyle(.plain)
-                            .help(item.label)
-                        }
-                    }
-                }
-            }
-            .padding(20)
-
-            Divider()
-
-            // Actions
-            HStack {
-                Spacer()
-                Button("Cancel") {
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-
-                Button("Add") {
-                    addApp()
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(!isValid)
-            }
-            .padding(20)
+            .opacity(isHovered || isFocused ? 1 : 0)
+            .allowsHitTesting(isHovered || isFocused)
         }
-        .frame(width: 400)
-    }
-
-    private func addApp() {
-        guard let url = resolvedURL else {
-            return
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .contentShape(Rectangle())
+        .background((isHovered || isFocused) ? Color.primary.opacity(0.05) : Color.clear)
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(isFocused ? 0.7 : 0), lineWidth: 2)
         }
-
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let id = trimmedName.lowercased().replacingOccurrences(of: " ", with: "_")
-            + "_" + String(Int(Date().timeIntervalSince1970))
-
-        let description = shortDescription.trimmingCharacters(in: .whitespaces)
-
-        let app = WebAppDefinition(
-            id: id,
-            name: trimmedName,
-            homeURL: url,
-            accentColorName: selectedAccentColor,
-            shortDescription: description.isEmpty ? url.host ?? "Custom app" : description
+        .focusable()
+        .focused($focusedAppID, equals: app.id)
+        .focusEffectDisabled()
+        .onKeyPress(.return) {
+            appModel.openWebApp(app)
+            return .handled
+        }
+        .accessibilityLabel("\(app.name)，\(app.homeURL.host ?? app.homeURL.absoluteString)")
+        .accessibilityHint("按下回车打开网页应用")
+        .accessibilityAction {
+            appModel.openWebApp(app)
+        }
+        .onHover { isInside in
+            if isInside {
+                hoveredAppID = app.id
+            } else if hoveredAppID == app.id {
+                hoveredAppID = nil
+            }
+        }
+        .onTapGesture(count: 2) {
+            appModel.openWebApp(app)
+        }
+        .onDrag {
+            draggedApp = app
+            return NSItemProvider(object: app.id as NSString)
+        }
+        .onDrop(
+            of: [.text],
+            delegate: AppDropDelegate(
+                item: app,
+                items: appModel.apps,
+                draggedItem: $draggedApp,
+                appModel: appModel
+            )
         )
+        .contextMenu {
+            Button("打开") {
+                appModel.openWebApp(app)
+            }
 
-        appModel.addCustomApp(app)
-        dismiss()
+            Button("编辑…") {
+                editorTarget = .existing(app)
+            }
+
+            Divider()
+
+            Button("删除", role: .destructive) {
+                appToDelete = app
+            }
+        }
     }
 }
 
-// MARK: - 编辑 Web App URL 弹窗
+// MARK: - 编辑弹窗
 
-private struct EditWebAppURLSheet: View {
+/// 新增与编辑共用一个弹窗，两者的字段完全一致。
+enum WebAppEditorTarget: Identifiable {
+    case new
+    case existing(WebAppDefinition)
+
+    var id: String {
+        switch self {
+        case .new:
+            "new"
+        case .existing(let app):
+            app.id
+        }
+    }
+}
+
+private struct WebAppEditorSheet: View {
     let appModel: AppModel
-    let app: WebAppDefinition
+    let target: WebAppEditorTarget
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var urlString: String
+    @FocusState private var focusedField: Field?
 
-    init(appModel: AppModel, app: WebAppDefinition) {
+    @State private var urlString: String
+    @State private var name: String
+    @State private var accentColorName: String
+    /// 名称被手动改过之后就不再跟着网址自动填充。
+    @State private var hasEditedName: Bool
+
+    private enum Field {
+        case url
+        case name
+    }
+
+    private static let accentColors: [(name: String, label: String, color: Color)] = [
+        ("WebAppAccentBlue", "蓝色", .blue),
+        ("WebAppAccentGreen", "绿色", .green),
+        ("WebAppAccentOrange", "橙色", .orange),
+        ("WebAppAccentRed", "红色", .red),
+        ("WebAppAccentPurple", "紫色", .indigo),
+        ("WebAppAccentGray", "灰色", .gray)
+    ]
+
+    init(appModel: AppModel, target: WebAppEditorTarget) {
         self.appModel = appModel
-        self.app = app
-        _urlString = State(initialValue: app.homeURL.absoluteString)
+        self.target = target
+
+        switch target {
+        case .new:
+            _urlString = State(initialValue: "")
+            _name = State(initialValue: "")
+            _accentColorName = State(initialValue: "WebAppAccentBlue")
+            _hasEditedName = State(initialValue: false)
+        case .existing(let app):
+            _urlString = State(initialValue: app.homeURL.absoluteString)
+            _name = State(initialValue: app.name)
+            _accentColorName = State(initialValue: app.accentColorName)
+            _hasEditedName = State(initialValue: true)
+        }
+    }
+
+    private var isEditing: Bool {
+        if case .existing = target {
+            return true
+        }
+
+        return false
     }
 
     private var resolvedURL: URL? {
@@ -468,61 +270,116 @@ private struct EditWebAppURLSheet: View {
     }
 
     private var isValid: Bool {
-        resolvedURL != nil
+        !name.trimmingCharacters(in: .whitespaces).isEmpty && resolvedURL != nil
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Edit URL")
-                        .font(.title3.weight(.semibold))
-                    Text(app.name)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 16) {
+            Text(isEditing ? "编辑网页应用" : "添加网页应用")
+                .font(.system(size: 15, weight: .semibold))
+
+            textField("网址", prompt: "example.com", text: $urlString, field: .url)
+                .onChange(of: urlString) { _, newValue in
+                    guard !hasEditedName else {
+                        return
+                    }
+
+                    name = Self.suggestedName(from: newValue)
                 }
 
-                Spacer()
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
+            textField("名称", prompt: "显示在启动器中的名称", text: $name, field: .name)
+                .onChange(of: name) { _, _ in
+                    if focusedField == .name {
+                        hasEditedName = true
+                    }
                 }
-                .buttonStyle(.plain)
-            }
-            .padding(20)
-
-            Divider()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("URL")
-                    .font(.subheadline.weight(.medium))
-                TextField("e.g. example.com", text: $urlString)
-                    .textFieldStyle(.roundedBorder)
-            }
-            .padding(20)
+                Text("底色")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
 
-            Divider()
+                HStack(spacing: 8) {
+                    ForEach(Self.accentColors, id: \.name) { item in
+                        Button {
+                            accentColorName = item.name
+                        } label: {
+                            Circle()
+                                .fill(item.color)
+                                .frame(width: 20, height: 20)
+                                .overlay {
+                                    if accentColorName == item.name {
+                                        Circle()
+                                            .stroke(.white, lineWidth: 2)
+                                            .frame(width: 14, height: 14)
+                                    }
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .help(item.label)
+                    }
+                }
+            }
 
             HStack {
                 Spacer()
-                Button("Cancel") {
+
+                Button("取消") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button("Save") {
+                Button(isEditing ? "保存" : "添加") {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid)
             }
-            .padding(20)
+            .padding(.top, 4)
         }
-        .frame(width: 420)
+        .padding(20)
+        .frame(width: 360)
+        .focusEffectDisabled()
+        .onAppear {
+            // 新增时直接把光标放到网址框；编辑时不抢焦点，避免一打开就选中已有内容。
+            if !isEditing {
+                focusedField = .url
+            }
+        }
+    }
+
+    private func textField(
+        _ title: String,
+        prompt: String,
+        text: Binding<String>,
+        field: Field
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            TextField(prompt, text: text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($focusedField, equals: field)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(
+                    Color(nsColor: .textBackgroundColor),
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                )
+                // 系统焦点框已关闭，这里补一套克制的自绘焦点态，保证键盘操作仍看得见焦点。
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(
+                            focusedField == field
+                            ? Color.accentColor.opacity(0.8)
+                            : Color(nsColor: .separatorColor),
+                            lineWidth: focusedField == field ? 2 : 1
+                        )
+                }
+        }
     }
 
     private func save() {
@@ -530,8 +387,49 @@ private struct EditWebAppURLSheet: View {
             return
         }
 
-        appModel.updateWebAppURL(app, to: resolvedURL)
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+
+        switch target {
+        case .new:
+            let id = trimmedName.lowercased().replacingOccurrences(of: " ", with: "_")
+                + "_" + String(Int(Date().timeIntervalSince1970))
+
+            appModel.addCustomApp(
+                WebAppDefinition(
+                    id: id,
+                    name: trimmedName,
+                    homeURL: resolvedURL,
+                    accentColorName: accentColorName,
+                    shortDescription: resolvedURL.host ?? trimmedName
+                )
+            )
+        case .existing(let app):
+            appModel.updateWebApp(
+                app,
+                name: trimmedName,
+                homeURL: resolvedURL,
+                accentColorName: accentColorName
+            )
+        }
+
         dismiss()
+    }
+
+    /// 从网址推导默认名称，省去手动输入：取主域名并首字母大写。
+    private static func suggestedName(from urlString: String) -> String {
+        guard let host = WebAppURLInputResolver.resolve(urlString)?.host else {
+            return ""
+        }
+
+        let components = host
+            .replacingOccurrences(of: "www.", with: "")
+            .split(separator: ".")
+
+        guard let mainComponent = components.first else {
+            return ""
+        }
+
+        return mainComponent.prefix(1).uppercased() + String(mainComponent.dropFirst())
     }
 }
 
@@ -548,11 +446,6 @@ enum WebAppURLInputResolver {
 
         return URL(string: "https://\(trimmed)")
     }
-}
-
-#Preview {
-    DashboardView()
-        .environment(AppModel())
 }
 
 private struct AppDropDelegate: DropDelegate {
@@ -580,11 +473,16 @@ private struct AppDropDelegate: DropDelegate {
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
+        DropProposal(operation: .move)
     }
 
     func performDrop(info: DropInfo) -> Bool {
         draggedItem = nil
         return true
     }
+}
+
+#Preview {
+    DashboardView()
+        .environment(AppModel())
 }

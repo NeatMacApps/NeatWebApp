@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import SwiftUI
 import WebKit
 
@@ -15,7 +16,12 @@ struct BrowserWebView: NSViewRepresentable {
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.userContentController = WKUserContentController()
         configuration.userContentController.add(context.coordinator, name: BrowserThemeObserver.messageHandlerName)
-        configuration.userContentController.addUserScript(BrowserThemeObserver.makeUserScript())
+        configuration.userContentController.add(context.coordinator, name: BrowserPasskeySupport.messageHandlerName)
+        configuration.userContentController.add(context.coordinator, name: BrowserElementHidingScript.messageHandlerName)
+        BrowserUserScripts.install(
+            into: configuration.userContentController,
+            hiddenElementRules: session.hiddenElementRules
+        )
 
         let webView = BrowserKeyCommandWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -35,21 +41,68 @@ struct BrowserWebView: NSViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         private let session: BrowserSession
         private let downloadManager: BrowserDownloadManager
+        /// 通行密钥受限的解释每个窗口只给一次：站点常会连着重试，否则会连弹好几次。
+        private var hasExplainedPasskeyLimitation = false
+        /// 最近一次由网页主动发起的媒体请求。用户从系统设置回来时据此重检，不在启动时碰权限。
+        private var pendingMediaTypes = Set<AVMediaType>()
+        /// 同一类能力在一个窗口生命周期内只解释一次，避免网页重试时连续打断用户。
+        private var explainedDeniedMediaTypes = Set<AVMediaType>()
 
         init(session: BrowserSession) {
             self.session = session
             self.downloadManager = BrowserDownloadManager(session: session)
+            super.init()
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(applicationDidBecomeActive),
+                name: NSApplication.didBecomeActiveNotification,
+                object: nil
+            )
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard
-                message.name == BrowserThemeObserver.messageHandlerName,
-                let pageColor = BrowserThemeColor.fromScriptMessageBody(message.body)
-            else {
+            switch message.name {
+            case BrowserThemeObserver.messageHandlerName:
+                guard let pageColor = BrowserThemeColor.fromScriptMessageBody(message.body) else {
+                    return
+                }
+
+                session.updateChromeThemeColor(pageColor)
+            case BrowserPasskeySupport.messageHandlerName:
+                explainPasskeyLimitation(pageURL: message.webView?.url)
+            case BrowserElementHidingScript.messageHandlerName:
+                guard let incoming = BrowserElementHidingScript.IncomingMessage(body: message.body) else {
+                    return
+                }
+
+                session.handleElementHidingMessage(incoming)
+            default:
+                break
+            }
+        }
+
+        /// 通行密钥被系统拒绝时，说清为什么，并给一条真的走得通的路：换到默认浏览器登录。
+        private func explainPasskeyLimitation(pageURL: URL?) {
+            guard !hasExplainedPasskeyLimitation else {
                 return
             }
 
-            session.updateChromeThemeColor(pageColor)
+            hasExplainedPasskeyLimitation = true
+
+            let alert = NSAlert()
+            alert.messageText = localized("browser.permission.passkey.title")
+            alert.informativeText = String(format: localized("browser.permission.passkey.message"), session.definition.name)
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: localized("browser.permission.passkey.open_browser"))
+            alert.addButton(withTitle: localized("common.got_it"))
+
+            if alert.runModal() == .alertFirstButtonReturn {
+                openExternally(pageURL ?? session.definition.homeURL)
+            }
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -198,7 +251,7 @@ struct BrowserWebView: NSViewRepresentable {
             openPanel.canChooseFiles = true
             openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection
             openPanel.canCreateDirectories = false
-            openPanel.message = "选择要上传到网页的文件"
+            openPanel.message = localized("browser.upload.choose_file")
 
             let response = openPanel.runModal()
             completionHandler(response == .OK ? openPanel.urls : nil)
@@ -211,7 +264,115 @@ struct BrowserWebView: NSViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
         ) {
+            let mediaTypes = Self.mediaTypes(for: type)
+            let deniedMediaTypes = mediaTypes.filter { Self.isAccessBlocked(for: $0) }
+
+            guard deniedMediaTypes.isEmpty else {
+                decisionHandler(.deny)
+                presentMediaCaptureRecoveryIfNeeded(for: deniedMediaTypes)
+                return
+            }
+
+            pendingMediaTypes.formUnion(mediaTypes)
             decisionHandler(.prompt)
+        }
+
+        /// 从系统设置回到应用时重检，不强迫重载页面或替用户再次触发网页的摄像头/麦克风动作。
+        @objc private func applicationDidBecomeActive(_ notification: Notification) {
+            guard !pendingMediaTypes.isEmpty else {
+                return
+            }
+
+            let deniedMediaTypes = pendingMediaTypes.filter { Self.isAccessBlocked(for: $0) }
+            if deniedMediaTypes.isEmpty,
+               pendingMediaTypes.allSatisfy({ AVCaptureDevice.authorizationStatus(for: $0) == .authorized }) {
+                pendingMediaTypes.removeAll()
+                return
+            }
+
+            presentMediaCaptureRecoveryIfNeeded(for: Array(deniedMediaTypes))
+        }
+
+        private static func mediaTypes(for requestType: WKMediaCaptureType) -> [AVMediaType] {
+            switch requestType {
+            case .camera:
+                [.video]
+            case .microphone:
+                [.audio]
+            case .cameraAndMicrophone:
+                [.video, .audio]
+            @unknown default:
+                []
+            }
+        }
+
+        private static func isAccessBlocked(for mediaType: AVMediaType) -> Bool {
+            switch AVCaptureDevice.authorizationStatus(for: mediaType) {
+            case .denied, .restricted:
+                true
+            case .notDetermined, .authorized:
+                false
+            @unknown default:
+                true
+            }
+        }
+
+        private func presentMediaCaptureRecoveryIfNeeded(for deniedMediaTypes: [AVMediaType]) {
+            let newlyDeniedMediaTypes = deniedMediaTypes.filter { !explainedDeniedMediaTypes.contains($0) }
+            guard !newlyDeniedMediaTypes.isEmpty else {
+                return
+            }
+
+            explainedDeniedMediaTypes.formUnion(newlyDeniedMediaTypes)
+
+            let alert = NSAlert()
+            alert.messageText = mediaCaptureDeniedTitle(for: newlyDeniedMediaTypes)
+            alert.informativeText = mediaCaptureDeniedDescription(for: newlyDeniedMediaTypes)
+            alert.alertStyle = .warning
+
+            if newlyDeniedMediaTypes.contains(.video) {
+                alert.addButton(withTitle: localized("browser.permission.camera.open_settings"))
+            }
+            if newlyDeniedMediaTypes.contains(.audio) {
+                alert.addButton(withTitle: localized("browser.permission.microphone.open_settings"))
+            }
+            alert.addButton(withTitle: localized("common.later"))
+
+            let response = alert.runModal()
+            let selectedIndex = Int(response.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue)
+            let selectableMediaTypes = newlyDeniedMediaTypes.filter { $0 == .video || $0 == .audio }
+            guard selectableMediaTypes.indices.contains(selectedIndex) else {
+                return
+            }
+
+            openMediaCaptureSettings(for: selectableMediaTypes[selectedIndex])
+        }
+
+        private func mediaCaptureDeniedTitle(for mediaTypes: [AVMediaType]) -> String {
+            if mediaTypes.count == 2 {
+                return localized("browser.permission.media.camera_microphone.title")
+            }
+            return localized(mediaTypes.first == .video ? "browser.permission.media.camera.title" : "browser.permission.media.microphone.title")
+        }
+
+        private func mediaCaptureDeniedDescription(for mediaTypes: [AVMediaType]) -> String {
+            let capability = localized(
+                mediaTypes.count == 2
+                    ? "browser.permission.media.capability.camera_microphone"
+                    : mediaTypes.first == .video
+                        ? "browser.permission.media.capability.camera"
+                        : "browser.permission.media.capability.microphone"
+            )
+            return String(format: localized("browser.permission.media.message"), session.definition.name, capability)
+        }
+
+        private func openMediaCaptureSettings(for mediaType: AVMediaType) {
+            let pane = mediaType == .video ? "Privacy_Camera" : "Privacy_Microphone"
+            guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") else {
+                return
+            }
+
+            _ = NSWorkspace.shared.open(url)
         }
 
         private func presentAlert(messageText: String, informativeText: String, style: NSAlert.Style) {
@@ -219,7 +380,7 @@ struct BrowserWebView: NSViewRepresentable {
             alert.messageText = messageText
             alert.informativeText = informativeText
             alert.alertStyle = style
-            alert.addButton(withTitle: "确定")
+            alert.addButton(withTitle: localized("common.confirm"))
             alert.runModal()
         }
 
@@ -228,8 +389,8 @@ struct BrowserWebView: NSViewRepresentable {
             alert.messageText = messageText
             alert.informativeText = informativeText
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "确定")
-            alert.addButton(withTitle: "取消")
+            alert.addButton(withTitle: localized("common.confirm"))
+            alert.addButton(withTitle: localized("common.cancel"))
             return alert.runModal() == .alertFirstButtonReturn
         }
 
@@ -238,8 +399,8 @@ struct BrowserWebView: NSViewRepresentable {
             alert.messageText = messageText
             alert.informativeText = informativeText
             alert.alertStyle = .informational
-            alert.addButton(withTitle: "确定")
-            alert.addButton(withTitle: "取消")
+            alert.addButton(withTitle: localized("common.confirm"))
+            alert.addButton(withTitle: localized("common.cancel"))
 
             let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
             textField.stringValue = defaultText ?? ""
@@ -259,6 +420,10 @@ struct BrowserWebView: NSViewRepresentable {
                 messageText: "打开外部应用？",
                 informativeText: "\(source) 想打开：\n\(target)"
             )
+        }
+
+        private func localized(_ key: String) -> String {
+            String(localized: LocalizedStringResource(stringLiteral: key))
         }
 
         private func openExternally(_ url: URL?) {
@@ -313,6 +478,20 @@ final class BrowserKeyCommandWebView: WKWebView {
         }
 
         return true
+    }
+}
+
+/// 注入脚本的唯一安装入口。
+///
+/// WebKit 只允许整批清空用户脚本、不能单独摘掉某一条，所以隐藏规则一变就得把整套重装一遍；
+/// 装配顺序集中在这里，免得漏掉其中一条。
+enum BrowserUserScripts {
+    @MainActor
+    static func install(into controller: WKUserContentController, hiddenElementRules: [HiddenElementRule]) {
+        controller.removeAllUserScripts()
+        controller.addUserScript(BrowserThemeObserver.makeUserScript())
+        controller.addUserScript(BrowserPasskeySupport.makeUserScript())
+        controller.addUserScript(BrowserElementHidingScript.makeUserScript(rules: hiddenElementRules))
     }
 }
 

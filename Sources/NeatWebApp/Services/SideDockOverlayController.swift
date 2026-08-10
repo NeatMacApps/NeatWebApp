@@ -12,10 +12,10 @@ final class SideDockOverlayController {
     private var verticalPosition = SideDockPlacementResolver.defaultVerticalPosition
     private var preferredDisplayID: CGDirectDisplayID?
     private var isDragging = false
-    private var dragOffsetFromPanelCenterY: CGFloat?
+    private var dragOffsetFromPanelCenter: CGFloat?
     private var draggedApp: WebAppDefinition?
     private var latestInwardDistance: CGFloat = 0
-    private var latestVerticalTravel: CGFloat = 0
+    private var latestAlongEdgeTravel: CGFloat = 0
     private var suppressSelectionUntil = Date.distantPast
 
     func update(
@@ -121,16 +121,19 @@ final class SideDockOverlayController {
 
         if !isDragging {
             isDragging = true
-            dragOffsetFromPanelCenterY = update.mouseLocation.y - panel.frame.midY
+            (panel.contentView as? SideDockHostingView)?.isDragging = true
+            let panelCenter = edge.isSide ? panel.frame.midY : panel.frame.midX
+            let mouseCoordinate = edge.isSide ? update.mouseLocation.y : update.mouseLocation.x
+            dragOffsetFromPanelCenter = mouseCoordinate - panelCenter
             draggedApp = update.app
         }
 
         latestInwardDistance = update.inwardDistance
-        latestVerticalTravel = update.verticalTravel
+        latestAlongEdgeTravel = update.alongEdgeTravel
         guard !SideDockDragResolver.isClosingGesture(
             startedOnApp: draggedApp != nil,
             inwardDistance: update.inwardDistance,
-            verticalTravel: update.verticalTravel
+            alongEdgeTravel: update.alongEdgeTravel
         ) else {
             return
         }
@@ -142,12 +145,21 @@ final class SideDockOverlayController {
         }
 
         preferredDisplayID = screen.displayID
-        let offset = dragOffsetFromPanelCenterY ?? 0
-        verticalPosition = SideDockPlacementResolver.normalizedVerticalPosition(
-            panelMidY: update.mouseLocation.y - offset,
-            visibleFrame: screen.visibleFrame,
-            panelHeight: panel.frame.height
-        )
+        let offset = dragOffsetFromPanelCenter ?? 0
+        if edge.isSide {
+            verticalPosition = SideDockPlacementResolver.normalizedVerticalPosition(
+                panelMidY: update.mouseLocation.y - offset,
+                visibleFrame: screen.visibleFrame,
+                panelHeight: panel.frame.height
+            )
+        } else {
+            verticalPosition = SideDockPlacementResolver.normalizedPosition(
+                edge: edge,
+                panelMidX: update.mouseLocation.x - offset,
+                visibleFrame: screen.visibleFrame,
+                panelWidth: panel.frame.width
+            )
+        }
 
         if let context = presentationContext() {
             panel.setFrame(context.panelFrame.integral, display: true)
@@ -163,13 +175,14 @@ final class SideDockOverlayController {
         let shouldClose = SideDockDragResolver.shouldClose(
             startedOnApp: appToClose != nil,
             inwardDistance: latestInwardDistance,
-            verticalTravel: latestVerticalTravel
+            alongEdgeTravel: latestAlongEdgeTravel
         )
         isDragging = false
-        dragOffsetFromPanelCenterY = nil
+        (panel?.contentView as? SideDockHostingView)?.isDragging = false
+        dragOffsetFromPanelCenter = nil
         draggedApp = nil
         latestInwardDistance = 0
-        latestVerticalTravel = 0
+        latestAlongEdgeTravel = 0
         suppressSelectionUntil = Date().addingTimeInterval(0.2)
 
         if shouldClose, let appToClose {
@@ -221,8 +234,8 @@ final class SideDockOverlayController {
             contentRect: CGRect(
                 origin: .zero,
                 size: CGSize(
-                    width: SideDockPresentationContext.Layout.width,
-                    height: SideDockPresentationContext.Layout.minimumHeight
+                    width: SideDockPresentationContext.Layout.thickness,
+                    height: SideDockPresentationContext.Layout.thickness
                 )
             ),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -245,8 +258,30 @@ final class SideDockOverlayController {
 /// 侧边 Dock 是非激活浮层，宿主进程多数时候不在前台。
 /// 不接管首次点击的话，落在图标以外的空白玻璃上的按下事件只会被系统吞掉，整块 Dock 就拖不动。
 private final class SideDockHostingView: NSHostingView<AnyView> {
+    /// 拖动中显示抓手，其余时间显示箭头。
+    var isDragging = false {
+        didSet {
+            updateCursor()
+        }
+    }
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
+    }
+
+    // 非激活面板不会自动重置光标：鼠标从终端等窗口移进来时
+    // 会残留 I-beam / 十字等形状，这里强制面板区域始终是箭头或抓手。
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        addCursorRect(bounds, cursor: isDragging ? .closedHand : .arrow)
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        updateCursor()
+    }
+
+    private func updateCursor() {
+        (isDragging ? NSCursor.closedHand : NSCursor.arrow).set()
     }
 }
 
