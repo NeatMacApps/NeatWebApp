@@ -58,6 +58,68 @@ struct HiddenElementRule: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+/// 用户在某个网页应用里收藏的一页。
+///
+/// 列表按网页应用隔离：收藏存在该应用自己的偏好里，不会出现在别的网页应用窗口。
+struct WebAppBookmark: Codable, Equatable, Identifiable, Sendable {
+    var id: UUID
+    /// 给用户看的标题，通常是收藏当时的页面标题。
+    var title: String
+    /// 已归一化的地址，用来判断当前页是不是已经收藏过。
+    var urlString: String
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        urlString: String,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.title = title
+        self.urlString = urlString
+        self.createdAt = createdAt
+    }
+
+    var url: URL? {
+        URL(string: urlString)
+    }
+
+    var displayHost: String {
+        url?.host() ?? urlString
+    }
+
+    /// 只收普通网页。去掉锚点、去掉路径末尾多余斜杠，避免同一页被存两份。
+    static func canonicalURLString(_ url: URL) -> String? {
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
+            return nil
+        }
+
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        components.fragment = nil
+        if let host = components.host {
+            components.host = host.lowercased()
+        }
+        if components.path.count > 1, components.path.hasSuffix("/") {
+            components.path = String(components.path.dropLast())
+        }
+
+        let canonical = components.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return canonical.isEmpty ? nil : canonical
+    }
+
+    func matches(_ url: URL) -> Bool {
+        guard let canonical = Self.canonicalURLString(url) else {
+            return false
+        }
+
+        return urlString == canonical
+    }
+}
+
 struct StoredWebAppPreference: Codable, Equatable, Sendable {
     var pageZoom: Double = 0.8
     var isPinned: Bool = false
@@ -67,9 +129,15 @@ struct StoredWebAppPreference: Codable, Equatable, Sendable {
     /// 必须是可选的：老版本存下来的偏好里没有这个字段，写成非可选会让整份偏好解码失败、
     /// 用户的缩放/置顶/窗口位置一起丢掉。
     var hiddenElements: [HiddenElementRule]?
+    /// 同样必须是可选的：老版本没有收藏字段。
+    var bookmarks: [WebAppBookmark]?
 
     var resolvedHiddenElements: [HiddenElementRule] {
         hiddenElements ?? []
+    }
+
+    var resolvedBookmarks: [WebAppBookmark] {
+        bookmarks ?? []
     }
 
     var resolvedWindowPlacement: StoredWindowPlacement? {
@@ -91,10 +159,30 @@ final class WebAppPreferencesStore {
         static let preferences = "NeatWebApp.Preferences"
     }
 
-    private let userDefaults: UserDefaults
+    /// 宿主和运行时是两个进程，标准 UserDefaults 各写各的。
+    /// 窗口位置必须两边读同一份，否则占位框会对不齐真窗。
+    private static let siblingBundleIDs = [
+        "com.geraltgraham.NeatWebApp",
+        "com.geraltgraham.NeatWebAppRuntime"
+    ]
 
-    init(userDefaults: UserDefaults = .standard) {
+    private let userDefaults: UserDefaults
+    private let sharedFileURL: URL?
+    private let decoder = JSONDecoder()
+    private let encoder = JSONEncoder()
+
+    init(userDefaults: UserDefaults = .standard, rootDirectoryURL: URL? = nil) {
         self.userDefaults = userDefaults
+        let usesSharedFile = userDefaults === UserDefaults.standard || rootDirectoryURL != nil
+        if usesSharedFile {
+            self.sharedFileURL = try? RuntimeSupportDirectory.directoryURL(
+                named: "Preferences",
+                rootDirectoryURL: rootDirectoryURL
+            ).appending(path: "web-apps.json")
+        } else {
+            self.sharedFileURL = nil
+        }
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     }
 
     func load(for appID: String) -> StoredWebAppPreference {
@@ -108,18 +196,60 @@ final class WebAppPreferencesStore {
     }
 
     private var storage: [String: StoredWebAppPreference] {
-        guard let data = userDefaults.data(forKey: Key.preferences) else {
-            return [:]
+        if let shared = loadSharedFile(), !shared.isEmpty {
+            return shared
         }
 
-        return (try? JSONDecoder().decode([String: StoredWebAppPreference].self, from: data)) ?? [:]
+        let merged = mergedDefaultsStorage()
+        if sharedFileURL != nil, !merged.isEmpty {
+            persist(merged)
+        }
+        return merged
     }
 
     private func persist(_ value: [String: StoredWebAppPreference]) {
-        guard let data = try? JSONEncoder().encode(value) else {
+        guard let data = try? encoder.encode(value) else {
             return
         }
 
         userDefaults.set(data, forKey: Key.preferences)
+        if let sharedFileURL {
+            try? data.write(to: sharedFileURL, options: .atomic)
+        }
+    }
+
+    private func loadSharedFile() -> [String: StoredWebAppPreference]? {
+        guard let sharedFileURL,
+              let data = try? Data(contentsOf: sharedFileURL) else {
+            return nil
+        }
+
+        return try? decoder.decode([String: StoredWebAppPreference].self, from: data)
+    }
+
+    private func mergedDefaultsStorage() -> [String: StoredWebAppPreference] {
+        var merged: [String: StoredWebAppPreference] = [:]
+        if sharedFileURL != nil {
+            for bundleID in Self.siblingBundleIDs {
+                guard let domain = UserDefaults.standard.persistentDomain(forName: bundleID),
+                      let data = domain[Key.preferences] as? Data,
+                      let decoded = try? decoder.decode([String: StoredWebAppPreference].self, from: data) else {
+                    continue
+                }
+
+                merged.merge(decoded) { current, new in
+                    new.resolvedWindowPlacement != nil ? new : current
+                }
+            }
+        }
+
+        if let data = userDefaults.data(forKey: Key.preferences),
+           let decoded = try? decoder.decode([String: StoredWebAppPreference].self, from: data) {
+            merged.merge(decoded) { current, new in
+                new.resolvedWindowPlacement != nil ? new : current
+            }
+        }
+
+        return merged
     }
 }

@@ -58,6 +58,7 @@ final class BrowserElementHidingTests: XCTestCase {
         XCTAssertEqual(preference.pageZoom, 1.2)
         XCTAssertTrue(preference.isPinned)
         XCTAssertTrue(preference.resolvedHiddenElements.isEmpty)
+        XCTAssertTrue(preference.resolvedBookmarks.isEmpty)
     }
 
     func testHiddenElementsSurviveEncodeDecodeRoundTrip() throws {
@@ -71,5 +72,28 @@ final class BrowserElementHidingTests: XCTestCase {
 
         XCTAssertEqual(restored.resolvedHiddenElements.count, 1)
         XCTAssertEqual(restored.resolvedHiddenElements.first?.selector, "#promo")
+    }
+
+    /// 老版本存下来的偏好里没有收藏这个字段，必须仍然能解出来。
+    func testLegacyPreferenceWithoutBookmarksStillDecodes() throws {
+        let legacy = Data(#"{"pageZoom":1.2,"isPinned":true,"isMobileUA":false}"#.utf8)
+
+        let preference = try JSONDecoder().decode(StoredWebAppPreference.self, from: legacy)
+
+        XCTAssertTrue(preference.resolvedBookmarks.isEmpty)
+    }
+
+    func testBookmarksSurviveEncodeDecodeRoundTrip() throws {
+        var preference = StoredWebAppPreference()
+        preference.bookmarks = [
+            WebAppBookmark(title: "文档", urlString: "https://example.com/docs")
+        ]
+
+        let data = try JSONEncoder().encode(preference)
+        let restored = try JSONDecoder().decode(StoredWebAppPreference.self, from: data)
+
+        XCTAssertEqual(restored.resolvedBookmarks.count, 1)
+        XCTAssertEqual(restored.resolvedBookmarks.first?.title, "文档")
+        XCTAssertEqual(restored.resolvedBookmarks.first?.urlString, "https://example.com/docs")
     }
 }

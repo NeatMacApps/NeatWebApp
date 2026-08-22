@@ -43,11 +43,19 @@ Shared code contains:
 
 ## Launch Flow
 
+Product rulings, overturned approaches, and acceptance for the covering lid: [launch-cover.md](design/launch-cover.md).
+
 1. `AppModel` starts, loads the app catalog, restores cached favicons, refreshes screen state, and refreshes the runtime registry.
 2. When the user opens a web app, `WebAppRuntimeCoordinator` checks whether a runtime for that `appID` is already available.
-3. If needed, `RuntimeLauncher` writes a bootstrap payload and launches `NeatWebAppRuntime`.
-4. The runtime reads its bootstrap, creates `BrowserSession`, builds its window controller, and publishes runtime state.
-5. The host observes runtime changes to update launcher state, diagnostics, and helper takeover behavior.
+3. If this is a **new** process launch (not expanding or focusing an already-running runtime), the host resolves the window frame **once**, immediately shows a placeholder at that exact frame, and writes the same frame into the runtime bootstrap. This covers the wait while Launch Services starts `NeatWebAppRuntime`.
+4. `RuntimeLauncher` writes a bootstrap payload and launches `NeatWebAppRuntime`.
+5. The runtime reads its bootstrap, creates `BrowserSession`, applies the host-provided frame as-is (it must not re-resolve placement, nudge the window, or let SwiftUI / window restoration change the frame on first show), and publishes runtime state. A frame that fills the usable desktop is treated as a zoom artifact, not the user's size.
+6. The runtime keeps the covering lid in place until the real window has painted its first frame. Only then does it report itself visible; the host lifts the lid with no fade and no scale. Collapse, hide, crash, or launch failure also lifts it immediately. Already-running windows never go through this cover.
+7. The host observes runtime changes to update launcher state, diagnostics, and helper takeover behavior.
+
+Placeholder windows live in the host process only as a **covering lid** while Launch Services starts the helper: same outer frame and window style, white content, no second chrome, no transition animation, no own shadow (the real window’s shadow is the only one). The runtime window disables AppKit’s default appear zoom, sits at that exact frame underneath, and does **not** tell the host it is visible until the webpage has painted a frame. The host then orders the lid out. They must not look like two different screens swapping. The host is a menu-bar extra, so the cover must bring the app forward or it appears behind other apps and looks like a missed click. The lid sits on a higher window layer so it is not treated as covering the real window for auto-collapse. Background health restarts do not show a cover.
+
+Host and runtime are separate processes with separate preference domains. Window size and position therefore live in a shared Application Support file both processes read, and the host still passes the exact frame in the bootstrap so the first appearance cannot drift even if the two processes would otherwise pick different screens.
 
 ## Runtime Window Lifecycle
 
@@ -55,9 +63,10 @@ Shared code contains:
 - Ending a WebApp is a deliberate side-notch gesture: drag its icon toward the screen center past the close threshold and release. The host then asks that runtime to terminate; it removes its state/bootstrap files and exits.
 - Hiding and side-notch collapse remain window-lifecycle actions. They keep the runtime process alive so the host can show, focus, expand, or recover the same web app without launching a replacement.
 - Each runtime process owns exactly one browser window. There is no way to spawn extra windows for the same web app.
-- Invisibility is the only auto-collapse trigger. Once `NSWindow.occlusionState` drops `.visible` for longer than `collapseDelayAfterOcclusion`, the runtime hides its window and publishes the collapsed state; the host then places that WebApp in the shared side Dock. There is deliberately no idle/unfocused timeout: a window the user can still see stays open no matter how long it goes untouched.
-- macOS reports "not visible" for being fully covered by opaque windows, for sitting on an inactive Space, and for another app going full-screen. All three intentionally count as invisible here. Only two cases are excluded, in `WebAppWindowController.shouldCollapseWindowWhenOccluded`: miniaturized to the Dock (the user put it there) and a window that is not on screen at all (already collapsed or hidden — collapsing again would be a no-op that fires spurious runtime events).
-- Occlusion state updates asynchronously and flickers during Mission Control and window animations, so the collapse is debounced and re-checks eligibility when the delay elapses instead of trusting the state captured at scheduling time.
+- Invisibility is the only auto-collapse trigger. Once at least 80% of the browser window is actually hidden (covered by opaque same-layer windows, off-screen, or not on the active Space), the runtime collapses immediately and the host places that WebApp in the shared side Dock. System overlays such as Mission Control are ignored, so there is no debounce delay. There is deliberately no idle/unfocused timeout: a window the user can still see stays open no matter how long it goes untouched.
+- macOS's own `occlusionState` only reports "any pixel visible" versus "fully covered", which is too coarse here. Hidden area is computed from the on-screen window list by subtracting overlapping same-layer opaque frames (and any portion outside all displays). A window missing from the current Space's list counts as fully hidden. Being covered, sitting on an inactive Space, and another app going full-screen all still count. Only two cases are excluded, in `WebAppWindowController.shouldCollapseWindowWhenOccluded`: miniaturized to the Dock (the user put it there) and a window that is not on screen at all (already collapsed or hidden — collapsing again would be a no-op that fires spurious runtime events).
+- Collapse is immediate. Mission Control and similar system overlays sit on a higher window layer and are skipped, which replaces the old 2-second debounce. Eligibility is still re-checked at the moment of collapse instead of trusting an earlier snapshot.
+- A user-initiated show (launcher, side Dock, or focus command) suppresses auto-collapse briefly so a window that just came on screen is not treated as fully hidden while the on-screen window list is still catching up. After that grace, the 80% rule applies again. This is not the old occlusion delay. The covering lid sits on a higher window layer and is only lifted after the first painted frame (or on failure / timeout), so it must not be treated as same-layer occlusion that collapses the real window.
 - Because the side Dock joins every Space, the browser window carries `.moveToActiveSpace`. Without it, opening an item from another Space would drag the user back to the Space the window was left on instead of bringing the window to them.
 - Pinned windows never auto-collapse.
 
@@ -85,6 +94,7 @@ Shared code contains:
 - `Sources/NeatWebApp/Services/AppPreferencesStore.swift`
 - `Sources/NeatWebApp/Services/WebAppRuntimeCoordinator.swift`
 - `Sources/NeatWebApp/Services/RuntimeLauncher.swift`
+- `Sources/NeatWebApp/Services/LaunchPlaceholderController.swift`
 - `Sources/NeatWebApp/Services/WebAppPreferencesStore.swift`
 - `Sources/NeatWebApp/Services/WebAppFaviconStore.swift`
 
@@ -123,6 +133,7 @@ The browser bridge owns daily browser capabilities that WebKit does not enable b
 | `Command Shift H` | return to the configured home URL |
 | `Command P` | print the current page |
 | `Command W` | collapse into the side notch (same action as the top chrome band's `×`) |
+| `Command D` | bookmark or unbookmark the current page for this web app only |
 
 Two deliberate exclusions: `Command ←`/`Command →` stay with the page because they mean "start/end of line" inside a web text field, and `Command H` stays the system hide command, so home is only reachable with Shift. Interception has to happen in `performKeyEquivalent` rather than `keyDown` — a focused web input would otherwise swallow the key first.
 
@@ -141,8 +152,8 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 
 - Collapsed WebApps are collected into one host-owned vertical Dock instead of creating independent floating circles in each runtime.
 - The collapsed WebApps live directly inside a compact, pure-black side notch. It stays one stable piece attached to the edge; there is no hover drawer, second-stage expansion, or dedicated drag handle. Its black fill, restrained white stroke, and corner language match the top-notch launcher.
-- Dragging anywhere on the notch, including directly over an icon, moves it vertically and can transfer it between displays. A short click still opens the WebApp, while a completed drag suppresses the click. The vertical position is stored as a normalized value so it remains valid when resolution or available screen area changes.
-- Settings offers explicit left and right placement. On first use, the default side avoids the larger system-reserved inset; once chosen, the user's setting is authoritative.
+- Dragging anywhere on the notch, including directly over an icon, moves it along the attached edge and can transfer it between displays. Dragging past a usable corner wraps to the adjacent edge (left/right ↔ bottom; the top edge is not used). A short click still opens the WebApp, while a completed drag suppresses the click. Position along the current edge is stored as a normalized value so it remains valid when resolution or available screen area changes.
+- Settings offers explicit left, right, and bottom placement. On first use, the default side avoids the larger system-reserved inset; once chosen, the user's setting is authoritative. Dragging around a corner updates that same setting.
 - Placement is computed from `NSScreen.visibleFrame`, not the physical display edge. A right-side Dock therefore sits immediately inside a right-side system Dock instead of covering it or stealing its reveal boundary. Screen geometry is refreshed after display configuration changes and must not be cached indefinitely.
 - Only the visible black panel receives pointer events. No transparent full-height window is allowed along the edge because that would block other edge interactions.
 - System focus rings are disabled on the Dock and Settings controls. Keyboard users receive the app's own restrained white focus treatment instead.
@@ -150,7 +161,7 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 ## Persistence
 
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
-- `WebAppPreferencesStore` persists zoom, pinned state, and saved window placement.
+- `WebAppPreferencesStore` persists zoom, pinned state, saved window placement, hidden-element rules, and **per-web-app bookmarks**. Each web app's bookmark list is stored under that app's own preference record and never mixed with another app.
 - `AppPreferencesStore` persists the side Dock edge, normalized vertical position, and target display.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
 - `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.
@@ -159,8 +170,8 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 
 Tests are split by ownership:
 
-- `Tests/NeatWebAppTests` covers host-side geometry, persistence, and catalog-related behavior.
-- `Tests/NeatWebAppRuntimeTests` covers runtime-side browser chrome, legacy placement compatibility, and the auto-collapse eligibility rules.
+- `Tests/NeatWebAppTests` covers host-side geometry, persistence, catalog-related behavior, and side-dock corner wrapping.
+- `Tests/NeatWebAppRuntimeTests` covers runtime-side browser chrome, per-web-app bookmarks, legacy placement compatibility, auto-collapse eligibility, and visible-area coverage math.
 - Auto-collapse eligibility is kept in a pure static function precisely so it stays testable without a live window; keep new window-lifecycle rules factored the same way.
 
 ## Design Constraints

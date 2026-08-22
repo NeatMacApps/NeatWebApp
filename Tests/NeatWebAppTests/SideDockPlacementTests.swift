@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import SwiftUI
 import XCTest
 @testable import NeatWebApp
 
@@ -355,6 +356,126 @@ final class SideDockPlacementTests: XCTestCase {
             )
         }
     }
+
+    func testWrapsFromLeftBottomCornerOntoBottomEdge() {
+        let wrap = wrapDecision(
+            edge: .left,
+            position: 0,
+            mouse: CGPoint(x: 28, y: 40),
+            offset: 40 - 120
+        )
+
+        XCTAssertEqual(wrap?.edge, .bottom)
+        XCTAssertEqual(wrap?.position, 0)
+    }
+
+    func testWrapsFromLeftWhenPushedPastTheBottom() {
+        let wrap = wrapDecision(
+            edge: .left,
+            position: 0,
+            mouse: CGPoint(x: 24, y: 80)
+        )
+
+        XCTAssertEqual(wrap?.edge, .bottom)
+        XCTAssertEqual(wrap?.position, 0)
+    }
+
+    func testDoesNotWrapFromTheMiddleOfTheLeftEdge() {
+        XCTAssertNil(
+            wrapDecision(
+                edge: .left,
+                position: 0.5,
+                mouse: CGPoint(x: 80, y: 400)
+            )
+        )
+    }
+
+    func testDoesNotWrapFromTheTopOfTheLeftEdge() {
+        XCTAssertNil(
+            wrapDecision(
+                edge: .left,
+                position: 1,
+                mouse: CGPoint(x: 40, y: 820)
+            )
+        )
+    }
+
+    func testDoesNotWrapUntilTheCornerIsActuallyPassed() {
+        XCTAssertNil(
+            wrapDecision(
+                edge: .left,
+                position: 0,
+                mouse: CGPoint(x: 20, y: 40),
+                offset: 40 - 120
+            )
+        )
+    }
+
+    func testWrapsFromRightBottomCornerOntoBottomEdge() {
+        let wrap = wrapDecision(
+            edge: .right,
+            position: 0,
+            mouse: CGPoint(x: 1172, y: 40),
+            offset: 40 - 120
+        )
+
+        XCTAssertEqual(wrap?.edge, .bottom)
+        XCTAssertEqual(wrap?.position, 1)
+    }
+
+    func testWrapsFromBottomLeftCornerOntoLeftEdge() {
+        let wrap = wrapDecision(
+            edge: .bottom,
+            position: 0,
+            mouse: CGPoint(x: 20, y: 40),
+            offset: 20 - 120,
+            panelSize: CGSize(width: 240, height: 47)
+        )
+
+        XCTAssertEqual(wrap?.edge, .left)
+        XCTAssertEqual(wrap?.position, 0)
+    }
+
+    func testWrapsFromBottomRightCornerOntoRightEdge() {
+        let wrap = wrapDecision(
+            edge: .bottom,
+            position: 1,
+            mouse: CGPoint(x: 1180, y: 40),
+            offset: 1180 - 1080,
+            panelSize: CGSize(width: 240, height: 47)
+        )
+
+        XCTAssertEqual(wrap?.edge, .right)
+        XCTAssertEqual(wrap?.position, 0)
+    }
+
+    func testDoesNotWrapFromTheMiddleOfTheBottomEdge() {
+        XCTAssertNil(
+            wrapDecision(
+                edge: .bottom,
+                position: 0.5,
+                mouse: CGPoint(x: 600, y: 80),
+                panelSize: CGSize(width: 240, height: 47)
+            )
+        )
+    }
+
+    private func wrapDecision(
+        edge: SideDockEdge,
+        position: CGFloat,
+        mouse: CGPoint,
+        offset: CGFloat = 0,
+        panelSize: CGSize = CGSize(width: 47, height: 240)
+    ) -> SideDockDragResolver.WrapTarget? {
+        SideDockDragResolver.wrapTarget(
+            currentEdge: edge,
+            currentPosition: position,
+            mouseLocation: mouse,
+            dragOffsetFromCenter: offset,
+            visibleFrame: CGRect(x: 0, y: 0, width: 1200, height: 800),
+            panelSize: panelSize
+        )
+    }
 }
 
 final class AppPreferencesStoreTests: XCTestCase {
@@ -403,6 +524,19 @@ final class AppPreferencesStoreTests: XCTestCase {
 
         XCTAssertEqual(preferences.sideDockEdge, .left)
         XCTAssertEqual(preferences.sideDockVerticalPosition, 1)
+    }
+
+    func testGlassInsetKeepsTheAttachedEdgeFlush() {
+        let rect = CGRect(x: 0, y: 0, width: 200, height: 47)
+        let shape = EdgeAttachedShape(edge: .bottom, cornerRadius: 15)
+        let original = shape.path(in: rect).boundingRect
+        let inset = shape.inset(by: 4).path(in: rect).boundingRect
+
+        XCTAssertEqual(original.maxY, rect.maxY, accuracy: 0.5)
+        XCTAssertEqual(inset.maxY, rect.maxY, accuracy: 0.5)
+        XCTAssertGreaterThan(inset.minY, original.minY)
+        XCTAssertGreaterThan(inset.minX, original.minX)
+        XCTAssertLessThan(inset.maxX, original.maxX)
     }
 
     private func withStore(_ body: (AppPreferencesStore) -> Void) {

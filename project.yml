@@ -20,8 +20,8 @@ settings:
     # 版本号的唯一来源：两个 Info.plist 都通过构建变量取值，不再各写各的。
     # MARKETING_VERSION 是给人看的展示版本（SemVer）；
     # CURRENT_PROJECT_VERSION 是 Sparkle 判断新旧的唯一权威值，必须是严格递增的正整数。
-    MARKETING_VERSION: 0.3.2
-    CURRENT_PROJECT_VERSION: 3020
+    MARKETING_VERSION: 0.3.7
+    CURRENT_PROJECT_VERSION: 3025
   configs:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
@@ -60,6 +60,7 @@ targets:
           - Services/WebAppFloatingIconSupport.swift
           - Services/WebAppWindowController.swift
           - Services/WebAppWindowCoordinator.swift
+          - Services/WindowVisibleCoverage.swift
       - Sources/Shared
     dependencies:
       - target: NeatWebAppRuntime
@@ -88,6 +89,7 @@ targets:
       - Sources/NeatWebApp/Features/Browser
       - Sources/NeatWebApp/Services/WebAppFloatingIconSupport.swift
       - Sources/NeatWebApp/Services/WebAppWindowController.swift
+      - Sources/NeatWebApp/Services/WindowVisibleCoverage.swift
       - Sources/NeatWebApp/Services/WebAppFaviconStore.swift
       - Sources/NeatWebApp/Models/WebAppDefinition.swift
       - Sources/NeatWebApp/Models/ScreenNotchGeometry.swift

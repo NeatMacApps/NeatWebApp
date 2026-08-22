@@ -1,5 +1,16 @@
 import AppKit
+import Observation
 import SwiftUI
+
+@MainActor
+@Observable
+final class SideDockOverlayState {
+    var context: SideDockPresentationContext
+
+    init(context: SideDockPresentationContext) {
+        self.context = context
+    }
+}
 
 @MainActor
 final class SideDockOverlayController {
@@ -7,11 +18,14 @@ final class SideDockOverlayController {
 
     private weak var appModel: AppModel?
     private var panel: SideDockPanel?
+    private var overlayState: SideDockOverlayState?
+    private var dockHostingView: SideDockHostingView?
     private var apps: [WebAppDefinition] = []
     private var edge: SideDockEdge = .right
     private var verticalPosition = SideDockPlacementResolver.defaultVerticalPosition
     private var preferredDisplayID: CGDirectDisplayID?
     private var isDragging = false
+    private var didWrapDuringDrag = false
     private var dragOffsetFromPanelCenter: CGFloat?
     private var draggedApp: WebAppDefinition?
     private var latestInwardDistance: CGFloat = 0
@@ -26,22 +40,26 @@ final class SideDockOverlayController {
         appModel: AppModel
     ) {
         self.apps = apps
-        self.edge = edge
-        self.verticalPosition = verticalPosition
-        // 偏好里还没有记录过屏幕时保留本次会话已解析出的那块，
-        // 否则每次刷新都会退回兜底逻辑重新挑屏幕，Dock 又会开始漂。
-        self.preferredDisplayID = preferredDisplayID ?? self.preferredDisplayID
         self.appModel = appModel
+        if !isDragging {
+            self.edge = edge
+            self.verticalPosition = verticalPosition
+            // 偏好里还没有记录过屏幕时保留本次会话已解析出的那块，
+            // 否则每次刷新都会退回兜底逻辑重新挑屏幕，Dock 又会开始漂。
+            self.preferredDisplayID = preferredDisplayID ?? self.preferredDisplayID
+        }
 
         guard !apps.isEmpty else {
             hide()
             return
         }
 
-        present(animated: panel?.isVisible == true)
+        present(animated: panel?.isVisible == true && !isDragging)
     }
 
     func hide() {
+        overlayState = nil
+        dockHostingView = nil
         guard let panel, panel.isVisible else {
             return
         }
@@ -82,10 +100,17 @@ final class SideDockOverlayController {
     }
 
     private func installRootView(in panel: SideDockPanel, context: SideDockPresentationContext) {
+        if let overlayState {
+            overlayState.context = context
+            return
+        }
+
+        let overlayState = SideDockOverlayState(context: context)
+        self.overlayState = overlayState
         let currentBounds = panel.contentView?.bounds
             ?? CGRect(origin: .zero, size: panel.frame.size)
         let rootView = SideDockOverlayRootView(
-            context: context,
+            state: overlayState,
             onSelectApp: { [weak self] app in
                 self?.select(app)
             },
@@ -101,8 +126,8 @@ final class SideDockOverlayController {
         let hostingView = SideDockHostingView(rootView: AnyView(rootView))
         hostingView.frame = currentBounds
         hostingView.autoresizingMask = [.width, .height]
-        hostingView.wantsLayer = true
-        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        hostingView.clearHostingBackground()
+        dockHostingView = hostingView
         panel.contentView = hostingView
     }
 
@@ -121,7 +146,8 @@ final class SideDockOverlayController {
 
         if !isDragging {
             isDragging = true
-            (panel.contentView as? SideDockHostingView)?.isDragging = true
+            didWrapDuringDrag = false
+            dockHostingView?.isDragging = true
             let panelCenter = edge.isSide ? panel.frame.midY : panel.frame.midX
             let mouseCoordinate = edge.isSide ? update.mouseLocation.y : update.mouseLocation.x
             dragOffsetFromPanelCenter = mouseCoordinate - panelCenter
@@ -130,13 +156,6 @@ final class SideDockOverlayController {
 
         latestInwardDistance = update.inwardDistance
         latestAlongEdgeTravel = update.alongEdgeTravel
-        guard !SideDockDragResolver.isClosingGesture(
-            startedOnApp: draggedApp != nil,
-            inwardDistance: update.inwardDistance,
-            alongEdgeTravel: update.alongEdgeTravel
-        ) else {
-            return
-        }
 
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(update.mouseLocation) })
             ?? panel.screen
@@ -146,6 +165,25 @@ final class SideDockOverlayController {
 
         preferredDisplayID = screen.displayID
         let offset = dragOffsetFromPanelCenter ?? 0
+        if let wrap = SideDockDragResolver.wrapTarget(
+            currentEdge: edge,
+            currentPosition: verticalPosition,
+            mouseLocation: update.mouseLocation,
+            dragOffsetFromCenter: offset,
+            visibleFrame: screen.visibleFrame,
+            panelSize: panel.frame.size
+        ) {
+            applyWrappedPlacement(wrap, mouseLocation: update.mouseLocation, panel: panel)
+            return
+        }
+
+        guard !SideDockDragResolver.isClosingGesture(
+            startedOnApp: draggedApp != nil,
+            inwardDistance: update.inwardDistance,
+            alongEdgeTravel: update.alongEdgeTravel
+        ) else {
+            return
+        }
         if edge.isSide {
             verticalPosition = SideDockPlacementResolver.normalizedVerticalPosition(
                 panelMidY: update.mouseLocation.y - offset,
@@ -162,8 +200,29 @@ final class SideDockOverlayController {
         }
 
         if let context = presentationContext() {
+            overlayState?.context = context
             panel.setFrame(context.panelFrame.integral, display: true)
         }
+    }
+
+    private func applyWrappedPlacement(
+        _ wrap: SideDockDragResolver.WrapTarget,
+        mouseLocation: CGPoint,
+        panel: SideDockPanel
+    ) {
+        edge = wrap.edge
+        verticalPosition = wrap.position
+        didWrapDuringDrag = true
+        guard let context = presentationContext() else {
+            return
+        }
+
+        overlayState?.context = context
+        let frame = context.panelFrame
+        panel.setFrame(frame.integral, display: true)
+        dragOffsetFromPanelCenter = wrap.edge.isSide
+            ? mouseLocation.y - frame.midY
+            : mouseLocation.x - frame.midX
     }
 
     private func finishDragging() {
@@ -172,17 +231,19 @@ final class SideDockOverlayController {
         }
 
         let appToClose = draggedApp
-        let shouldClose = SideDockDragResolver.shouldClose(
+        let shouldClose = !didWrapDuringDrag && SideDockDragResolver.shouldClose(
             startedOnApp: appToClose != nil,
             inwardDistance: latestInwardDistance,
             alongEdgeTravel: latestAlongEdgeTravel
         )
         isDragging = false
-        (panel?.contentView as? SideDockHostingView)?.isDragging = false
+        didWrapDuringDrag = false
+        dockHostingView?.isDragging = false
         dragOffsetFromPanelCenter = nil
         draggedApp = nil
         latestInwardDistance = 0
         latestAlongEdgeTravel = 0
+        // 只有真正开始拖过才会走到这里；松手那一下还会落到图标上，短时间忽略点开。
         suppressSelectionUntil = Date().addingTimeInterval(0.2)
 
         if shouldClose, let appToClose {
@@ -191,6 +252,7 @@ final class SideDockOverlayController {
         }
 
         appModel?.updateSideDockPlacement(
+            edge: edge,
             verticalPosition: verticalPosition,
             displayID: preferredDisplayID
         )
@@ -265,6 +327,37 @@ private final class SideDockHostingView: NSHostingView<AnyView> {
         }
     }
 
+    override var isOpaque: Bool {
+        false
+    }
+
+    override func layout() {
+        super.layout()
+        clearHostingBackground()
+        applyClearLiquidGlassIfAvailable()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        clearHostingBackground()
+        applyClearLiquidGlassIfAvailable()
+    }
+
+    override func didAddSubview(_ subview: NSView) {
+        super.didAddSubview(subview)
+        applyClearLiquidGlassIfAvailable()
+    }
+
+    /// macOS 26 的 `NSHostingView` 会按窗口背景画出一层不透明浅色矩形，
+    /// 只清 CALayer 不够，玻璃再通透也会被这块底板托成浅色方块。
+    func clearHostingBackground() {
+        wantsLayer = true
+        layer?.isOpaque = false
+        layer?.backgroundColor = NSColor.clear.cgColor
+        setValue(NSColor.clear, forKey: "backgroundColor")
+        safeAreaRegions = []
+    }
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
     }
@@ -282,6 +375,14 @@ private final class SideDockHostingView: NSHostingView<AnyView> {
 
     private func updateCursor() {
         (isDragging ? NSCursor.closedHand : NSCursor.arrow).set()
+    }
+
+    private func applyClearLiquidGlassIfAvailable() {
+        guard #available(macOS 26.0, *) else {
+            return
+        }
+
+        ClearLiquidGlass.apply(in: self)
     }
 }
 

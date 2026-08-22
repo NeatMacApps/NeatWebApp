@@ -12,6 +12,8 @@ import AppKit
 ///   前进后退只绑 `Command [` / `Command ]`，与 Safari 菜单里的标注一致。
 /// - `Command H`：系统隐藏应用，只有加 Shift 才是回到配置地址。
 /// - `Command C/V/X/A/Z`：交给系统标准菜单，避免与网页内的编辑行为打架。
+///
+/// `Command D` 收藏或取消收藏当前页面，与常见浏览器一致。
 enum BrowserKeyCommand: Equatable {
     case zoomIn
     case zoomOut
@@ -23,6 +25,7 @@ enum BrowserKeyCommand: Equatable {
     case goHome
     case printPage
     case collapseWindow
+    case toggleBookmark
 
     /// 主键盘与数字小键盘的 `charactersIgnoringModifiers` 一致，因此无需区分 `.numericPad`。
     static func resolve(
@@ -62,6 +65,8 @@ enum BrowserKeyCommand: Equatable {
             return isShiftPressed ? nil : .printPage
         case "w":
             return isShiftPressed ? nil : .collapseWindow
+        case "d":
+            return isShiftPressed ? nil : .toggleBookmark
         default:
             return nil
         }

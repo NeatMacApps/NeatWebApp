@@ -7,11 +7,17 @@ enum ScreenAttachedEdge: Sendable {
     case bottom
 }
 
-struct EdgeAttachedShape: Shape {
-    let edge: ScreenAttachedEdge
-    let cornerRadius: CGFloat
+struct EdgeAttachedShape: InsettableShape {
+    var edge: ScreenAttachedEdge
+    var cornerRadius: CGFloat
+    var insetAmount: CGFloat = 0
+
+    func inset(by amount: CGFloat) -> EdgeAttachedShape {
+        EdgeAttachedShape(edge: edge, cornerRadius: cornerRadius, insetAmount: insetAmount + amount)
+    }
 
     func path(in rect: CGRect) -> Path {
+        let rect = drawingRect(from: rect)
         let connectionDepth = min(10, rect.width / 4, rect.height / 4)
         let sideBodyLength = max(rect.height - (connectionDepth * 2), 0)
         let radius = min(cornerRadius, rect.width / 2, sideBodyLength / 2)
@@ -112,5 +118,45 @@ struct EdgeAttachedShape: Shape {
 
         path.closeSubpath()
         return path
+    }
+
+    /// 玻璃会向内收缩形状。贴边那一侧不能跟着缩，否则底板会离开屏幕边缘，
+    /// 看起来像一块浮着的圆角矩形，四周还可能露出宿主视图的浅色底。
+    private func drawingRect(from rect: CGRect) -> CGRect {
+        let inset = insetAmount
+        guard inset != 0 else {
+            return rect
+        }
+
+        switch edge {
+        case .top:
+            return CGRect(
+                x: rect.minX + inset,
+                y: rect.minY,
+                width: max(rect.width - (inset * 2), 0),
+                height: max(rect.height - inset, 0)
+            )
+        case .bottom:
+            return CGRect(
+                x: rect.minX + inset,
+                y: rect.minY + inset,
+                width: max(rect.width - (inset * 2), 0),
+                height: max(rect.height - inset, 0)
+            )
+        case .left:
+            return CGRect(
+                x: rect.minX,
+                y: rect.minY + inset,
+                width: max(rect.width - inset, 0),
+                height: max(rect.height - (inset * 2), 0)
+            )
+        case .right:
+            return CGRect(
+                x: rect.minX + inset,
+                y: rect.minY + inset,
+                width: max(rect.width - inset, 0),
+                height: max(rect.height - (inset * 2), 0)
+            )
+        }
     }
 }

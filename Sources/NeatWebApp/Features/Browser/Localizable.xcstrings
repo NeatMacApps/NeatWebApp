@@ -1,6 +1,54 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "browser.bookmark.delete" : {
+      "comment" : "收藏列表里删除一条收藏的按钮。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove Bookmark" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除收藏" } }
+      }
+    },
+    "browser.bookmark.empty" : {
+      "comment" : "收藏列表为空时的说明。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No bookmarks yet. Click the star to save this page for this web app." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没有收藏。点星星可以把当前页面加进这个网页应用的收藏。" } }
+      }
+    },
+    "browser.bookmark.open" : {
+      "comment" : "收藏列表里打开一条收藏的操作提示。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Bookmark" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开收藏" } }
+      }
+    },
+    "browser.chrome.bookmark.add" : {
+      "comment" : "浏览器窗口顶部按钮：把当前页面加入这个网页应用的收藏。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bookmark This Page" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏当前页面" } }
+      }
+    },
+    "browser.chrome.bookmark.list" : {
+      "comment" : "浏览器窗口顶部按钮：打开当前网页应用自己的收藏列表。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bookmarks" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏列表" } }
+      }
+    },
+    "browser.chrome.bookmark.remove" : {
+      "comment" : "浏览器窗口顶部按钮：把当前页面从收藏里去掉。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove Bookmark" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消收藏" } }
+      }
+    },
     "browser.chrome.collapse" : {
       "comment" : "浏览器窗口顶部按钮：将窗口收进侧边 Dock。",
       "extractionState" : "manual",

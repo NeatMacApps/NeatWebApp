@@ -20,14 +20,16 @@ final class LauncherOverlayController {
         }
         .environment(appModel)
 
-        let hostingController = NSHostingController(rootView: AnyView(rootView))
-        hostingController.view.frame = CGRect(origin: .zero, size: context.panelSize)
-        hostingController.view.wantsLayer = true
+        let hostingView = LauncherHostingView(rootView: AnyView(rootView))
+        hostingView.frame = CGRect(origin: .zero, size: context.panelSize)
+        hostingView.autoresizingMask = [.width, .height]
+        hostingView.wantsLayer = true
         // The launcher panel relies on true transparency around the attached bar.
         // If this view ever gets an opaque background, it shows up as a stray gray block.
-        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
 
-        panel.contentViewController = hostingController
+        panel.contentViewController = nil
+        panel.contentView = hostingView
         panel.setFrame(context.panelFrame.integral, display: true)
         panel.orderFrontRegardless()
 
@@ -60,4 +62,11 @@ final class LauncherOverlayController {
 private final class LauncherPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+}
+
+/// 启动器是非激活浮层。不接管首次点击的话，落在图标上的按下只会被系统吞掉。
+private final class LauncherHostingView: NSHostingView<AnyView> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
 }

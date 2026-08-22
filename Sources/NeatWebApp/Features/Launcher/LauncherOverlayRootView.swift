@@ -36,6 +36,8 @@ struct LauncherOverlayRootView: View {
             Spacer(minLength: 0)
         }
         .frame(width: context.panelSize.width, height: context.panelSize.height)
+        // 非激活浮层上的第一次按下默认只用来激活窗口；图标手势必须能直接吃掉这次点击。
+        .allowsWindowActivationEvents()
         .onAppear {
             orderedApps = context.apps
             isExpanded = false
@@ -129,38 +131,62 @@ struct LauncherOverlayRootView: View {
     }
 
     /// 图标入口。不能再用 `Button`：macOS 的 Button 按下后会自己跟踪鼠标，
-    /// 拖动手势的滑动事件会被它吞掉，导致「拖动不跟手」。这里用
-    /// 普通点击 + 拖动手势的组合，两者由手势系统按位移竞争。
+    /// 拖动手势的滑动事件会被它吞掉，导致「拖动不跟手」。
+    /// 点击和拖动合成一个手势：位移很小当点开，否则换位。
+    /// 分开写 `onTapGesture` + `DragGesture` 时，拖动手势会把点击吃掉，表现为点了没反应。
+    @ViewBuilder
     private func iconButton(item: LauncherItem, layout: LauncherPresentationContext.Layout) -> some View {
-        launcherIcon(for: item, layout: layout)
+        let icon = launcherIcon(for: item, layout: layout)
             .contentShape(Rectangle())
             .help(item.helpText)
             .accessibilityLabel(item.helpText)
             .accessibilityAddTraits(.isButton)
             .offset(x: dragOffsetX(for: item))
             .zIndex(draggingAppID == item.id ? 1 : 0)
-            .onTapGesture {
-                handleSelection(for: item)
-            }
-            .gesture(itemDragGesture(for: item))
-    }
 
-    private func itemDragGesture(for item: LauncherItem) -> some Gesture {
         switch item {
         case .webApp(let app):
-            DragGesture(minimumDistance: 3)
-                .onChanged { value in
-                    handleDragChanged(for: app, value: value)
-                }
-                .onEnded { _ in
-                    handleDragEnded()
-                }
+            icon.gesture(webAppInteractionGesture(for: app, item: item))
         case .dashboard:
-            // 加号入口固定在最右，不参与换位。
-            DragGesture(minimumDistance: .greatestFiniteMagnitude)
-                .onChanged { _ in }
-                .onEnded { _ in }
+            icon.gesture(dashboardClickGesture(for: item))
         }
+    }
+
+    private func webAppInteractionGesture(
+        for app: WebAppDefinition,
+        item: LauncherItem
+    ) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                guard !Self.isClick(translation: value.translation) else {
+                    return
+                }
+
+                handleDragChanged(for: app, value: value)
+            }
+            .onEnded { value in
+                let shouldOpen = draggingAppID == nil && Self.isClick(translation: value.translation)
+                handleDragEnded()
+                if shouldOpen {
+                    handleSelection(for: item)
+                }
+            }
+    }
+
+    private func dashboardClickGesture(for item: LauncherItem) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                if Self.isClick(translation: value.translation) {
+                    handleSelection(for: item)
+                }
+            }
+    }
+
+    /// 触控板单击经常带几像素抖动；小于这个距离一律当点开，不当换位。
+    private static let clickSlop: CGFloat = 8
+
+    private static func isClick(translation: CGSize) -> Bool {
+        hypot(translation.width, translation.height) < clickSlop
     }
 
     private func dragOffsetX(for item: LauncherItem) -> CGFloat {

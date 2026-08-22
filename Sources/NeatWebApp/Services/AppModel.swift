@@ -195,7 +195,7 @@ final class AppModel {
 
     func openWebApp(_ app: WebAppDefinition) {
         let preferredGeometry = launcherContext?.geometry ?? mainScreenPreferredGeometry
-        hideLauncher(afterDelay: .zero)
+        hideLauncher(immediately: true)
         runtimeCoordinator.open(app, preferredGeometry: preferredGeometry)
     }
 
@@ -276,9 +276,11 @@ final class AppModel {
     }
 
     func updateSideDockPlacement(
+        edge: SideDockEdge,
         verticalPosition: CGFloat,
         displayID: CGDirectDisplayID?
     ) {
+        sideDockEdge = edge
         sideDockVerticalPosition = min(max(verticalPosition, 0), 1)
         sideDockDisplayID = displayID
         saveAppPreferences()

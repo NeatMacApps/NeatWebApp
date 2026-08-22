@@ -18,12 +18,7 @@ struct BrowserContainerView: View {
     }
 }
 
-private enum BrowserChromeLayout {
-    static let bandHeight: CGFloat = 40
-    static let windowMargin: CGFloat = 10
-    static let buttonSize: CGFloat = 24
-    static let buttonSpacing: CGFloat = 2
-}
+private typealias BrowserChromeLayout = BrowserChromeMetrics
 
 /// 顶部让位带：整条只铺网页自己的背景色、不画分割线，所以看不出是一条独立的横条；
 /// 网页内容从带子下方开始，永远不会被两组悬浮按钮盖住。
@@ -63,6 +58,18 @@ private struct BrowserChromeBand: View {
                         action: session.togglePinned
                     )
                     .help(Text(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin"))
+
+                    BrowserChromeButton(
+                        systemImage: session.isCurrentPageBookmarked ? "star.fill" : "star",
+                        theme: theme,
+                        isHighlighted: session.isCurrentPageBookmarked,
+                        accessibilityLabel: localized(session.isCurrentPageBookmarked ? "browser.chrome.bookmark.remove" : "browser.chrome.bookmark.add"),
+                        action: session.toggleCurrentPageBookmark
+                    )
+                    .help(Text(session.isCurrentPageBookmarked ? "browser.chrome.bookmark.remove" : "browser.chrome.bookmark.add"))
+                    .disabled(!session.canBookmarkCurrentPage)
+
+                    BrowserBookmarkListControl(session: session, theme: theme)
                 }
 
                 Spacer(minLength: 0)
@@ -172,6 +179,93 @@ private struct BrowserDownloadIndicator: View {
         case .failed:
             return item.message ?? localized("browser.download.status.failed")
         }
+    }
+}
+
+/// 收藏列表：只展示当前这个网页应用里收藏过的页面。
+private struct BrowserBookmarkListControl: View {
+    let session: BrowserSession
+    let theme: BrowserChromeTheme
+
+    @State private var isPanelPresented = false
+
+    var body: some View {
+        BrowserChromeButton(
+            systemImage: "bookmark",
+            theme: theme,
+            isHighlighted: isPanelPresented,
+            accessibilityLabel: localized("browser.chrome.bookmark.list"),
+            action: { isPanelPresented = true }
+        )
+        .help(Text("browser.chrome.bookmark.list"))
+        .popover(isPresented: $isPanelPresented, arrowEdge: .bottom) {
+            BrowserBookmarkListPanel(session: session) {
+                isPanelPresented = false
+            }
+        }
+    }
+}
+
+private struct BrowserBookmarkListPanel: View {
+    let session: BrowserSession
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("browser.chrome.bookmark.list")
+                .font(.system(size: 12, weight: .semibold))
+
+            if session.bookmarks.isEmpty {
+                Text("browser.bookmark.empty")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(session.bookmarks) { bookmark in
+                            HStack(spacing: 8) {
+                                Button {
+                                    session.openBookmark(bookmark)
+                                    dismiss()
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(verbatim: bookmark.title)
+                                            .font(.system(size: 11))
+                                            .lineLimit(1)
+                                            .foregroundStyle(.primary)
+
+                                        Text(verbatim: bookmark.displayHost)
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(.tertiary)
+                                            .lineLimit(1)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .focusEffectDisabled()
+                                .help(Text("browser.bookmark.open"))
+
+                                Button {
+                                    session.removeBookmark(id: bookmark.id)
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 10, weight: .semibold))
+                                }
+                                .buttonStyle(.borderless)
+                                .focusEffectDisabled()
+                                .help(Text("browser.bookmark.delete"))
+                                .accessibilityLabel(localized("browser.bookmark.delete"))
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 220)
+            }
+        }
+        .padding(14)
+        .frame(width: 260)
     }
 }
 
@@ -320,7 +414,7 @@ private struct BrowserChromeButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: BrowserChromeLayout.iconFontSize, weight: .semibold))
                 .foregroundStyle(theme.foregroundColor.color.opacity(isHighlighted ? 1 : 0.82))
                 .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
                 .background {

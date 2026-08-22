@@ -52,7 +52,9 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             definition: bootstrap.definition,
             preferencesStore: preferencesStore,
             preferredGeometry: resolvePreferredGeometry(),
-            eventSink: self
+            eventSink: self,
+            restoredWindowFrame: bootstrap.restoredWindowFrame,
+            lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil
         )
         windowController = controller
         restoreInitialPresentation(with: controller)

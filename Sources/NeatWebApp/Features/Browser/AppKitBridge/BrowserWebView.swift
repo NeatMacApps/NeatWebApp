@@ -111,18 +111,32 @@ struct BrowserWebView: NSViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             session.syncNavigationState(from: webView)
+            notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             session.syncNavigationState(from: webView)
+            notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             session.syncNavigationState(from: webView)
+            notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             session.syncNavigationState(from: webView)
+            notifyFirstContentPaint(from: webView)
+        }
+
+        private func notifyFirstContentPaint(from webView: WKWebView) {
+            guard session.onFirstContentPaint != nil else {
+                return
+            }
+
+            webView.notifyAfterNextPresentationUpdate { [session] in
+                session.consumeFirstContentPaint()
+            }
         }
 
         func webView(
@@ -475,6 +489,8 @@ final class BrowserKeyCommandWebView: WKWebView {
             session.printPage()
         case .collapseWindow:
             session.collapseWindow()
+        case .toggleBookmark:
+            session.toggleCurrentPageBookmark()
         }
 
         return true
@@ -768,5 +784,25 @@ private enum BrowserThemeObserver {
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: true
         )
+    }
+}
+
+private extension WKWebView {
+    func notifyAfterNextPresentationUpdate(_ handler: @escaping @MainActor () -> Void) {
+        let selector = NSSelectorFromString("_doAfterNextPresentationUpdate:")
+        if responds(to: selector) {
+            let block: @convention(block) () -> Void = {
+                Task { @MainActor in
+                    handler()
+                }
+            }
+            perform(selector, with: unsafeBitCast(block, to: AnyObject.self))
+            return
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
+            handler()
+        }
     }
 }

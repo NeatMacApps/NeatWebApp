@@ -19,14 +19,16 @@ protocol RuntimeWindowEventSink: AnyObject {
 @MainActor
 final class WebAppWindowController: NSWindowController, NSWindowDelegate, BrowserSessionCommandHandling {
     enum WindowMetrics {
-        static let defaultContentSize = NSSize(width: 460, height: 900)
-        static let minimumContentSize = NSSize(width: 390, height: 640)
+        static let defaultContentSize = WebAppWindowMetrics.defaultContentSize
+        static let minimumContentSize = WebAppWindowMetrics.minimumContentSize
         static let floatingIconDiameter: CGFloat = 52 * 0.8 * 0.9
         static let floatingIconShadowPadding: CGFloat = 10
         static let floatingIconTransitionDuration: TimeInterval = 0.3
-        static let collapseDelayAfterOcclusion: Duration = .seconds(2)
         static let pinnedWindowLevel = NSWindow.Level.floating
         static let floatingIconLevel = NSWindow.Level(rawValue: pinnedWindowLevel.rawValue + 1)
+        /// 用户刚点开或从刘海唤出后，窗口列表和焦点还没站稳，这段时间不自动收起。
+        /// 这不是「被挡住再等两秒」的旧延时：过了这段仍按八成看不见立刻收。
+        static let autoCollapseGraceAfterExplicitShow: TimeInterval = 1.2
     }
 
     let session: BrowserSession
@@ -39,13 +41,26 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private var expandedWindowFrameBeforeCollapse: CGRect?
     private var isAnimatingFloatingIconTransition = false
     private var lastExternalFrontmostApplication: NSRunningApplication?
-    private var autoCollapseTask: Task<Void, Never>?
+    private var coverageWatchTask: Task<Void, Never>?
+    private var environmentObservers: [NSObjectProtocol] = []
+    private var suppressAutoCollapseUntil = Date.distantPast
+    /// 宿主已经把占位窗摆到这个框上时，首次显示禁止再挪，否则会跳一下。
+    private var skipNextVisibilityCorrection = false
+    /// 盖子还在时不要抢焦点、不要报「窗口已显示」，否则宿主会提前揭盖，底下还是空的。
+    private var isAwaitingHostCoverLift = false
+    private var hasOrderedFrontUnderCover = false
+    private var contentPaintedUnderCover = false
+    /// 宿主已经定好的框。第一次上屏期间系统 / SwiftUI 改框都要套回去。
+    private var lockedLaunchFrame: CGRect?
+    private var shouldHoldLaunchFrame = false
 
     init(
         definition: WebAppDefinition,
         preferencesStore: WebAppPreferencesStore,
         preferredGeometry: ScreenNotchGeometry?,
-        eventSink: (any RuntimeWindowEventSink)?
+        eventSink: (any RuntimeWindowEventSink)?,
+        restoredWindowFrame: CGRect? = nil,
+        lockRestoredFrame: Bool = false
     ) {
         let preference = preferencesStore.load(for: definition.id)
         self.session = BrowserSession(
@@ -55,10 +70,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         )
         self.eventSink = eventSink
         self.preferredGeometry = preferredGeometry
+        self.skipNextVisibilityCorrection = lockRestoredFrame && restoredWindowFrame != nil
+        self.isAwaitingHostCoverLift = lockRestoredFrame && restoredWindowFrame != nil
 
         let window = NSWindow(
             contentRect: CGRect(origin: .zero, size: WindowMetrics.defaultContentSize),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: WebAppWindowMetrics.styleMask,
             backing: .buffered,
             defer: false
         )
@@ -66,8 +83,19 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         super.init(window: window)
 
         configureWindow(window, definition: definition, isPinned: preference.isPinned)
-        applyInitialFrame(using: preference, to: window, preferredGeometry: preferredGeometry)
+        applyInitialFrame(
+            using: preference,
+            restoredWindowFrame: restoredWindowFrame,
+            to: window,
+            preferredGeometry: preferredGeometry
+        )
+        if isAwaitingHostCoverLift {
+            session.onFirstContentPaint = { [weak self] in
+                self?.markCoveredContentPainted()
+            }
+        }
         wireSession(to: window)
+        restoreLockedFrameIfNeeded(on: window)
     }
 
     @available(*, unavailable)
@@ -76,7 +104,9 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
-        cancelAutoCollapse()
+        stopCoverageWatch()
+        suppressAutoCollapseUntil = Date().addingTimeInterval(WindowMetrics.autoCollapseGraceAfterExplicitShow)
+        startEnvironmentObserversIfNeeded()
 
         if floatingIconPanel != nil {
             expandFromFloatingIcon(shouldFocusWebView: true)
@@ -84,22 +114,72 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         }
 
         rememberFrontmostExternalApplication()
-        ensureWindowFrameIsVisible(preferredGeometry: preferredGeometry ?? self.preferredGeometry)
-        NSApp.activate(ignoringOtherApps: true)
-        window?.deminiaturize(nil)
-        showWindow(nil)
-        window?.makeKeyAndOrderFront(nil)
+        if skipNextVisibilityCorrection {
+            skipNextVisibilityCorrection = false
+        } else {
+            ensureWindowFrameIsVisible(preferredGeometry: preferredGeometry ?? self.preferredGeometry)
+        }
+
+        // 系统默认会给新窗口做缩放弹出。占位盖还在上面时，这个动画会从盖子底下透出来。
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0
+            context.allowsImplicitAnimation = false
+            window?.deminiaturize(nil)
+            window?.orderFrontRegardless()
+            if let window {
+                restoreLockedFrameIfNeeded(on: window)
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            if !isAwaitingHostCoverLift {
+                window?.makeKey()
+            }
+        }
+
+        if isAwaitingHostCoverLift {
+            hasOrderedFrontUnderCover = true
+            scheduleCoveredFirstShowTimeout()
+            finishCoveredFirstShowIfReady()
+            return
+        }
+
+        releaseLaunchFrameHoldIfNeeded()
         session.focusWebView()
         publishRuntimeUpdate(phase: .windowVisible, windowFrame: window?.frame, floatingIconFrame: nil)
     }
 
+    private func markCoveredContentPainted() {
+        contentPaintedUnderCover = true
+        finishCoveredFirstShowIfReady()
+    }
+
+    private func scheduleCoveredFirstShowTimeout() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(800))
+            self?.markCoveredContentPainted()
+        }
+    }
+
+    private func finishCoveredFirstShowIfReady() {
+        guard isAwaitingHostCoverLift, hasOrderedFrontUnderCover, contentPaintedUnderCover else {
+            return
+        }
+
+        isAwaitingHostCoverLift = false
+        releaseLaunchFrameHoldIfNeeded()
+        publishRuntimeUpdate(phase: .windowVisible, windowFrame: window?.frame, floatingIconFrame: nil)
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKey()
+        session.focusWebView()
+    }
+
     func collapseWindow() {
-        cancelAutoCollapse()
+        stopCoverageWatch()
         collapseToFloatingIcon()
     }
 
     func restoreCollapsedWindow(windowFrame: CGRect?, iconFrame _: CGRect?) {
-        cancelAutoCollapse()
+        stopCoverageWatch()
+        stopEnvironmentObservers()
 
         guard !isAnimatingFloatingIconTransition else {
             return
@@ -124,11 +204,16 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     func updatePinnedState(_ isPinned: Bool) {
         window?.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         if isPinned {
-            cancelAutoCollapse()
+            stopCoverageWatch()
         }
     }
 
     func windowDidMove(_ notification: Notification) {
+        if shouldHoldLaunchFrame {
+            restoreLockedFrameIfNeeded(on: window)
+            return
+        }
+
         persistWindowFrame()
     }
 
@@ -136,28 +221,37 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         persistWindowFrame()
     }
 
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        if shouldHoldLaunchFrame, let lockedLaunchFrame {
+            return lockedLaunchFrame.size
+        }
+
+        return frameSize
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        restoreLockedFrameIfNeeded(on: window)
+    }
+
     func windowDidBecomeKey(_ notification: Notification) {
-        cancelAutoCollapse()
+        stopCoverageWatch()
         session.focusWebView()
+        guard !isAwaitingHostCoverLift else {
+            return
+        }
+
         eventSink?.webAppWindowDidFocus(appID: session.definition.id, windowFrame: window?.frame)
     }
 
+    func windowDidResignKey(_ notification: Notification) {
+        startCoverageWatch()
+    }
+
     func windowDidChangeOcclusionState(_ notification: Notification) {
-        guard let window else {
-            return
+        evaluateAutoCollapse()
+        if window?.isKeyWindow == false {
+            startCoverageWatch()
         }
-
-        // 重新露出来就撤销待执行的收起。
-        guard !window.occlusionState.contains(.visible) else {
-            cancelAutoCollapse()
-            return
-        }
-
-        guard isEligibleForAutoCollapse else {
-            return
-        }
-
-        scheduleAutoCollapse()
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -166,7 +260,8 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func hideWindow() {
-        cancelAutoCollapse()
+        stopCoverageWatch()
+        stopEnvironmentObservers()
         persistWindowFrame()
         hideFloatingIcon()
         hideTransitionSnapshot()
@@ -189,7 +284,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return
         }
 
-        cancelAutoCollapse()
+        stopCoverageWatch()
         persistWindowFrame()
         hideFloatingIcon()
         hideTransitionSnapshot()
@@ -207,6 +302,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         window.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         window.contentMinSize = WindowMetrics.minimumContentSize
         window.toolbar = nil
+        WebAppWindowMetrics.applyLaunchIsolation(to: window)
 
         // 悬浮圆点在所有桌面空间都点得到，窗口必须跟着来找用户；
         // 否则从别的桌面点圆点会把用户硬拽回窗口原来所在的桌面空间。
@@ -220,7 +316,10 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private func wireSession(to window: NSWindow) {
         let rootView = BrowserContainerView(session: session)
         let hostingController = NSHostingController(rootView: rootView)
+        hostingController.sizingOptions = []
         window.contentViewController = hostingController
+        window.updateConstraintsIfNeeded()
+        restoreLockedFrameIfNeeded(on: window)
 
         session.onChromeThemeChange = { [weak self] theme in
             self?.window?.backgroundColor = theme.pageColor.nsColor
@@ -234,7 +333,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     private func collapseToFloatingIcon() {
-        cancelAutoCollapse()
+        stopCoverageWatch()
 
         guard let window, !isAnimatingFloatingIconTransition else {
             return
@@ -535,7 +634,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     private func persistWindowFrame() {
-        guard let window else {
+        guard let window, !shouldHoldLaunchFrame, !window.isZoomed else {
+            return
+        }
+
+        if let screen = window.screen,
+           WebAppWindowPlacementResolver.isFillVisibleFrame(window.frame, visibleFrame: screen.visibleFrame) {
             return
         }
 
@@ -555,31 +659,72 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         )
     }
 
-    private func scheduleAutoCollapse() {
-        cancelAutoCollapse()
+    private func startEnvironmentObserversIfNeeded() {
+        guard environmentObservers.isEmpty else {
+            return
+        }
 
-        autoCollapseTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(for: WindowMetrics.collapseDelayAfterOcclusion)
-            } catch {
-                return
-            }
-
-            guard let self, !Task.isCancelled else {
-                return
-            }
-
-            self.autoCollapseTask = nil
-            self.collapseIfStillEligible()
+        let center = NSWorkspace.shared.notificationCenter
+        let names: [NSNotification.Name] = [
+            NSWorkspace.activeSpaceDidChangeNotification,
+            NSWorkspace.didActivateApplicationNotification,
+        ]
+        for name in names {
+            environmentObservers.append(
+                center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                    Task { @MainActor in
+                        self?.evaluateAutoCollapse()
+                        if self?.window?.isKeyWindow == false {
+                            self?.startCoverageWatch()
+                        }
+                    }
+                }
+            )
         }
     }
 
-    private func cancelAutoCollapse() {
-        autoCollapseTask?.cancel()
-        autoCollapseTask = nil
+    private func stopEnvironmentObservers() {
+        let center = NSWorkspace.shared.notificationCenter
+        for observer in environmentObservers {
+            center.removeObserver(observer)
+        }
+        environmentObservers.removeAll()
     }
 
-    /// 延时到点后重新判定一次，避免这段时间里窗口已经被重新激活、置顶或收起。
+    private func startCoverageWatch() {
+        startEnvironmentObserversIfNeeded()
+        evaluateAutoCollapse()
+
+        guard coverageWatchTask == nil,
+              window?.isVisible == true,
+              window?.isKeyWindow == false,
+              !session.isPinned,
+              floatingIconPanel == nil,
+              !isAnimatingFloatingIconTransition else {
+            return
+        }
+
+        coverageWatchTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled, let self else {
+                    return
+                }
+                self.evaluateAutoCollapse()
+            }
+        }
+    }
+
+    private func stopCoverageWatch() {
+        coverageWatchTask?.cancel()
+        coverageWatchTask = nil
+    }
+
+    private func evaluateAutoCollapse() {
+        collapseIfStillEligible()
+    }
+
+    /// 判定当下仍满足收起条件才动手，避免刚失去焦点或切桌面的瞬间状态已经又变回去。
     private func collapseIfStillEligible() {
         guard isEligibleForAutoCollapse else {
             return
@@ -591,7 +736,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     private var isEligibleForAutoCollapse: Bool {
-        guard let window else {
+        guard let window, Date() >= suppressAutoCollapseUntil else {
             return false
         }
 
@@ -602,11 +747,11 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             isWindowVisible: window.isVisible,
             isKeyWindow: window.isKeyWindow,
             isMiniaturized: window.isMiniaturized,
-            isOccluded: !window.occlusionState.contains(.visible)
+            hiddenFraction: WindowVisibleCoverage.hiddenFraction(of: window)
         )
     }
 
-    /// 只要系统报告窗口看不见就收起，被别的窗口盖住、切到别的桌面空间、别的应用进入全屏都算。
+    /// 看不见的面积达到八成就立刻收起：被别的普通窗口盖住、大部分拖出屏幕、切到别的桌面、别的应用全屏都算。
     /// 唯二排除的是最小化到程序坞（用户主动放进坞里的）和窗口本就没有显示出来（已经收起或已隐藏）。
     static func shouldCollapseWindowWhenOccluded(
         isPinned: Bool,
@@ -615,7 +760,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         isWindowVisible: Bool,
         isKeyWindow: Bool,
         isMiniaturized: Bool,
-        isOccluded: Bool
+        hiddenFraction: CGFloat
     ) -> Bool {
         !isPinned &&
         !hasFloatingIconPanel &&
@@ -623,16 +768,21 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         isWindowVisible &&
         !isKeyWindow &&
         !isMiniaturized &&
-        isOccluded
+        WindowVisibleCoverage.shouldCollapse(hiddenFraction: hiddenFraction)
     }
 
     private func applyInitialFrame(
         using preference: StoredWebAppPreference,
+        restoredWindowFrame: CGRect?,
         to window: NSWindow,
         preferredGeometry: ScreenNotchGeometry?
     ) {
-        let defaultFrameSize = window.frame.size
-        let minimumFrameSize = window.frameRect(forContentRect: CGRect(origin: .zero, size: WindowMetrics.minimumContentSize)).size
+        if let restoredWindowFrame,
+           !isFillFrame(restoredWindowFrame, among: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))) {
+            lockLaunchFrame(restoredWindowFrame, on: window)
+            return
+        }
+
         let availableScreens = NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))
         let fallbackDisplayID = NSScreen.main?.displayID
 
@@ -641,15 +791,15 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             preferredGeometry: preferredGeometry,
             availableScreens: availableScreens,
             fallbackDisplayID: fallbackDisplayID,
-            defaultFrameSize: defaultFrameSize,
-            minimumFrameSize: minimumFrameSize
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
         )
 
-        window.setFrame(frame, display: false)
+        lockLaunchFrame(frame, on: window)
     }
 
     private func ensureWindowFrameIsVisible(preferredGeometry: ScreenNotchGeometry?) {
-        guard let window else {
+        guard let window, !shouldHoldLaunchFrame else {
             return
         }
 
@@ -664,18 +814,51 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             windowFrame: window.frame,
             windowPlacement: StoredWindowPlacement(frame: window.frame, display: nil)
         )
-        let minimumFrameSize = window.frameRect(forContentRect: CGRect(origin: .zero, size: WindowMetrics.minimumContentSize)).size
-        let fallbackDisplayID = NSScreen.main?.displayID
         let nextFrame = WebAppWindowPlacementResolver.resolveFrame(
             preference: transientPreference,
             preferredGeometry: preferredGeometry ?? self.preferredGeometry,
             availableScreens: availableScreens,
-            fallbackDisplayID: fallbackDisplayID,
-            defaultFrameSize: window.frame.size,
-            minimumFrameSize: minimumFrameSize
+            fallbackDisplayID: NSScreen.main?.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
         )
 
         window.setFrame(nextFrame, display: false)
+    }
+
+    private func lockLaunchFrame(_ frame: CGRect, on window: NSWindow) {
+        lockedLaunchFrame = frame
+        shouldHoldLaunchFrame = true
+        window.setFrame(frame, display: false)
+    }
+
+    private func restoreLockedFrameIfNeeded(on window: NSWindow?) {
+        guard shouldHoldLaunchFrame, let window, let lockedLaunchFrame else {
+            return
+        }
+
+        if abs(window.frame.width - lockedLaunchFrame.width) > 0.5 ||
+            abs(window.frame.height - lockedLaunchFrame.height) > 0.5 ||
+            abs(window.frame.minX - lockedLaunchFrame.minX) > 0.5 ||
+            abs(window.frame.minY - lockedLaunchFrame.minY) > 0.5 {
+            window.setFrame(lockedLaunchFrame, display: false)
+        }
+    }
+
+    private func releaseLaunchFrameHoldIfNeeded() {
+        restoreLockedFrameIfNeeded(on: window)
+        guard shouldHoldLaunchFrame else {
+            return
+        }
+
+        shouldHoldLaunchFrame = false
+        persistWindowFrame()
+    }
+
+    private func isFillFrame(_ frame: CGRect, among screens: [WebAppWindowPlacementScreen]) -> Bool {
+        screens.contains {
+            WebAppWindowPlacementResolver.isFillVisibleFrame(frame, visibleFrame: $0.visibleFrame)
+        }
     }
 }
 

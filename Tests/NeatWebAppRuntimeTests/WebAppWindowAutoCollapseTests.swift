@@ -3,13 +3,21 @@ import XCTest
 
 @MainActor
 final class WebAppWindowAutoCollapseTests: XCTestCase {
-    /// 被别的窗口盖住、切到别的桌面空间、别的应用进入全屏，系统都报告成同一件事：看不见。
-    func testCollapsesWheneverTheWindowIsNotVisibleOnScreen() {
+    /// 被别的窗口盖住八成、切到别的桌面、别的应用进入全屏，都视为足够看不见。
+    func testCollapsesWheneverTheWindowIsMostlyHidden() {
         XCTAssertTrue(makeDecision())
     }
 
-    func testKeepsWindowWhenStillPartiallyVisible() {
-        XCTAssertFalse(makeDecision(isOccluded: false))
+    func testCollapsesWhenExactlyEightyPercentHidden() {
+        XCTAssertTrue(makeDecision(hiddenFraction: 0.8))
+    }
+
+    func testKeepsWindowWhenSeventyNinePercentHidden() {
+        XCTAssertFalse(makeDecision(hiddenFraction: 0.79))
+    }
+
+    func testKeepsWindowWhenStillMostlyVisible() {
+        XCTAssertFalse(makeDecision(hiddenFraction: 0.5))
     }
 
     /// 最小化到程序坞是用户主动放进坞里的，不该再变成悬浮圆点。
@@ -45,7 +53,7 @@ final class WebAppWindowAutoCollapseTests: XCTestCase {
         isWindowVisible: Bool = true,
         isKeyWindow: Bool = false,
         isMiniaturized: Bool = false,
-        isOccluded: Bool = true
+        hiddenFraction: CGFloat = 1
     ) -> Bool {
         WebAppWindowController.shouldCollapseWindowWhenOccluded(
             isPinned: isPinned,
@@ -54,7 +62,7 @@ final class WebAppWindowAutoCollapseTests: XCTestCase {
             isWindowVisible: isWindowVisible,
             isKeyWindow: isKeyWindow,
             isMiniaturized: isMiniaturized,
-            isOccluded: isOccluded
+            hiddenFraction: hiddenFraction
         )
     }
 }

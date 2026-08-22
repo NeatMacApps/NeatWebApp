@@ -18,8 +18,10 @@ protocol WebAppRuntimeCoordinating {
 @MainActor
 final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let registryStore: RuntimeRegistryStore
-    private let launcher: RuntimeLauncher
+    private let launcher: any RuntimeLaunching
     private let commandBus: RuntimeCommandBus
+    private let placeholderPresenter: any LaunchPlaceholderPresenting
+    private let preferencesStore: WebAppPreferencesStore
     private let onActiveAppIDChange: (String?) -> Void
     private let onDiagnosticMessage: (String) -> Void
     private let onRuntimeStatesChange: ([RuntimeState]) -> Void
@@ -34,6 +36,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private var runtimeHealthCheckTask: Task<Void, Never>?
     private var migratingAppIDs: Set<String> = []
     private var recoveringAppIDs: Set<String> = []
+    private var placeholderAppIDs: Set<String> = []
     private var activeAppID: String? {
         didSet {
             guard oldValue != activeAppID else {
@@ -46,8 +49,10 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
 
     init(
         registryStore: RuntimeRegistryStore = RuntimeRegistryStore(),
-        launcher: RuntimeLauncher? = nil,
+        launcher: (any RuntimeLaunching)? = nil,
         commandBus: RuntimeCommandBus = RuntimeCommandBus(),
+        placeholderPresenter: any LaunchPlaceholderPresenting = LaunchPlaceholderController(),
+        preferencesStore: WebAppPreferencesStore = WebAppPreferencesStore(),
         runtimeHealthPolicy: RuntimeHealthPolicy = .standard,
         runtimeMetricsProvider: RuntimeProcessMetricsProviding = DarwinRuntimeProcessMetricsProvider(),
         onActiveAppIDChange: @escaping (String?) -> Void,
@@ -57,6 +62,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.registryStore = registryStore
         self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
         self.commandBus = commandBus
+        self.placeholderPresenter = placeholderPresenter
+        self.preferencesStore = preferencesStore
         self.runtimeHealthPolicy = runtimeHealthPolicy
         self.runtimeMetricsProvider = runtimeMetricsProvider
         self.runtimeHealthMonitor = RuntimeHealthMonitor(policy: runtimeHealthPolicy)
@@ -75,6 +82,15 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?) {
         refreshRegistry()
 
+        if placeholderAppIDs.contains(definition.id),
+           registry[definition.id] == nil || registry[definition.id]?.phase == .launching {
+            placeholderPresenter.orderPlaceholderFront(appID: definition.id)
+            if let state = registry[definition.id] {
+                focus(appID: definition.id)
+            }
+            return
+        }
+
         if let state = registry[definition.id] {
             switch state.phase {
             case .collapsedToFloatingIcon:
@@ -82,14 +98,25 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             case .hidden:
                 sendCommand(.showWindow, state: state)
             case .launching, .windowVisible:
+                placeholderPresenter.orderPlaceholderFront(appID: definition.id)
                 focus(appID: definition.id)
             case .terminating:
-                launchNewRuntime(for: definition, preferredGeometry: preferredGeometry, reason: .reopenExisting)
+                launchNewRuntime(
+                    for: definition,
+                    preferredGeometry: preferredGeometry,
+                    reason: .reopenExisting,
+                    showsPlaceholder: true
+                )
             }
             return
         }
 
-        launchNewRuntime(for: definition, preferredGeometry: preferredGeometry, reason: .openFromLauncher)
+        launchNewRuntime(
+            for: definition,
+            preferredGeometry: preferredGeometry,
+            reason: .openFromLauncher,
+            showsPlaceholder: true
+        )
     }
 
     func focus(appID: String) {
@@ -134,6 +161,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         for state in registry.values {
             terminateProcessIfNeeded(for: state)
         }
+        placeholderPresenter.dismissAllPlaceholders()
+        placeholderAppIDs.removeAll()
     }
 
     func increaseZoom(appID: String) {
@@ -177,8 +206,20 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private func launchNewRuntime(
         for definition: WebAppDefinition,
         preferredGeometry: ScreenNotchGeometry?,
-        reason: RuntimeLaunchReason
+        reason: RuntimeLaunchReason,
+        showsPlaceholder: Bool
     ) {
+        // 只算一次框：占位窗和运行时真窗必须套同一份，禁止两边各自再算。
+        let launchFrame = resolveLaunchFrame(for: definition, preferredGeometry: preferredGeometry)
+
+        if showsPlaceholder {
+            placeholderPresenter.showPlaceholder(
+                for: definition,
+                frame: launchFrame
+            )
+            placeholderAppIDs.insert(definition.id)
+        }
+
         let bootstrap = RuntimeBootstrap(
             instanceID: UUID(),
             appID: definition.id,
@@ -187,7 +228,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             preferredDisplayID: preferredGeometry?.displayID,
             runtimeBuildIdentifier: runtimeBuildIdentifier,
             restoredPhase: nil,
-            restoredWindowFrame: nil,
+            restoredWindowFrame: launchFrame,
             restoredFloatingIconFrame: nil,
             createdAt: .now,
             hostVersion: hostVersion
@@ -195,6 +236,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
 
         do {
             try launcher.launch(bootstrap) { [weak self] message in
+                self?.dismissLaunchPlaceholder(appID: definition.id)
                 if self?.activeAppID == definition.id {
                     self?.activeAppID = nil
                 }
@@ -202,6 +244,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             }
             activeAppID = definition.id
         } catch {
+            dismissLaunchPlaceholder(appID: definition.id)
             onDiagnosticMessage(error.localizedDescription)
         }
     }
@@ -419,21 +462,28 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         )
 
         switch event.event {
-        case .runtimeStarted, .windowShown, .windowFocused, .windowExpanded:
+        case .windowShown, .windowFocused, .windowExpanded:
+            registry[event.appID] = state
+            activeAppID = event.appID
+            dismissLaunchPlaceholder(appID: event.appID)
+        case .runtimeStarted:
             registry[event.appID] = state
             activeAppID = event.appID
         case .windowCollapsed:
             registry[event.appID] = state
+            dismissLaunchPlaceholder(appID: event.appID)
             if activeAppID == event.appID {
                 activeAppID = nil
             }
         case .windowHidden:
             registry[event.appID] = state
+            dismissLaunchPlaceholder(appID: event.appID)
             if activeAppID == event.appID {
                 activeAppID = nil
             }
         case .runtimeTerminating, .runtimeCrashed:
             registry.removeValue(forKey: event.appID)
+            dismissLaunchPlaceholder(appID: event.appID)
             if activeAppID == event.appID {
                 activeAppID = nil
             }
@@ -452,5 +502,26 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                 return $0.lastUpdatedAt < $1.lastUpdatedAt
             }
         )
+    }
+
+    private func resolveLaunchFrame(
+        for definition: WebAppDefinition,
+        preferredGeometry: ScreenNotchGeometry?
+    ) -> CGRect {
+        let preference = preferencesStore.load(for: definition.id)
+        let availableScreens = NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))
+        return WebAppWindowPlacementResolver.resolveFrame(
+            preference: preference,
+            preferredGeometry: preferredGeometry,
+            availableScreens: availableScreens,
+            fallbackDisplayID: NSScreen.main?.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
+        )
+    }
+
+    private func dismissLaunchPlaceholder(appID: String) {
+        placeholderAppIDs.remove(appID)
+        placeholderPresenter.dismissPlaceholder(appID: appID)
     }
 }

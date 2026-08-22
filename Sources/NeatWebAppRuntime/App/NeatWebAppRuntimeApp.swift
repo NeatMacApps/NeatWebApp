@@ -19,6 +19,7 @@ final class RuntimeAppDelegate: NSObject, NSApplicationDelegate {
     private let environment = ProcessInfo.processInfo.environment
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSWindow.allowsAutomaticWindowTabbing = false
         do {
             let bootstrap = try RuntimeBootstrapLoader().load()
             let coordinator = RuntimeWindowCoordinator(bootstrap: bootstrap)

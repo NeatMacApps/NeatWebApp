@@ -38,6 +38,8 @@ final class BrowserSession {
 
     /// 用户手动隐藏掉的元素，按站点归属，跨页面生效。
     private(set) var hiddenElementRules: [HiddenElementRule]
+    /// 只属于当前这个网页应用的收藏，不会出现在别的网页应用窗口。
+    private(set) var bookmarks: [WebAppBookmark]
     /// 是否正处在"点一下就隐藏"的挑选模式。
     private(set) var isPickingElement = false
     /// 挑选失败时给用户的一句话解释，展示过一次就清掉。
@@ -66,6 +68,10 @@ final class BrowserSession {
     @ObservationIgnored
     var onChromeThemeChange: ((BrowserChromeTheme) -> Void)?
 
+    /// 宿主盖还在时，网页第一帧画完再揭盖。只触发一次。
+    @ObservationIgnored
+    var onFirstContentPaint: (() -> Void)?
+
     init(
         definition: WebAppDefinition,
         preference: StoredWebAppPreference,
@@ -78,6 +84,7 @@ final class BrowserSession {
         self.isPinned = preference.isPinned
         self.isMobileUA = preference.isMobileUA
         self.hiddenElementRules = preference.resolvedHiddenElements
+        self.bookmarks = preference.resolvedBookmarks.sorted { $0.createdAt > $1.createdAt }
         self.preferencesStore = preferencesStore
         self.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.websiteDataStoreIdentifier(for: definition.id))
     }
@@ -168,6 +175,56 @@ final class BrowserSession {
 
     func togglePinned() {
         isPinned.toggle()
+    }
+
+    // MARK: - 收藏
+
+    var canBookmarkCurrentPage: Bool {
+        WebAppBookmark.canonicalURLString(currentURL) != nil
+    }
+
+    var isCurrentPageBookmarked: Bool {
+        bookmarks.contains { $0.matches(currentURL) }
+    }
+
+    func toggleCurrentPageBookmark() {
+        guard let canonical = WebAppBookmark.canonicalURLString(currentURL) else {
+            return
+        }
+
+        if let existing = bookmarks.first(where: { $0.urlString == canonical }) {
+            removeBookmark(id: existing.id)
+            return
+        }
+
+        let trimmedTitle = pageTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = trimmedTitle.nonEmpty ?? currentURL.host() ?? canonical
+        bookmarks.insert(
+            WebAppBookmark(title: title, urlString: canonical),
+            at: 0
+        )
+        persistPreference()
+    }
+
+    func removeBookmark(id: UUID) {
+        let originalCount = bookmarks.count
+        bookmarks.removeAll { $0.id == id }
+        guard bookmarks.count != originalCount else {
+            return
+        }
+
+        persistPreference()
+    }
+
+    func openBookmark(_ bookmark: WebAppBookmark) {
+        guard let url = bookmark.url else {
+            return
+        }
+
+        currentURL = url
+        pageTitle = bookmark.title
+        isLoading = true
+        webView?.load(URLRequest(url: url))
     }
 
     // MARK: - 手动隐藏网页元素
@@ -374,6 +431,12 @@ final class BrowserSession {
         isLoading = webView.isLoading
     }
 
+    func consumeFirstContentPaint() {
+        let callback = onFirstContentPaint
+        onFirstContentPaint = nil
+        callback?()
+    }
+
     private func setPageZoom(_ newValue: Double) {
         let clampedZoom = newValue.clamped(to: 0.5 ... 2.0)
         guard clampedZoom != pageZoom else {
@@ -391,6 +454,7 @@ final class BrowserSession {
         preference.isPinned = isPinned
         preference.isMobileUA = isMobileUA
         preference.hiddenElements = hiddenElementRules
+        preference.bookmarks = bookmarks
         if let windowPlacement {
             preference.windowPlacement = windowPlacement
             preference.windowFrame = windowPlacement.frame

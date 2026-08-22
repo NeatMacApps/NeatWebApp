@@ -44,6 +44,8 @@ final class BrowserKeyCommandTests: XCTestCase {
     func testPrintAndCollapseShortcuts() {
         XCTAssertEqual(resolve("p", [.command]), .printPage)
         XCTAssertEqual(resolve("w", [.command]), .collapseWindow)
+        XCTAssertEqual(resolve("d", [.command]), .toggleBookmark)
+        XCTAssertNil(resolve("d", [.command, .shift]))
     }
 
     func testIgnoresEventsWithoutCommandOrWithExtraModifiers() {

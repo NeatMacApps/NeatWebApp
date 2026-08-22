@@ -55,26 +55,34 @@ enum WebAppWindowPlacementResolver {
         )
 
         if let storedPlacement = preference.resolvedWindowPlacement,
-           let matchedScreen = resolveStoredScreen(for: storedPlacement, availableScreens: availableScreens) {
-            let size = clampedSize(
-                storedPlacement.frame.size,
-                within: matchedScreen.visibleFrame.size,
-                minimumFrameSize: minimumFrameSize
-            )
+           let matchedScreen = resolveStoredScreen(for: storedPlacement, availableScreens: availableScreens),
+           !isFillVisibleFrame(storedPlacement.frame, visibleFrame: matchedScreen.visibleFrame) {
+            // 用户拖过的尺寸只许缩小以塞进屏幕，不许被「最小窗口」抬成整块可用桌面。
+            let size = fittedSize(storedPlacement.frame.size, within: matchedScreen.visibleFrame.size)
             let frame = CGRect(origin: storedPlacement.frame.origin, size: size)
             return clamp(frame, into: matchedScreen.visibleFrame)
         }
 
         let fallbackScreen = preferredScreen ?? availableScreens.first
-        let requestedSize = preference.resolvedWindowPlacement?.frame.size ?? defaultFrameSize
+        let safeDefaultSize = sanitizedDefaultSize(
+            defaultFrameSize,
+            visibleSize: fallbackScreen?.visibleFrame.size
+        )
+        let requestedSize = usableStoredSize(
+            preference.resolvedWindowPlacement?.frame.size,
+            visibleSize: fallbackScreen?.visibleFrame.size
+        ) ?? safeDefaultSize
         let placementBounds = fallbackPlacementBounds(
             preferredNotch: preferredNotch ?? fallbackScreen?.notchGeometry,
             visibleFrame: fallbackScreen?.visibleFrame
         )
         let size = clampedSize(
             requestedSize,
-            within: placementBounds?.size ?? fallbackScreen?.visibleFrame.size ?? defaultFrameSize,
-            minimumFrameSize: minimumFrameSize
+            within: placementBounds?.size ?? fallbackScreen?.visibleFrame.size ?? safeDefaultSize,
+            minimumFrameSize: sanitizedMinimumSize(
+                minimumFrameSize,
+                visibleSize: placementBounds?.size ?? fallbackScreen?.visibleFrame.size
+            )
         )
 
         guard let fallbackScreen else {
@@ -87,6 +95,18 @@ enum WebAppWindowPlacementResolver {
             visibleFrame: fallbackScreen.visibleFrame,
             placementBounds: placementBounds ?? fallbackScreen.visibleFrame
         )
+    }
+
+    /// 铺满当前可用桌面的框不是用户选的窗口大小，而是缩放 / 系统贴边的结果。
+    static func isFillVisibleFrame(_ frame: CGRect, visibleFrame: CGRect, tolerance: CGFloat = 8) -> Bool {
+        isFillVisibleSize(frame.size, visibleSize: visibleFrame.size, tolerance: tolerance) &&
+            abs(frame.minX - visibleFrame.minX) <= tolerance &&
+            abs(frame.minY - visibleFrame.minY) <= tolerance
+    }
+
+    static func isFillVisibleSize(_ size: CGSize, visibleSize: CGSize, tolerance: CGFloat = 8) -> Bool {
+        abs(size.width - visibleSize.width) <= tolerance &&
+            abs(size.height - visibleSize.height) <= tolerance
     }
 
     static func isFrameVisible(_ frame: CGRect, across screens: [WebAppWindowPlacementScreen]) -> Bool {
@@ -108,9 +128,44 @@ enum WebAppWindowPlacementResolver {
                 return true
             }
 
-            return storedDisplay.localizedName == screen.localizedName &&
-                storedDisplay.frame.size == screen.frame.size
+            // 显示器名字会随系统语言变，不能当主键；编号对不上时用物理尺寸兜底。
+            return storedDisplay.frame.size == screen.frame.size
         })
+    }
+
+    private static func usableStoredSize(_ size: CGSize?, visibleSize: CGSize?) -> CGSize? {
+        guard let size else {
+            return nil
+        }
+
+        if let visibleSize, isFillVisibleSize(size, visibleSize: visibleSize) {
+            return nil
+        }
+
+        return size
+    }
+
+    private static func sanitizedDefaultSize(_ size: CGSize, visibleSize: CGSize?) -> CGSize {
+        if let visibleSize, isFillVisibleSize(size, visibleSize: visibleSize) {
+            return WebAppWindowMetrics.defaultContentSize
+        }
+
+        return size
+    }
+
+    private static func sanitizedMinimumSize(_ size: CGSize, visibleSize: CGSize?) -> CGSize {
+        if let visibleSize, isFillVisibleSize(size, visibleSize: visibleSize) {
+            return WebAppWindowMetrics.minimumContentSize
+        }
+
+        return size
+    }
+
+    private static func fittedSize(_ size: CGSize, within availableSize: CGSize) -> CGSize {
+        CGSize(
+            width: min(max(size.width, 1), availableSize.width),
+            height: min(max(size.height, 1), availableSize.height)
+        )
     }
 
     private static func resolvePreferredScreen(

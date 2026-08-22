@@ -2,7 +2,17 @@ import AppKit
 import Foundation
 
 @MainActor
-final class RuntimeLauncher {
+protocol RuntimeLaunching: AnyObject {
+    func launch(
+        _ bootstrap: RuntimeBootstrap,
+        onError: @escaping @MainActor (String) -> Void
+    ) throws
+
+    func currentRuntimeBuildIdentifier() throws -> String
+}
+
+@MainActor
+final class RuntimeLauncher: RuntimeLaunching {
     private let registryStore: RuntimeRegistryStore
 
     init(registryStore: RuntimeRegistryStore = RuntimeRegistryStore()) {

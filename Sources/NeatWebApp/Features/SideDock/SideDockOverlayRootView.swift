@@ -7,20 +7,30 @@ struct SideDockOverlayRootView: View {
     @State private var dragStartMouseLocation: CGPoint?
     @State private var closeProgress: CGFloat = 0
 
-    let context: SideDockPresentationContext
+    var state: SideDockOverlayState
     let onSelectApp: (WebAppDefinition) -> Void
     let onDragChange: (SideDockDragUpdate) -> Void
     let onDragEnd: () -> Void
 
+    private var context: SideDockPresentationContext {
+        state.context
+    }
+
     var body: some View {
+        let shape = EdgeAttachedShape(
+            edge: context.edge.attachedShapeEdge,
+            cornerRadius: SideDockPresentationContext.Layout.cornerRadius
+        )
+
         sideNotch
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
-                SideDockGlassBackground(edge: context.edge.attachedShapeEdge)
+                // 玻璃本身点不中。无论是否走液态玻璃，都要垫一层命中区域。
+                shape.fill(.black.opacity(0.001))
             }
             .contentShape(Rectangle())
             .simultaneousGesture(
-                DragGesture(minimumDistance: 3)
+                DragGesture(minimumDistance: Self.dragThreshold)
                     .onChanged { value in
                         let mouseLocation = NSEvent.mouseLocation
                         let startLocation = dragStartMouseLocation ?? mouseLocation
@@ -69,8 +79,17 @@ struct SideDockOverlayRootView: View {
                 iconFrames = frames
             }
             .clipped()
+            // 玻璃必须放在所有影响外观的修饰符之后；再 clip 会把贴边外形裁回矩形。
+            .modifier(SideDockGlassModifier(shape: shape))
+            // 非激活浮层上的第一次按下默认只用来激活窗口；图标必须能直接点开。
+            .allowsWindowActivationEvents()
             .accessibilityElement(children: .contain)
             .accessibilityLabel("已收起的网页应用，可拖动调整位置")
+            .containerBackground(.clear, for: .window)
+            .onChange(of: context.edge) { _, _ in
+                dragStartMouseLocation = NSEvent.mouseLocation
+                closeProgress = 0
+            }
     }
 
     private var sideNotch: some View {
@@ -148,6 +167,7 @@ struct SideDockOverlayRootView: View {
                 .opacity(opacity)
         }
         .buttonStyle(.plain)
+        .allowsWindowActivationEvents()
         .focusEffectDisabled()
         .help(app.name)
         .accessibilityLabel(app.name)
@@ -155,6 +175,9 @@ struct SideDockOverlayRootView: View {
             iconFrameReader(for: app)
         }
     }
+
+    /// 小于这个位移不当整块拖动，避免触控板单击的抖动把点开吃掉。
+    private static let dragThreshold: CGFloat = 8
 
     private func iconLabel(for app: WebAppDefinition) -> some View {
         WebAppIconView(
@@ -183,32 +206,27 @@ struct SideDockOverlayRootView: View {
     }
 }
 
-/// Dock 底板：macOS 26 起走系统液态玻璃，旧系统退回原来的纯黑底板。
-private struct SideDockGlassBackground: View {
-    let edge: ScreenAttachedEdge
+/// Dock 底板：macOS 26 起把通透液态玻璃套在整块内容上，贴边外形由形状参数决定；
+/// 旧系统仍画原来的纯黑底板。两条路径共用同一套贴边形状。
+///
+/// 不要把 `glassEffect` 套在 `Shape.fill` 上：那样玻璃会按视图的矩形包围盒
+/// 走默认胶囊，屏幕上就是一块浅色圆角矩形，贴边外形丢失。
+private struct SideDockGlassModifier: ViewModifier {
+    let shape: EdgeAttachedShape
 
-    var body: some View {
+    @ViewBuilder
+    func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            // 玻璃本身不给窗口留下不透明像素，系统会判定这块区域可穿透、
-            // 把按下事件直接交给下层窗口，整块 Dock 就只有图标能拖。
-            // 补一层肉眼不可见的实色兜住命中区域。
-            shape
-                .fill(.black.opacity(0.001))
-                .glassEffect(.regular, in: shape)
+            content.glassEffect(.clear, in: shape)
         } else {
-            shape
-                .fill(.black)
-                .overlay {
-                    shape.stroke(.white.opacity(0.06), lineWidth: 1)
-                }
+            content.background {
+                shape
+                    .fill(.black)
+                    .overlay {
+                        shape.stroke(.white.opacity(0.06), lineWidth: 1)
+                    }
+            }
         }
-    }
-
-    private var shape: EdgeAttachedShape {
-        EdgeAttachedShape(
-            edge: edge,
-            cornerRadius: SideDockPresentationContext.Layout.cornerRadius
-        )
     }
 }
 
