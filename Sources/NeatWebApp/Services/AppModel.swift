@@ -7,7 +7,6 @@ import AppKit
 final class AppModel {
     private static let launcherHideDelay: Duration = .milliseconds(800)
     private static let launcherTransitionDuration: Duration = .milliseconds(220)
-    private static let virtualNotchHoverIntentDelay: Duration = .milliseconds(260)
 
     private(set) var apps: [WebAppDefinition] = []
     private(set) var detectedNotchScreens: [ScreenNotchGeometry] = []
@@ -421,19 +420,24 @@ final class AppModel {
         hideLauncher()
     }
 
-    /// 硬件刘海背后没有任何系统控件，指针一进入就可以展开。
-    /// 虚拟热区压在菜单栏上，必须先要求指针停留一小段时间，
-    /// 否则用户只是路过去点菜单，也会被启动器抢走。
+    /// 指针移入热区后先等一段时间，到期再看是否还在区内才展开。
+    /// 已经展开时不再等。点进硬件刘海视为明确意图，立即展开；
+    /// 虚拟热区上的点击一律让给菜单栏，不在这里抢焦点。
     private func requestLauncher(for geometry: ScreenNotchGeometry, isClick: Bool) {
-        guard geometry.isVirtual, !isLauncherVisible else {
+        if isLauncherVisible {
             cancelPendingActivation()
             showLauncher(for: geometry)
             return
         }
 
-        // 虚拟热区上的点击一律让给菜单栏，不在这里抢焦点。
-        guard !isClick else {
+        if isClick {
+            guard !geometry.isVirtual else {
+                cancelPendingActivation()
+                return
+            }
+
             cancelPendingActivation()
+            showLauncher(for: geometry)
             return
         }
 
@@ -445,7 +449,7 @@ final class AppModel {
         pendingActivationGeometryID = geometry.id
         pendingActivationTask = Task { [weak self] in
             do {
-                try await Task.sleep(for: Self.virtualNotchHoverIntentDelay)
+                try await Task.sleep(for: geometry.hoverIntentDelay)
             } catch {
                 return
             }
