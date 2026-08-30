@@ -145,7 +145,7 @@ done
 - launcher 图标行两侧的 fade / 阴影反馈必须与真实可滚动方向一致：某一侧还有被裁切内容时保留该侧过渡，某一侧已经滑到尽头时关闭该侧过渡，避免给出错误提示。
 - launcher 图标必须保持固定紧凑间距；1、2、3、4 个图标以及更多图标的默认排布都不要按剩余宽度做均分拉伸，禁止出现为了“铺满”而把中间间隔拉得很大的排布。
 - 修改刘海识别逻辑时，同时检查 `Sources/NeatWebApp/Models/ScreenNotchGeometry.swift` 和相关测试。
-- 无刘海屏幕（外接显示器、Mac mini / Studio、旧款 MacBook）由虚拟刘海兜底：顶部中央合成一块与硬件刘海同构的热区，指针停留约 260ms 才展开，热区内的点击让给菜单栏。**硬件刘海也不是一碰就开**：指针移入后等 60ms，仍在区内才弹出启动器，避免路过误开。改虚拟刘海几何、悬停判定、开关或诊断文案前先读 [刘海触发说明](docs/notch-activation-research.md)，里面记了「屏幕刷新无差别取消悬停等待会让虚拟热区彻底失灵」这个坑，以及覆盖层无法用截图 skill 验证时的替代手法。
+- 无刘海屏幕（外接显示器、Mac mini / Studio、旧款 MacBook）由虚拟刘海兜底：顶部中央合成一块与硬件刘海同构的热区，指针停留约 260ms 才展开，热区内的点击让给菜单栏。**硬件刘海也不是一碰就开**：指针移入后等 100ms，仍在区内才弹出启动器，避免路过误开。改虚拟刘海几何、悬停判定、开关或诊断文案前先读 [刘海触发说明](docs/notch-activation-research.md)，里面记了「屏幕刷新无差别取消悬停等待会让虚拟热区彻底失灵」这个坑，以及覆盖层无法用截图 skill 验证时的替代手法。
 - 修改浏览器行为时，同时检查 `Sources/NeatWebApp/Features/Browser/BrowserSession.swift`、`Sources/NeatWebApp/Features/Browser/AppKitBridge/BrowserWebView.swift`、`Sources/NeatWebApp/Services/WebAppWindowController.swift`。
 - 浏览器窗口顶部是无边框的「让位带」，不是标题栏：不画横条与分割线，图标裸放，网页内容从带子下方开始。左上角是收起、置顶、收藏当前页与这个网页应用自己的收藏列表。改这块前先读 [浏览器顶栏无界样式](docs/design/browser-top-chrome.md)，里面记了液态玻璃胶囊、悬停淡入等已被推翻的方案和推翻理由。
 - 注入网页的用户脚本（页面取色、通行密钥提示、元素隐藏）统一在 `BrowserUserScripts.install` 里装配。WebKit 只能整批清空用户脚本、不能单独摘掉一条，新增注入脚本必须加进这个入口，否则隐藏规则变更时重装会把它弄丢。
@@ -191,7 +191,7 @@ done
 - [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围判定、规则生效范围与持久化、还原入口，或需要新增／升级注入到页面里的脚本时必读；含已裁定不可推翻的产品决策、内嵌第三方选择器库的升级方式与已知边界。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器窗口顶部控件区（收起 / 置顶 / **收藏当前页与收藏列表** / 刷新 / 网页标识 / 下载指示的排布、顶部让位带高度、渐变、配色与对比度、窗口拖动区域）前必读；也是判断「该不该在窗口内部用液态玻璃 / 系统材质」的依据，含已实现后被推翻的方案与根因，以及顶栏改动的截图验收要求。收藏列表必须按网页应用隔离，不要做成整浏览器共享书签。
-- [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何识别、launcher 激活逻辑、**硬件刘海 60ms / 虚拟刘海 260ms 悬停停留**、路过误开前阅读；无刘海屏幕 / 外接显示器的虚拟刘海热区（几何推导、悬停停留判定、开关偏好、与菜单栏的冲突处理）也在这里，验证覆盖层是否真的唤出时同样先读本文的验证手法一节。
+- [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何识别、launcher 激活逻辑、**硬件刘海 100ms / 虚拟刘海 260ms 悬停停留**、路过误开前阅读；无刘海屏幕 / 外接显示器的虚拟刘海热区（几何推导、悬停停留判定、开关偏好、与菜单栏的冲突处理）也在这里，验证覆盖层是否真的唤出时同样先读本文的验证手法一节。
 - [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前阅读。
 - [docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md](docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md)：安装、构建、改 App 图标，或排查 Spotlight 出现多个 NeatWebApp、图标不刷新、旧副本残留时必读。
 - [docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md](docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md)：改、评审或排查侧边 Dock 的选屏与定位（多显示器下乱跳、拔插显示器后跑偏、Dock 该出现却没出现），或需要在真机上验证 Dock 位置时必读；含 `NSScreen.main` 语义陷阱与验证手法。

@@ -37,9 +37,9 @@ struct ScreenNotchGeometry: Identifiable, Equatable, Sendable {
     }
 
     /// 指针移入热区后要等这么久，到期时仍在区内才展开启动器。
-    /// 硬件 60ms：挡住路过误开，又不会觉得钝。虚拟约 260ms：热区压在菜单栏上，必须更久。
+    /// 硬件 100ms：挡住路过误开，又不会觉得钝。虚拟约 260ms：热区压在菜单栏上，必须更久。
     var hoverIntentDelay: Duration {
-        isVirtual ? .milliseconds(260) : .milliseconds(60)
+        isVirtual ? .milliseconds(260) : .milliseconds(100)
     }
 
     init?(

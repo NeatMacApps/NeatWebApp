@@ -241,6 +241,7 @@
 		F064968ED7E8033EDBBE526F /* WebAppWindowAutoCollapseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowAutoCollapseTests.swift; sourceTree = "<group>"; };
 		F1E4BB2F4C92B1295A9ABB38 /* BrowserExternalNavigationPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserExternalNavigationPolicyTests.swift; sourceTree = "<group>"; };
 		F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherRowReorderTests.swift; sourceTree = "<group>"; };
+		F32E86D67D9B8B720606D7BD /* 0.3.9.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.9.md; sourceTree = "<group>"; };
 		F510DB1DB8B76472F5AC77B9 /* 0.3.5.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.5.md; sourceTree = "<group>"; };
 		F99DF162F766071E7C75979E /* SideDockPresentationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockPresentationContext.swift; sourceTree = "<group>"; };
 		FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeTheme.swift; sourceTree = "<group>"; };
@@ -400,6 +401,7 @@
 				12286D0DC034FFFA6F5A17EA /* 0.3.6.md */,
 				6366139A94DCBB7DE18313AE /* 0.3.7.md */,
 				80B48173EF6202C4AFC2C0CC /* 0.3.8.md */,
+				F32E86D67D9B8B720606D7BD /* 0.3.9.md */,
 			);
 			path = "release-notes";
 			sourceTree = "<group>";
@@ -938,7 +940,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3026;
+				CURRENT_PROJECT_VERSION = 3027;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -959,7 +961,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.8;
+				MARKETING_VERSION = 0.3.9;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1061,7 +1063,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3026;
+				CURRENT_PROJECT_VERSION = 3027;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1076,7 +1078,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.8;
+				MARKETING_VERSION = 0.3.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

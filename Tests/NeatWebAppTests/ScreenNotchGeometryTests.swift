@@ -16,7 +16,7 @@ final class ScreenNotchGeometryTests: XCTestCase {
         XCTAssertTrue(geometry.hasNotch)
         XCTAssertEqual(geometry.notchRect, CGRect(x: 620, y: 908, width: 272, height: 74))
         XCTAssertEqual(geometry.activationRect, geometry.notchRect)
-        XCTAssertEqual(geometry.hoverIntentDelay, .milliseconds(60))
+        XCTAssertEqual(geometry.hoverIntentDelay, .milliseconds(100))
 
         let retentionRect = geometry.launcherRetentionRect
         XCTAssertEqual(retentionRect.midX, geometry.notchRect.midX, accuracy: 0.001)
