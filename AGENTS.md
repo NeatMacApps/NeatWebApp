@@ -167,7 +167,7 @@ done
 - `Sources/NeatWebApp/Services/WebAppWindowCoordinator.swift` 是历史遗留的死文件：`project.yml` 把它从所有 target 排除，且它调用的构造签名早已不存在。不要参照它写代码；一旦把它加回 target，编译会立刻失败。
 - 窗口自动收进侧边 Dock 的触发条件是「看不见的面积达到 80%」，立刻收起，没有闲置超时。用户刚从刘海或侧边栏点开/唤出时有短暂保护，避免窗口列表还没跟上就误收。改这块前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md)。
 - 置顶窗口行为通过 `NSWindow.Level.floating` 实现，并由偏好持久化保存。
-- 应用内自动更新由 `Sources/NeatWebApp/Services/AppUpdater.swift` 持有，只装在宿主上；更新覆盖安装前会调用 `AppModel.prepareForApplicationUpdate()` 收掉全部运行时进程，漏网的靠既有的运行时版本迁移逻辑在下次启动时重启。改运行时生命周期、`WebAppRuntimeCoordinating` 协议或菜单栏菜单时，一并确认这条链路没断。
+- 应用内自动更新由 `Sources/NeatWebApp/Services/AppUpdater.swift` 持有，只装在宿主上；更新覆盖安装前会调用 `AppModel.prepareForApplicationUpdate()` 收掉全部运行时进程，漏网的靠既有的运行时版本迁移逻辑在下次启动时重启。改运行时生命周期、`WebAppRuntimeCoordinating` 协议或菜单栏菜单时，一并确认这条链路没断。**「能否检查更新」必须挂在这个更新器上、整个生命周期只订阅一次**；禁止在检查更新按钮初始化时新建观察对象，否则菜单会被系统反复合成、主线程打满。排障见 `~/.config/agentsync/docs/troubleshooting/2026-09-01-swiftui-menubar-main-thread-spin.md`。
 - 开机自启由公共行为包的登录项单元封装，主窗口的设置区与菜单栏各有一个入口。**只有系统真正会在登录时拉起才算启用**：待批准不能显示成已开启，也不能靠注销再登记救回来，只能由用户去系统设置里重新打开。界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
 - 触碰这些逻辑时，要连同构建、测试、替换 `/Applications/NeatWebApp.app`、再启动验证一起执行。
 

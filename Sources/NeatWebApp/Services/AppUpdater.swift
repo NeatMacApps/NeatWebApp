@@ -13,6 +13,9 @@ final class AppUpdater: NSObject, ObservableObject,
     @preconcurrency SPUStandardUserDriverDelegate {
     /// 后台已发现、但还没让用户处理的版本号；没有待处理更新时为 nil。
     @Published private(set) var availableVersion: String?
+    /// 跟随 Sparkle 的真实状态；值没变不写。菜单按钮不要观察本对象。
+    @Published private(set) var canCheckForUpdates = true
+    private var canCheckForUpdatesCancellable: AnyCancellable?
 
     private let onWillInstallUpdate: @MainActor () -> Void
     private var hasPreparedForInstall = false
@@ -27,6 +30,13 @@ final class AppUpdater: NSObject, ObservableObject,
         self.onWillInstallUpdate = onWillInstallUpdate
         super.init()
         _ = controller
+        canCheckForUpdatesCancellable = updater.publisher(for: \.canCheckForUpdates)
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] canCheck in
+                guard let self, self.canCheckForUpdates != canCheck else { return }
+                self.canCheckForUpdates = canCheck
+            }
     }
 
     var updater: SPUUpdater {
@@ -82,40 +92,5 @@ final class AppUpdater: NSObject, ObservableObject,
 
     func standardUserDriverWillFinishUpdateSession() {
         availableVersion = nil
-    }
-}
-
-/// 跟随 Sparkle 的真实状态控制按钮可用性，避免检查进行中被重复触发。
-@MainActor
-private final class UpdateCheckState: ObservableObject {
-    @Published var canCheckForUpdates = false
-
-    init(updater: SPUUpdater) {
-        updater.publisher(for: \.canCheckForUpdates)
-            .assign(to: &$canCheckForUpdates)
-    }
-}
-
-@MainActor
-struct CheckForUpdatesButton: View {
-    @ObservedObject private var state: UpdateCheckState
-    @ObservedObject private var appUpdater: AppUpdater
-
-    init(appUpdater: AppUpdater) {
-        self.appUpdater = appUpdater
-        state = UpdateCheckState(updater: appUpdater.updater)
-    }
-
-    var body: some View {
-        Button(buttonTitle, action: appUpdater.updater.checkForUpdates)
-            .disabled(!state.canCheckForUpdates)
-    }
-
-    private var buttonTitle: String {
-        if let availableVersion = appUpdater.availableVersion {
-            return "安装 NeatWebApp \(availableVersion) 更新…"
-        }
-
-        return "检查更新…"
     }
 }

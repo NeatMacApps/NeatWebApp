@@ -53,6 +53,7 @@ struct NeatWebAppApp: App {
             isInserted: Binding(
                 get: { appModel.isMenuBarIconVisible },
                 set: { visible in
+                    guard visible != appModel.isMenuBarIconVisible else { return }
                     appModel.setMenuBarIconVisible(visible)
                     if !visible {
                         openMainWindow()
@@ -83,7 +84,9 @@ struct NeatWebAppApp: App {
                 openMainWindow()
             }
 
-            CheckForUpdatesButton(appUpdater: appUpdater)
+            Button(updateButtonTitle) {
+                appUpdater.updater.checkForUpdates()
+            }
 
             Divider()
 
@@ -92,11 +95,19 @@ struct NeatWebAppApp: App {
             }
             .keyboardShortcut("q", modifiers: [.command])
         }
+        .menuBarExtraStyle(.menu)
     }
 
     /// 常驻菜单栏的应用打开窗口后不会自动激活，要手动抢一次前台，否则窗口会压在别的应用下面。
     private func openMainWindow() {
         openWindow(id: AppWindowID.main)
         NSApplication.shared.activate()
+    }
+
+    private var updateButtonTitle: String {
+        if let availableVersion = appUpdater.availableVersion {
+            return "安装 NeatWebApp \(availableVersion) 更新…"
+        }
+        return "检查更新…"
     }
 }
