@@ -20,8 +20,8 @@ settings:
     # 版本号的唯一来源：两个 Info.plist 都通过构建变量取值，不再各写各的。
     # MARKETING_VERSION 是给人看的展示版本（SemVer）；
     # CURRENT_PROJECT_VERSION 是 Sparkle 判断新旧的唯一权威值，必须是严格递增的正整数。
-    MARKETING_VERSION: 0.3.9
-    CURRENT_PROJECT_VERSION: 3027
+    MARKETING_VERSION: 0.3.10
+    CURRENT_PROJECT_VERSION: 3028
   configs:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
@@ -41,6 +41,9 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.9.4"
+  MacKit:
+    url: https://github.com/x0c/mac-kit-swift
+    from: "0.1.0"
 
 fileGroups:
   - scripts
@@ -71,6 +74,12 @@ targets:
       # 自动更新只装在宿主上：运行时是被宿主整包替换的，不需要也不能自己更新
       - package: Sparkle
         product: Sparkle
+      - package: MacKit
+        product: MacKitCore
+      - package: MacKit
+        product: MacKitLaunchAtLogin
+      - package: MacKit
+        product: MacKitLifecycle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebApp

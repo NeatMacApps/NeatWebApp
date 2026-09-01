@@ -32,6 +32,10 @@ macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 - 工程管理：XcodeGen（`project.yml`）
 - Xcode：16.2+
 
+## 2026-08-31 菜单栏专项复核：已落地（待 Mac 验收）
+
+已接入公共行为包：开机自启走系统三态（待批准不能显示成已开启），菜单和主窗口设置可隐藏/恢复菜单栏图标。图标隐藏后再次从“应用程序”、Spotlight 打开应唤出主窗口。本机是 Linux，不能编译或覆盖安装；回 Mac 后先 `xcodegen generate`，再按仓库命令构建并装进「应用程序」验收。验收清单见公共包 `docs/MAC_ACCEPTANCE.md`。
+
 ## 已检查的额外规则文件
 - 已检查 `.cursor/rules/`：未找到规则文件。
 - 已检查 `.cursorrules`：未找到规则文件。
@@ -50,7 +54,7 @@ macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 - `Sources/NeatWebApp/Features/Browser`：浏览器会话、窗口内容、WebKit bridge。
 - `Sources/NeatWebApp/Features/Dashboard`：主窗口（网页应用列表 + 设置区块）。
 - `Tests/NeatWebAppTests`：宿主侧单元测试（屏幕几何、持久化、catalog、侧边 Dock 贴边与拐角换边）。
-- `Tests/NeatWebAppRuntimeTests`：运行时侧单元测试（浏览器 chrome、收藏隔离、下载与外链策略、历史位置兼容、窗口自动收起判定与可见面积计算）。
+- `Tests/NeatWebAppRuntimeTests`：运行时侧单元测试（浏览器 chrome、收藏隔离、下载与外链策略、历史位置兼容、窗口自动收起判定、可见面积计算、**侧边 Dock 避让**）。
 
 ## 动手前
 - 先读相关文件，不要凭猜测做大改。
@@ -138,7 +142,7 @@ done
 - **主窗口只放用户要操作的东西**：不摆产品介绍、路线图、诊断读数、屏幕几何等开发者信息；设置项的补充说明一律走悬停提示，界面上只留一句话标题。唯一例外是必须解释否则用户会误判的状态（如开机自启被系统挂起）。刷新几何、调试覆盖层这类开发用动作只保留快捷键，不进界面。
 - App 图标与菜单栏图标共享“三层卡片落入带凹口托盘”的品牌语义：菜单栏版本必须保留三层卡片、托盘凹口和必要负空间，禁止把彩色 App 图标直接灰度化、阈值化或整块填黑。模板图的通用规格与验收步骤见 [Apple 应用图标与品牌资产基线](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)。
 - 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
-- 修改侧边 Dock 行为时，同时检查宿主状态、侧边 Dock 窗口协调、布局模型、设置持久化和对应测试；Dock 必须贴在当前屏幕的可用边界，不能覆盖系统程序坞或抢占其触发边缘。
+- 修改侧边 Dock 行为时，同时检查宿主状态、侧边 Dock 窗口协调、布局模型、设置持久化和对应测试；Dock 必须贴在当前屏幕的可用边界，不能覆盖系统程序坞或抢占其触发边缘。网页应用窗口也不得挡住这块侧边刘海（不是系统程序坞）：Dock 正在显示时，该屏窗口的可用区域是 `visibleFrame` 再扣掉 Dock 所在边的整条厚度。改、评审或排查「窗口压住侧边 Dock / 玻璃里透出网页」前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md) 里 2026-09-01 的裁定。
 - 侧边 Dock 上下不留死边距：可以一路拖到贴住可用区域的上下边缘（边距常量在放置解析器里统一管理，不要在别处再写死数值）。贴的是 `visibleFrame`，底部有系统程序坞时自然停在它内侧。
 - 侧边 Dock 拖到可用区域拐角后继续拖，会绕到相邻边（左/右 ↔ 底），上边不贴。只在已经顶到尽头且还在拐角附近时才换边，中间朝屏幕内侧拖仍是关闭手势。
 - 侧边 Dock 选屏**禁止使用 `NSScreen.main`**（它是键盘焦点所在屏，不是主显示器，会导致 Dock 跟着焦点在多显示器之间乱跳）；兜底一律用 Dock 当前所在屏或屏幕列表第一块。Dock 图标不画焦点描边。详见 [侧边 Dock 跨显示器跳动排查记录](docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md)。
@@ -164,7 +168,7 @@ done
 - 窗口自动收进侧边 Dock 的触发条件是「看不见的面积达到 80%」，立刻收起，没有闲置超时。用户刚从刘海或侧边栏点开/唤出时有短暂保护，避免窗口列表还没跟上就误收。改这块前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md)。
 - 置顶窗口行为通过 `NSWindow.Level.floating` 实现，并由偏好持久化保存。
 - 应用内自动更新由 `Sources/NeatWebApp/Services/AppUpdater.swift` 持有，只装在宿主上；更新覆盖安装前会调用 `AppModel.prepareForApplicationUpdate()` 收掉全部运行时进程，漏网的靠既有的运行时版本迁移逻辑在下次启动时重启。改运行时生命周期、`WebAppRuntimeCoordinating` 协议或菜单栏菜单时，一并确认这条链路没断。
-- 开机自启由 `Sources/NeatWebApp/Services/LaunchAtLoginService.swift` 封装 `SMAppService.mainApp`，主窗口的设置区与菜单栏各有一个入口。**只有 `.enabled` 才算启用**：`.requiresApproval` 表示这台机器上它曾被关掉过，系统据此挂起，此时**应用无论怎么调都救不回来**——实测「注销后重新登记」同样无效，苹果是故意持久化这个「用户曾关掉它」的意图的，只能由用户去系统设置里重新打开。所以把 `.requiresApproval` 并进「已启用」是错的（会表现为开关看着开着、开机却不启动），在这里加重试也是错的，界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
+- 开机自启由公共行为包的登录项单元封装，主窗口的设置区与菜单栏各有一个入口。**只有系统真正会在登录时拉起才算启用**：待批准不能显示成已开启，也不能靠注销再登记救回来，只能由用户去系统设置里重新打开。界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
 - 触碰这些逻辑时，要连同构建、测试、替换 `/Applications/NeatWebApp.app`、再启动验证一起执行。
 
 ### 当前基线缺口：中英本地化（A3，必须补齐）
@@ -188,7 +192,7 @@ done
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
 - [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作方式、进程划分，以及浏览器窗口生命周期（关闭 / 隐藏 / 收进侧边 Dock / 跨桌面空间行为 / 新打开尚未运行的网页应用时的启动盖衔接）前阅读。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
-- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
+- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围判定、规则生效范围与持久化、还原入口，或需要新增／升级注入到页面里的脚本时必读；含已裁定不可推翻的产品决策、内嵌第三方选择器库的升级方式与已知边界。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器窗口顶部控件区（收起 / 置顶 / **收藏当前页与收藏列表** / 刷新 / 网页标识 / 下载指示的排布、顶部让位带高度、渐变、配色与对比度、窗口拖动区域）前必读；也是判断「该不该在窗口内部用液态玻璃 / 系统材质」的依据，含已实现后被推翻的方案与根因，以及顶栏改动的截图验收要求。收藏列表必须按网页应用隔离，不要做成整浏览器共享书签。
 - [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何识别、launcher 激活逻辑、**硬件刘海 100ms / 虚拟刘海 260ms 悬停停留**、路过误开前阅读；无刘海屏幕 / 外接显示器的虚拟刘海热区（几何推导、悬停停留判定、开关偏好、与菜单栏的冲突处理）也在这里，验证覆盖层是否真的唤出时同样先读本文的验证手法一节。

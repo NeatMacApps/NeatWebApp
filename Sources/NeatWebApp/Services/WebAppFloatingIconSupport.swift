@@ -325,8 +325,8 @@ final class FloatingWebAppIconView: NSView {
             origin,
             panelSize: window.frame.size,
             anchorPoint: anchorPoint,
-            availableScreens: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:)),
-            fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
+            availableScreens: NSScreen.screens.map { WebAppWindowPlacementScreen(screen: $0) },
+            fallbackScreen: NSScreen.main.map { WebAppWindowPlacementScreen(screen: $0) },
             shadowPadding: WebAppWindowController.WindowMetrics.floatingIconShadowPadding
         )
     }

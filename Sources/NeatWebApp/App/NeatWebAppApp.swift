@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 窗口标识：启动器、菜单栏和快捷键都要打开同一个主窗口。
@@ -8,6 +9,7 @@ enum AppWindowID {
 @MainActor
 @main
 struct NeatWebAppApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let appModel: AppModel
     private let appUpdater: AppUpdater
 
@@ -27,14 +29,37 @@ struct NeatWebAppApp: App {
         Window("NeatWebApp", id: AppWindowID.main) {
             DashboardView()
                 .environment(appModel)
+                .onAppear {
+                    appDelegate.isMenuBarIconVisible = { [appModel] in
+                        appModel.isMenuBarIconVisible
+                    }
+                    appDelegate.isUpdateSessionInProgress = { [appUpdater] in
+                        appUpdater.updater.sessionInProgress
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .neatWebAppOpenMainWindow)) { _ in
+                    openMainWindow()
+                }
         }
-        .defaultLaunchBehavior(.suppressed)
+        .defaultLaunchBehavior(appModel.isMenuBarIconVisible ? .suppressed : .presented)
         .windowResizability(.contentSize)
         .commands {
             AppCommands(appModel: appModel)
         }
 
-        MenuBarExtra("NeatWebApp", image: .menuBarIcon) {
+        MenuBarExtra(
+            "NeatWebApp",
+            image: .menuBarIcon,
+            isInserted: Binding(
+                get: { appModel.isMenuBarIconVisible },
+                set: { visible in
+                    appModel.setMenuBarIconVisible(visible)
+                    if !visible {
+                        openMainWindow()
+                    }
+                }
+            )
+        ) {
             Button("打开主窗口") {
                 openMainWindow()
             }
@@ -53,12 +78,17 @@ struct NeatWebAppApp: App {
                 )
             )
 
+            Button("隐藏菜单栏图标") {
+                appModel.setMenuBarIconVisible(false)
+                openMainWindow()
+            }
+
             CheckForUpdatesButton(appUpdater: appUpdater)
 
             Divider()
 
             Button("退出 NeatWebApp") {
-                NSApplication.shared.terminate(nil)
+                appDelegate.terminationGuard.requestTermination()
             }
             .keyboardShortcut("q", modifiers: [.command])
         }
@@ -69,5 +99,4 @@ struct NeatWebAppApp: App {
         openWindow(id: AppWindowID.main)
         NSApplication.shared.activate()
     }
-
 }

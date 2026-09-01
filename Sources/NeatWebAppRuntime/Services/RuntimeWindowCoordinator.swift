@@ -10,8 +10,10 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private let eventPublisher: RuntimeEventPublisher
     private let commandListener: RuntimeCommandListener
     private let preferencesStore = WebAppPreferencesStore()
+    private let dockReserveStore = SideDockReserveStore()
     private var windowController: WebAppWindowController?
     private var hasPreparedTermination = false
+    private var dockReserveObserver: NSObjectProtocol?
 
     init(
         bootstrap: RuntimeBootstrap,
@@ -53,10 +55,18 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             preferencesStore: preferencesStore,
             preferredGeometry: resolvePreferredGeometry(),
             eventSink: self,
+            dockReserveStore: dockReserveStore,
             restoredWindowFrame: bootstrap.restoredWindowFrame,
             lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil
         )
         windowController = controller
+        dockReserveObserver = dockReserveStore.observeChanges { [weak self] in
+            guard let self else {
+                return
+            }
+
+            self.windowController?.applyDockReserve(self.dockReserveStore.load())
+        }
         restoreInitialPresentation(with: controller)
     }
 
@@ -66,6 +76,10 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         }
 
         hasPreparedTermination = true
+        if let dockReserveObserver {
+            dockReserveStore.removeObserver(dockReserveObserver)
+            self.dockReserveObserver = nil
+        }
         commandListener.stop()
         let windowFrame = windowController?.window?.frame ?? appModel.windowFrame
         let floatingIconFrame = appModel.floatingIconFrame

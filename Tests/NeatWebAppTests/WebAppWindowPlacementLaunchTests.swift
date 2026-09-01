@@ -70,6 +70,55 @@ final class WebAppWindowPlacementLaunchTests: XCTestCase {
         window.close()
     }
 
+    func testStoredFrameIsMovedOutOfTheSideDockStrip() {
+        let visible = CGRect(x: 0, y: 0, width: 1446, height: 949)
+        let usable = CGRect(x: 0, y: 0, width: 1399, height: 949)
+        let screen = WebAppWindowPlacementScreen(
+            displayID: 1,
+            localizedName: "Built-in Retina Display",
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: visible,
+            usableFrame: usable,
+            notchGeometry: nil
+        )
+        let saved = CGRect(x: visible.maxX - 400, y: 80, width: 400, height: 700)
+        let frame = WebAppWindowPlacementResolver.resolveFrame(
+            preference: makePreference(frame: saved, displayID: screen.displayID),
+            preferredGeometry: nil,
+            availableScreens: [screen],
+            fallbackDisplayID: screen.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
+        )
+
+        XCTAssertLessThanOrEqual(frame.maxX, usable.maxX)
+        XCTAssertEqual(frame.width, 400, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 700, accuracy: 0.5)
+    }
+
+    func testFillDesktopSavedFrameStillFallsBackWhenDockInsetExists() {
+        let visible = CGRect(x: 0, y: 0, width: 1446, height: 949)
+        let screen = WebAppWindowPlacementScreen(
+            displayID: 1,
+            localizedName: "Built-in Retina Display",
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: visible,
+            usableFrame: CGRect(x: 0, y: 0, width: 1399, height: 949),
+            notchGeometry: nil
+        )
+        let frame = WebAppWindowPlacementResolver.resolveFrame(
+            preference: makePreference(frame: visible, displayID: screen.displayID),
+            preferredGeometry: nil,
+            availableScreens: [screen],
+            fallbackDisplayID: screen.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
+        )
+
+        XCTAssertEqual(frame.size, WebAppWindowMetrics.defaultFrameSize)
+        XCTAssertLessThanOrEqual(frame.maxX, screen.usableFrame.maxX)
+    }
+
     private func makeBuiltInScreen() -> WebAppWindowPlacementScreen {
         WebAppWindowPlacementScreen(
             displayID: 1,

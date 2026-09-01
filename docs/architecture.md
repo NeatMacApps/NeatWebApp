@@ -155,6 +155,7 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 - Dragging anywhere on the notch, including directly over an icon, moves it along the attached edge and can transfer it between displays. Dragging past a usable corner wraps to the adjacent edge (left/right ↔ bottom; the top edge is not used). A short click still opens the WebApp, while a completed drag suppresses the click. Position along the current edge is stored as a normalized value so it remains valid when resolution or available screen area changes.
 - Settings offers explicit left, right, and bottom placement. On first use, the default side avoids the larger system-reserved inset; once chosen, the user's setting is authoritative. Dragging around a corner updates that same setting.
 - Placement is computed from `NSScreen.visibleFrame`, not the physical display edge. A right-side Dock therefore sits immediately inside a right-side system Dock instead of covering it or stealing its reveal boundary. Screen geometry is refreshed after display configuration changes and must not be cached indefinitely.
+- Web app windows must not cover this host-owned Dock. While the Dock is visible, window placement, resize, zoom, and the launch cover all use `visibleFrame` minus the Dock's full edge strip on that display. The Dock is inside `visibleFrame`, so treating the system desktop as the window's max frame would slide the window under the glass Dock. Rationale in [window-auto-collapse.md](design/window-auto-collapse.md).
 - Only the visible black panel receives pointer events. No transparent full-height window is allowed along the edge because that would block other edge interactions.
 - System focus rings are disabled on the Dock and Settings controls. Keyboard users receive the app's own restrained white focus treatment instead.
 
@@ -163,6 +164,7 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
 - `WebAppPreferencesStore` persists zoom, pinned state, saved window placement, hidden-element rules, and **per-web-app bookmarks**. Each web app's bookmark list is stored under that app's own preference record and never mixed with another app.
 - `AppPreferencesStore` persists the side Dock edge, normalized vertical position, and target display.
+- Side-dock occupancy for window avoidance is a shared Application Support file both host and runtime read (`side-dock-reserve.json`). The host writes it whenever the Dock appears, moves, or hides.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
 - `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.
 
@@ -171,7 +173,7 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 Tests are split by ownership:
 
 - `Tests/NeatWebAppTests` covers host-side geometry, persistence, catalog-related behavior, and side-dock corner wrapping.
-- `Tests/NeatWebAppRuntimeTests` covers runtime-side browser chrome, per-web-app bookmarks, legacy placement compatibility, auto-collapse eligibility, and visible-area coverage math.
+- `Tests/NeatWebAppRuntimeTests` covers runtime-side browser chrome, per-web-app bookmarks, legacy placement compatibility, auto-collapse eligibility, visible-area coverage math, and side-dock window avoidance.
 - Auto-collapse eligibility is kept in a pure static function precisely so it stays testable without a live window; keep new window-lifecycle rules factored the same way.
 
 ## Design Constraints

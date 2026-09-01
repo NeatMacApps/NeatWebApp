@@ -6,8 +6,9 @@ struct SettingsSectionView: View {
     @FocusState private var focusedControl: FocusedControl?
 
     private enum FocusedControl: Hashable {
-        case launchAtLogin
-        case sideDockEdge
+                case launchAtLogin
+                case menuBarIcon
+                case sideDockEdge
         case virtualNotch
         case openSystemSettings
     }
@@ -27,6 +28,8 @@ struct SettingsSectionView: View {
                     blockedNotice
                 }
 
+                rowDivider
+                menuBarIconRow
                 rowDivider
                 sideDockEdgeRow
                 rowDivider
@@ -56,6 +59,25 @@ struct SettingsSectionView: View {
             .focused($focusedControl, equals: .launchAtLogin)
             .settingFocusIndicator(focusedControl == .launchAtLogin)
             .accessibilityLabel(Text("settings.login.startup.title"))
+        }
+    }
+
+    private var menuBarIconRow: some View {
+        settingRow("settings.menubar.icon.title") {
+            Toggle(
+                "",
+                isOn: Binding(
+                    get: { appModel.isMenuBarIconVisible },
+                    set: { appModel.setMenuBarIconVisible($0) }
+                )
+            )
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .controlSize(.small)
+            .focusEffectDisabled()
+            .focused($focusedControl, equals: .menuBarIcon)
+            .settingFocusIndicator(focusedControl == .menuBarIcon)
+            .accessibilityLabel(Text("settings.menubar.icon.title"))
         }
     }
 

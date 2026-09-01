@@ -1,10 +1,101 @@
 import AppKit
 
+/// 侧边 Dock 当前占用的那条屏幕边。宿主写入、运行时读取，两边必须用同一份。
+struct SideDockScreenReserve: Equatable, Sendable, Codable {
+    enum Edge: String, Codable, Sendable {
+        case left
+        case right
+        case bottom
+    }
+
+    var edge: Edge
+    var displayID: UInt32?
+    var thickness: CGFloat
+}
+
+/// 网页窗口不得压住本应用侧边 Dock：在系统 `visibleFrame` 上再扣掉 Dock 所在边的整条厚度。
+enum SideDockWindowAvoidance {
+    static let didChangeNotification = Notification.Name("com.geraltgraham.NeatWebApp.sideDock.reserveDidChange")
+
+    static func usableFrame(
+        visibleFrame: CGRect,
+        reserve: SideDockScreenReserve?,
+        screenDisplayID: UInt32?
+    ) -> CGRect {
+        guard let reserve, reserve.thickness > 0 else {
+            return visibleFrame
+        }
+
+        if let reservedDisplayID = reserve.displayID,
+           let screenDisplayID,
+           reservedDisplayID != screenDisplayID {
+            return visibleFrame
+        }
+
+        let thickness = min(reserve.thickness, edgeLength(for: reserve.edge, in: visibleFrame))
+        guard thickness > 0 else {
+            return visibleFrame
+        }
+
+        switch reserve.edge {
+        case .left:
+            return CGRect(
+                x: visibleFrame.minX + thickness,
+                y: visibleFrame.minY,
+                width: visibleFrame.width - thickness,
+                height: visibleFrame.height
+            )
+        case .right:
+            return CGRect(
+                x: visibleFrame.minX,
+                y: visibleFrame.minY,
+                width: visibleFrame.width - thickness,
+                height: visibleFrame.height
+            )
+        case .bottom:
+            return CGRect(
+                x: visibleFrame.minX,
+                y: visibleFrame.minY + thickness,
+                width: visibleFrame.width,
+                height: visibleFrame.height - thickness
+            )
+        }
+    }
+
+    static func clamp(_ frame: CGRect, into usableFrame: CGRect) -> CGRect {
+        let width = min(max(frame.width, 1), max(usableFrame.width, 1))
+        let height = min(max(frame.height, 1), max(usableFrame.height, 1))
+        let maxX = usableFrame.maxX - width
+        let maxY = usableFrame.maxY - height
+        guard usableFrame.width > 0, usableFrame.height > 0 else {
+            return frame
+        }
+
+        return CGRect(
+            x: min(max(frame.minX, usableFrame.minX), max(maxX, usableFrame.minX)),
+            y: min(max(frame.minY, usableFrame.minY), max(maxY, usableFrame.minY)),
+            width: width,
+            height: height
+        )
+    }
+
+    private static func edgeLength(for edge: SideDockScreenReserve.Edge, in visibleFrame: CGRect) -> CGFloat {
+        switch edge {
+        case .left, .right:
+            visibleFrame.width
+        case .bottom:
+            visibleFrame.height
+        }
+    }
+}
+
 struct WebAppWindowPlacementScreen: Equatable, Sendable {
     let displayID: UInt32?
     let localizedName: String
     let frame: CGRect
     let visibleFrame: CGRect
+    /// 扣掉本应用侧边 Dock 占用条之后，窗口可以落到的区域。
+    let usableFrame: CGRect
     let notchGeometry: ScreenNotchGeometry?
 
     init(
@@ -12,21 +103,30 @@ struct WebAppWindowPlacementScreen: Equatable, Sendable {
         localizedName: String,
         frame: CGRect,
         visibleFrame: CGRect,
+        usableFrame: CGRect? = nil,
         notchGeometry: ScreenNotchGeometry?
     ) {
         self.displayID = displayID
         self.localizedName = localizedName
         self.frame = frame
         self.visibleFrame = visibleFrame
+        self.usableFrame = usableFrame ?? visibleFrame
         self.notchGeometry = notchGeometry
     }
 
-    init(screen: NSScreen) {
+    init(screen: NSScreen, dockReserve: SideDockScreenReserve? = nil) {
+        let visibleFrame = screen.visibleFrame
+        let displayID = screen.displayID
         self.init(
-            displayID: screen.displayID,
+            displayID: displayID,
             localizedName: screen.localizedName,
             frame: screen.frame,
-            visibleFrame: screen.visibleFrame,
+            visibleFrame: visibleFrame,
+            usableFrame: SideDockWindowAvoidance.usableFrame(
+                visibleFrame: visibleFrame,
+                reserve: dockReserve,
+                screenDisplayID: displayID
+            ),
             notchGeometry: ScreenNotchGeometry(screen: screen)
         )
     }
@@ -58,9 +158,9 @@ enum WebAppWindowPlacementResolver {
            let matchedScreen = resolveStoredScreen(for: storedPlacement, availableScreens: availableScreens),
            !isFillVisibleFrame(storedPlacement.frame, visibleFrame: matchedScreen.visibleFrame) {
             // 用户拖过的尺寸只许缩小以塞进屏幕，不许被「最小窗口」抬成整块可用桌面。
-            let size = fittedSize(storedPlacement.frame.size, within: matchedScreen.visibleFrame.size)
+            let size = fittedSize(storedPlacement.frame.size, within: matchedScreen.usableFrame.size)
             let frame = CGRect(origin: storedPlacement.frame.origin, size: size)
-            return clamp(frame, into: matchedScreen.visibleFrame)
+            return clamp(frame, into: matchedScreen.usableFrame)
         }
 
         let fallbackScreen = preferredScreen ?? availableScreens.first
@@ -74,14 +174,14 @@ enum WebAppWindowPlacementResolver {
         ) ?? safeDefaultSize
         let placementBounds = fallbackPlacementBounds(
             preferredNotch: preferredNotch ?? fallbackScreen?.notchGeometry,
-            visibleFrame: fallbackScreen?.visibleFrame
+            usableFrame: fallbackScreen?.usableFrame
         )
         let size = clampedSize(
             requestedSize,
-            within: placementBounds?.size ?? fallbackScreen?.visibleFrame.size ?? safeDefaultSize,
+            within: placementBounds?.size ?? fallbackScreen?.usableFrame.size ?? safeDefaultSize,
             minimumFrameSize: sanitizedMinimumSize(
                 minimumFrameSize,
-                visibleSize: placementBounds?.size ?? fallbackScreen?.visibleFrame.size
+                visibleSize: placementBounds?.size ?? fallbackScreen?.usableFrame.size
             )
         )
 
@@ -93,7 +193,7 @@ enum WebAppWindowPlacementResolver {
             size: size,
             preferredNotch: preferredNotch ?? fallbackScreen.notchGeometry,
             visibleFrame: fallbackScreen.visibleFrame,
-            placementBounds: placementBounds ?? fallbackScreen.visibleFrame
+            placementBounds: placementBounds ?? fallbackScreen.usableFrame
         )
     }
 
@@ -111,6 +211,16 @@ enum WebAppWindowPlacementResolver {
 
     static func isFrameVisible(_ frame: CGRect, across screens: [WebAppWindowPlacementScreen]) -> Bool {
         screens.contains { $0.visibleFrame.contains(frame) }
+    }
+
+    static func clamp(_ frame: CGRect, into screens: [WebAppWindowPlacementScreen]) -> CGRect {
+        let matchedScreen = screens.first(where: { $0.usableFrame.intersects(frame) || $0.visibleFrame.intersects(frame) })
+            ?? screens.first
+        guard let matchedScreen else {
+            return frame
+        }
+
+        return SideDockWindowAvoidance.clamp(frame, into: matchedScreen.usableFrame)
     }
 
     private static func resolveStoredScreen(
@@ -238,42 +348,97 @@ enum WebAppWindowPlacementResolver {
 
     private static func fallbackPlacementBounds(
         preferredNotch: ScreenNotchGeometry?,
-        visibleFrame: CGRect?
+        usableFrame: CGRect?
     ) -> CGRect? {
-        guard let visibleFrame else {
+        guard let usableFrame else {
             return nil
         }
 
         guard let preferredNotch else {
-            return visibleFrame
+            return usableFrame
         }
 
-        let maxY = max(visibleFrame.minY, preferredNotch.notchRect.minY - notchSpacing)
+        let maxY = max(usableFrame.minY, preferredNotch.notchRect.minY - notchSpacing)
         return CGRect(
-            x: visibleFrame.minX,
-            y: visibleFrame.minY,
-            width: visibleFrame.width,
-            height: maxY - visibleFrame.minY
+            x: usableFrame.minX,
+            y: usableFrame.minY,
+            width: usableFrame.width,
+            height: maxY - usableFrame.minY
         )
     }
 
     private static func clamp(_ frame: CGRect, into visibleFrame: CGRect) -> CGRect {
-        let width = min(frame.width, visibleFrame.width)
-        let height = min(frame.height, visibleFrame.height)
-        let maxX = visibleFrame.maxX - width
-        let maxY = visibleFrame.maxY - height
-
-        return CGRect(
-            x: min(max(frame.minX, visibleFrame.minX), maxX),
-            y: min(max(frame.minY, visibleFrame.minY), maxY),
-            width: width,
-            height: height
-        )
+        SideDockWindowAvoidance.clamp(frame, into: visibleFrame)
     }
 }
 
 extension NSScreen {
     var displayID: UInt32? {
         (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+    }
+}
+
+/// 宿主和运行时各有一份 UserDefaults，侧边 Dock 占用必须写到同一份文件。
+final class SideDockReserveStore {
+    private let fileURL: URL?
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+    private let notificationCenter: DistributedNotificationCenter
+
+    init(
+        rootDirectoryURL: URL? = nil,
+        notificationCenter: DistributedNotificationCenter = .default()
+    ) {
+        self.fileURL = try? RuntimeSupportDirectory.directoryURL(
+            named: "Preferences",
+            rootDirectoryURL: rootDirectoryURL
+        ).appending(path: "side-dock-reserve.json")
+        self.notificationCenter = notificationCenter
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    }
+
+    func load() -> SideDockScreenReserve? {
+        guard let fileURL,
+              let data = try? Data(contentsOf: fileURL),
+              !data.isEmpty else {
+            return nil
+        }
+
+        return try? decoder.decode(SideDockScreenReserve.self, from: data)
+    }
+
+    func save(_ reserve: SideDockScreenReserve?) {
+        guard let fileURL else {
+            return
+        }
+
+        if let reserve, let data = try? encoder.encode(reserve) {
+            try? data.write(to: fileURL, options: .atomic)
+        } else {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        notificationCenter.postNotificationName(
+            SideDockWindowAvoidance.didChangeNotification,
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+        )
+    }
+
+    func observeChanges(using handler: @escaping @MainActor () -> Void) -> NSObjectProtocol {
+        notificationCenter.addObserver(
+            forName: SideDockWindowAvoidance.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                handler()
+            }
+        }
+    }
+
+    func removeObserver(_ observer: NSObjectProtocol) {
+        notificationCenter.removeObserver(observer)
     }
 }

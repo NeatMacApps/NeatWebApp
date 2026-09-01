@@ -74,6 +74,10 @@ final class SideDockOverlayController {
         }
     }
 
+    var currentDisplayID: CGDirectDisplayID? {
+        preferredDisplayID
+    }
+
     private func present(animated: Bool) {
         guard let context = presentationContext() else {
             hide()

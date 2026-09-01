@@ -1,6 +1,7 @@
-import Foundation
-import Observation
 import AppKit
+import Foundation
+import MacKitLaunchAtLogin
+import Observation
 
 @Observable
 @MainActor
@@ -21,6 +22,7 @@ final class AppModel {
     /// 登录项被系统挂起的例外状态：正常开启不会出现，只有它曾被关掉过才会。
     /// 此时开关点了也不会生效，界面需要给出解释，否则表现为「怎么点都没反应」。
     private(set) var isLaunchAtLoginBlockedBySystem = false
+    private(set) var isMenuBarIconVisible = true
     private(set) var sideDockEdge: SideDockEdge = .right
     private(set) var sideDockVerticalPosition = SideDockPlacementResolver.defaultVerticalPosition
     private(set) var sideDockDisplayID: CGDirectDisplayID?
@@ -46,13 +48,20 @@ final class AppModel {
     private let launchAtLoginService = LaunchAtLoginService()
 
     @ObservationIgnored
+    private static let menuBarIconVisibleKey = "menuBar.iconVisible"
+
+    @ObservationIgnored
     private let appPreferencesStore = AppPreferencesStore()
 
     @ObservationIgnored
     private let sideDockOverlayController = SideDockOverlayController()
 
     @ObservationIgnored
+    private let sideDockReserveStore = SideDockReserveStore()
+
+    @ObservationIgnored
     private lazy var runtimeCoordinator = WebAppRuntimeCoordinator(
+        dockReserveStore: sideDockReserveStore,
         onActiveAppIDChange: { [weak self] appID in
             self?.activeRuntimeAppID = appID
         },
@@ -98,6 +107,7 @@ final class AppModel {
         restoreCachedFavicons()
         // 虚拟刘海开关会影响屏幕热区的识别结果，必须先恢复偏好再做首次识别。
         loadAppPreferences()
+        restoreMenuBarIconVisibility()
         refreshScreenState()
         refreshLaunchAtLoginState()
         runtimeCoordinator.refreshRegistry()
@@ -250,9 +260,15 @@ final class AppModel {
     }
 
     func setLaunchAtLoginEnabled(_ isEnabled: Bool) {
-        do {
-            try launchAtLoginService.setEnabled(isEnabled)
-        } catch {
+        if isLaunchAtLoginBlockedBySystem, isEnabled {
+            openLoginItemsSettings()
+            refreshLaunchAtLoginState()
+            return
+        }
+        switch launchAtLoginService.setEnabled(isEnabled) {
+        case .success:
+            break
+        case .failure(let error):
             diagnosticsMessage = "设置开机自启失败：\(error.localizedDescription)"
         }
 
@@ -262,6 +278,11 @@ final class AppModel {
     /// 打开系统设置的登录项页面。用户在那里放行后回到应用，状态会自动刷新。
     func openLoginItemsSettings() {
         launchAtLoginService.openSystemSettings()
+    }
+
+    func setMenuBarIconVisible(_ visible: Bool) {
+        isMenuBarIconVisible = visible
+        UserDefaults.standard.set(visible, forKey: Self.menuBarIconVisibleKey)
     }
 
     func setSideDockEdge(_ edge: SideDockEdge) {
@@ -614,6 +635,26 @@ final class AppModel {
             preferredDisplayID: sideDockDisplayID,
             appModel: self
         )
+        publishSideDockReserve()
+    }
+
+    private func publishSideDockReserve() {
+        let reserve: SideDockScreenReserve?
+        if collapsedWebApps.isEmpty {
+            reserve = nil
+        } else {
+            reserve = SideDockScreenReserve(
+                edge: sideDockEdge.screenReserveEdge,
+                displayID: sideDockOverlayController.currentDisplayID ?? sideDockDisplayID,
+                thickness: SideDockPresentationContext.Layout.thickness
+            )
+        }
+
+        guard reserve != sideDockReserveStore.load() else {
+            return
+        }
+
+        sideDockReserveStore.save(reserve)
     }
 
     private func preloadFavicons() {
@@ -680,7 +721,16 @@ final class AppModel {
     /// 用户是在系统设置里放行的，应用不会收到任何回调，所以每次应用重新变为活跃
     /// （打开设置窗口、点菜单栏图标）都要重读一次，否则界面会一直停在「等待放行」。
     func refreshLaunchAtLoginState() {
-        isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
-        isLaunchAtLoginBlockedBySystem = launchAtLoginService.isBlockedBySystem
+        launchAtLoginService.refresh()
+        isLaunchAtLoginEnabled = launchAtLoginService.isEffectivelyEnabled
+        isLaunchAtLoginBlockedBySystem = launchAtLoginService.needsApproval
+    }
+
+    private func restoreMenuBarIconVisibility() {
+        if UserDefaults.standard.object(forKey: Self.menuBarIconVisibleKey) == nil {
+            isMenuBarIconVisible = true
+        } else {
+            isMenuBarIconVisible = UserDefaults.standard.bool(forKey: Self.menuBarIconVisibleKey)
+        }
     }
 }

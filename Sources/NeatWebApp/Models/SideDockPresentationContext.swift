@@ -32,6 +32,17 @@ enum SideDockEdge: String, CaseIterable, Codable, Sendable {
     var isSide: Bool {
         self != .bottom
     }
+
+    var screenReserveEdge: SideDockScreenReserve.Edge {
+        switch self {
+        case .left:
+            .left
+        case .right:
+            .right
+        case .bottom:
+            .bottom
+        }
+    }
 }
 
 struct SideDockPresentationContext: Equatable {

@@ -53,12 +53,15 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     /// 宿主已经定好的框。第一次上屏期间系统 / SwiftUI 改框都要套回去。
     private var lockedLaunchFrame: CGRect?
     private var shouldHoldLaunchFrame = false
+    private let dockReserveStore: SideDockReserveStore
+    private var dockReserve: SideDockScreenReserve?
 
     init(
         definition: WebAppDefinition,
         preferencesStore: WebAppPreferencesStore,
         preferredGeometry: ScreenNotchGeometry?,
         eventSink: (any RuntimeWindowEventSink)?,
+        dockReserveStore: SideDockReserveStore = SideDockReserveStore(),
         restoredWindowFrame: CGRect? = nil,
         lockRestoredFrame: Bool = false
     ) {
@@ -70,15 +73,19 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         )
         self.eventSink = eventSink
         self.preferredGeometry = preferredGeometry
+        self.dockReserveStore = dockReserveStore
+        self.dockReserve = dockReserveStore.load()
         self.skipNextVisibilityCorrection = lockRestoredFrame && restoredWindowFrame != nil
         self.isAwaitingHostCoverLift = lockRestoredFrame && restoredWindowFrame != nil
 
-        let window = NSWindow(
+        let window = WebAppBrowserWindow(
             contentRect: CGRect(origin: .zero, size: WindowMetrics.defaultContentSize),
             styleMask: WebAppWindowMetrics.styleMask,
             backing: .buffered,
             defer: false
         )
+        window.dockReserve = dockReserve
+        window.ignoresDockAvoidance = lockRestoredFrame && restoredWindowFrame != nil
 
         super.init(window: window)
 
@@ -103,8 +110,15 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         fatalError("init(coder:) has not been implemented")
     }
 
+    func applyDockReserve(_ reserve: SideDockScreenReserve?) {
+        dockReserve = reserve
+        browserWindow?.dockReserve = reserve
+        clampWindowToDockReserveIfNeeded()
+    }
+
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
         stopCoverageWatch()
+        applyDockReserve(dockReserveStore.load())
         suppressAutoCollapseUntil = Date().addingTimeInterval(WindowMetrics.autoCollapseGraceAfterExplicitShow)
         startEnvironmentObserversIfNeeded()
 
@@ -231,6 +245,14 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
     func windowDidResize(_ notification: Notification) {
         restoreLockedFrameIfNeeded(on: window)
+    }
+
+    func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
+        guard !shouldHoldLaunchFrame else {
+            return lockedLaunchFrame ?? newFrame
+        }
+
+        return WebAppWindowPlacementResolver.clamp(newFrame, into: placementScreens())
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
@@ -500,8 +522,8 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         return FloatingIconSnapResolver.resolvePanelFrame(
             proposedFrame: proposedFrame,
             anchorPoint: topLeft,
-            availableScreens: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:)),
-            fallbackScreen: NSScreen.main.map(WebAppWindowPlacementScreen.init(screen:)),
+            availableScreens: NSScreen.screens.map { WebAppWindowPlacementScreen(screen: $0) },
+            fallbackScreen: NSScreen.main.map { WebAppWindowPlacementScreen(screen: $0) },
             shadowPadding: WindowMetrics.floatingIconShadowPadding
         )
     }
@@ -535,14 +557,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return frame
         }
 
-        let visibleFrame = screen.visibleFrame
-        guard visibleFrame.width >= frame.width, visibleFrame.height >= frame.height else {
-            return frame
-        }
-
-        let clampedX = min(max(frame.origin.x, visibleFrame.minX), visibleFrame.maxX - frame.width)
-        let clampedY = min(max(frame.origin.y, visibleFrame.minY), visibleFrame.maxY - frame.height)
-        return CGRect(x: clampedX, y: clampedY, width: frame.width, height: frame.height)
+        let usableFrame = SideDockWindowAvoidance.usableFrame(
+            visibleFrame: screen.visibleFrame,
+            reserve: dockReserve,
+            screenDisplayID: screen.displayID
+        )
+        return SideDockWindowAvoidance.clamp(frame, into: usableFrame)
     }
 
     private func makeFloatingIconPanel() -> FloatingWebAppIconPanel {
@@ -638,9 +658,16 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return
         }
 
-        if let screen = window.screen,
-           WebAppWindowPlacementResolver.isFillVisibleFrame(window.frame, visibleFrame: screen.visibleFrame) {
-            return
+        if let screen = window.screen {
+            let usableFrame = SideDockWindowAvoidance.usableFrame(
+                visibleFrame: screen.visibleFrame,
+                reserve: dockReserve,
+                screenDisplayID: screen.displayID
+            )
+            if WebAppWindowPlacementResolver.isFillVisibleFrame(window.frame, visibleFrame: screen.visibleFrame)
+                || WebAppWindowPlacementResolver.isFillVisibleFrame(window.frame, visibleFrame: usableFrame) {
+                return
+            }
         }
 
         session.persistWindowFrame(window.frame, on: window.screen)
@@ -778,12 +805,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         preferredGeometry: ScreenNotchGeometry?
     ) {
         if let restoredWindowFrame,
-           !isFillFrame(restoredWindowFrame, among: NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))) {
+           !isFillFrame(restoredWindowFrame, among: placementScreens()) {
             lockLaunchFrame(restoredWindowFrame, on: window)
             return
         }
 
-        let availableScreens = NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))
+        let availableScreens = placementScreens()
         let fallbackDisplayID = NSScreen.main?.displayID
 
         let frame = WebAppWindowPlacementResolver.resolveFrame(
@@ -803,8 +830,9 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return
         }
 
-        let availableScreens = NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))
+        let availableScreens = placementScreens()
         guard !WebAppWindowPlacementResolver.isFrameVisible(window.frame, across: availableScreens) else {
+            clampWindowToDockReserveIfNeeded()
             return
         }
 
@@ -829,6 +857,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private func lockLaunchFrame(_ frame: CGRect, on window: NSWindow) {
         lockedLaunchFrame = frame
         shouldHoldLaunchFrame = true
+        browserWindow?.ignoresDockAvoidance = true
         window.setFrame(frame, display: false)
     }
 
@@ -852,13 +881,62 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         }
 
         shouldHoldLaunchFrame = false
+        browserWindow?.ignoresDockAvoidance = false
+        clampWindowToDockReserveIfNeeded()
         persistWindowFrame()
     }
 
     private func isFillFrame(_ frame: CGRect, among screens: [WebAppWindowPlacementScreen]) -> Bool {
         screens.contains {
             WebAppWindowPlacementResolver.isFillVisibleFrame(frame, visibleFrame: $0.visibleFrame)
+                || WebAppWindowPlacementResolver.isFillVisibleFrame(frame, visibleFrame: $0.usableFrame)
         }
+    }
+
+    private func placementScreens() -> [WebAppWindowPlacementScreen] {
+        NSScreen.screens.map { WebAppWindowPlacementScreen(screen: $0, dockReserve: dockReserve) }
+    }
+
+    private func clampWindowToDockReserveIfNeeded() {
+        guard let window, !shouldHoldLaunchFrame else {
+            return
+        }
+
+        let clamped = WebAppWindowPlacementResolver.clamp(window.frame, into: placementScreens())
+        guard abs(clamped.minX - window.frame.minX) > 0.5
+            || abs(clamped.minY - window.frame.minY) > 0.5
+            || abs(clamped.width - window.frame.width) > 0.5
+            || abs(clamped.height - window.frame.height) > 0.5 else {
+            return
+        }
+
+        window.setFrame(clamped, display: window.isVisible)
+        persistWindowFrame()
+    }
+
+    private var browserWindow: WebAppBrowserWindow? {
+        window as? WebAppBrowserWindow
+    }
+}
+
+/// 拖动和系统放大都走 `constrainFrameRect`，在系统可用桌面之上再避开侧边 Dock。
+private final class WebAppBrowserWindow: NSWindow {
+    var dockReserve: SideDockScreenReserve?
+    var ignoresDockAvoidance = false
+
+    override func constrainFrameRect(_ frameRect: CGRect, to screen: NSScreen?) -> CGRect {
+        let constrained = super.constrainFrameRect(frameRect, to: screen)
+        guard !ignoresDockAvoidance else {
+            return constrained
+        }
+
+        let targetScreen = screen ?? self.screen
+        let usableFrame = SideDockWindowAvoidance.usableFrame(
+            visibleFrame: targetScreen?.visibleFrame ?? constrained,
+            reserve: dockReserve,
+            screenDisplayID: targetScreen?.displayID
+        )
+        return SideDockWindowAvoidance.clamp(constrained, into: usableFrame)
     }
 }
 

@@ -22,6 +22,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let commandBus: RuntimeCommandBus
     private let placeholderPresenter: any LaunchPlaceholderPresenting
     private let preferencesStore: WebAppPreferencesStore
+    private let dockReserveStore: SideDockReserveStore
     private let onActiveAppIDChange: (String?) -> Void
     private let onDiagnosticMessage: (String) -> Void
     private let onRuntimeStatesChange: ([RuntimeState]) -> Void
@@ -53,6 +54,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         commandBus: RuntimeCommandBus = RuntimeCommandBus(),
         placeholderPresenter: any LaunchPlaceholderPresenting = LaunchPlaceholderController(),
         preferencesStore: WebAppPreferencesStore = WebAppPreferencesStore(),
+        dockReserveStore: SideDockReserveStore = SideDockReserveStore(),
         runtimeHealthPolicy: RuntimeHealthPolicy = .standard,
         runtimeMetricsProvider: RuntimeProcessMetricsProviding = DarwinRuntimeProcessMetricsProvider(),
         onActiveAppIDChange: @escaping (String?) -> Void,
@@ -64,6 +66,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.commandBus = commandBus
         self.placeholderPresenter = placeholderPresenter
         self.preferencesStore = preferencesStore
+        self.dockReserveStore = dockReserveStore
         self.runtimeHealthPolicy = runtimeHealthPolicy
         self.runtimeMetricsProvider = runtimeMetricsProvider
         self.runtimeHealthMonitor = RuntimeHealthMonitor(policy: runtimeHealthPolicy)
@@ -509,7 +512,10 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         preferredGeometry: ScreenNotchGeometry?
     ) -> CGRect {
         let preference = preferencesStore.load(for: definition.id)
-        let availableScreens = NSScreen.screens.map(WebAppWindowPlacementScreen.init(screen:))
+        let dockReserve = dockReserveStore.load()
+        let availableScreens = NSScreen.screens.map {
+            WebAppWindowPlacementScreen(screen: $0, dockReserve: dockReserve)
+        }
         return WebAppWindowPlacementResolver.resolveFrame(
             preference: preference,
             preferredGeometry: preferredGeometry,

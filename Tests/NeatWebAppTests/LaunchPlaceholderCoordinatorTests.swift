@@ -143,12 +143,14 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
         let commandBus = RuntimeCommandBus()
         let defaults = UserDefaults(suiteName: "NeatWebAppPlaceholderTests-\(UUID().uuidString)")!
         let preferencesStore = WebAppPreferencesStore(userDefaults: defaults)
+        let dockReserveStore = SideDockReserveStore(rootDirectoryURL: tempRoot)
         let coordinator = WebAppRuntimeCoordinator(
             registryStore: registryStore,
             launcher: launcher,
             commandBus: commandBus,
             placeholderPresenter: placeholder,
             preferencesStore: preferencesStore,
+            dockReserveStore: dockReserveStore,
             runtimeHealthPolicy: RuntimeHealthPolicy(
                 checkInterval: .seconds(60),
                 minimumRuntimeAge: 60,
