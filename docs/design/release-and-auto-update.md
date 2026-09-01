@@ -69,6 +69,8 @@ scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不�
 
 前置：钥匙串有 Developer ID 证书与 account 为 `neatwebapp` 的 Sparkle 签名密钥、`.p8` 公证密钥在位、环境变量 `FORGEJO_REPO_TOKEN`（`--local-only` 不需要）。脚本可重复执行，tag / Release 已存在时走更新路径。
 
+**公开仓附件上传：字节发完仍可能报失败，先查 Release 列表再决定要不要续传。** 经 `https://forgejo.caozc.top` 把 zip/dmg 传到公开更新仓时，curl 常在进度 100% 之后卡住，随后报 `Connection reset by peer` 或超时。这不等于文件没到服务器——先查该版本 Release 的附件列表：名字和体积对得上就不要重传，更不要重开归档和公证。只有列表里没有才续传；续传时把等回执的时间拉长（上传后等 JSON 可能要两分钟以上）。v0.3.10 发版时 zip 第一次被重置、第二次成功；dmg 第一次 curl 超时，但列表里已经有体积正确的附件。
+
 发版前只需改 `project.yml` 里的展示版本与内部构建号。构建号非正整数、或低于公开更新清单上的构建号，脚本都会直接退出。
 
 **签名 / 公证 / `codesign` / `notarytool` 必须在 macOS 本机跑**——Linux 侧（suzhou）没有 `xcrun` 与钥匙串，不能代跑公证，连编译验证都做不了。
