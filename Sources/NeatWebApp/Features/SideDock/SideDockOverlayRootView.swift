@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct SideDockOverlayRootView: View {
+    @Environment(AppModel.self) private var appModel
+
     @State private var iconFrames: [String: CGRect] = [:]
     @State private var draggedAppID: String?
     @State private var dragStartMouseLocation: CGPoint?
@@ -183,7 +185,9 @@ struct SideDockOverlayRootView: View {
         WebAppIconView(
             app: app,
             size: SideDockPresentationContext.Layout.iconSize,
-            font: .system(size: 13, weight: .semibold)
+            font: .system(size: 13, weight: .semibold),
+            favicon: appModel.faviconImage(for: app),
+            loadFavicon: { appModel.ensureFaviconLoaded(for: app) }
         )
         // Soft edge shadow so light/white favicons stay readable on liquid glass.
         .shadow(color: .black.opacity(0.28), radius: 1.25, x: 0, y: 0.5)

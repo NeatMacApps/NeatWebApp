@@ -86,7 +86,9 @@ struct DashboardView: View {
             WebAppIconView(
                 app: app,
                 size: 24,
-                font: .system(size: 12, weight: .semibold)
+                font: .system(size: 12, weight: .semibold),
+                favicon: appModel.faviconImage(for: app),
+                loadFavicon: { appModel.ensureFaviconLoaded(for: app) }
             )
 
             VStack(alignment: .leading, spacing: 1) {

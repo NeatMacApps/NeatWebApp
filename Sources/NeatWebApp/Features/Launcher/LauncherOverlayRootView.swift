@@ -267,7 +267,9 @@ struct LauncherOverlayRootView: View {
             WebAppIconView(
                 app: app,
                 size: layout.iconSize * 0.85,
-                font: .system(size: layout.iconFontSize * 0.85, weight: .semibold)
+                font: .system(size: layout.iconFontSize * 0.85, weight: .semibold),
+                favicon: appModel.faviconImage(for: app),
+                loadFavicon: { appModel.ensureFaviconLoaded(for: app) }
             )
             .frame(width: layout.iconSize, height: layout.iconSize)
             .contentShape(Rectangle())

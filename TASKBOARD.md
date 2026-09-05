@@ -4,3 +4,5 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
+| doc-compact 文档治理 | 进行中 | AGENTS.md、CLAUDE.md、docs/** | 23:04 | 2026-09-05 23:09 | 礼让代码任务；只动 docs/AGENTS/CLAUDE；跳过全局 Step1 |
+| WebAppIconView 去 AppModel 依赖 | 发布中 | Features/Shared/WebAppIconView.swift、DashboardView、LauncherOverlayRootView、SideDockOverlayRootView | 23:06 | 2026-09-05 23:10 | 23:10 构建绿，进发布 |

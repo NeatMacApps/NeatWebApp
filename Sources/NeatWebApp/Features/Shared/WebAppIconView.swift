@@ -2,15 +2,17 @@ import AppKit
 import SwiftUI
 
 struct WebAppIconView: View {
-    @Environment(AppModel.self) private var appModel
-
     let app: WebAppDefinition
     let size: CGFloat
     let font: Font
+    /// 已缓存的 favicon；为 nil 时显示首字母回退。
+    let favicon: NSImage?
+    /// 视图出现时触发加载（例如从磁盘/网络补齐）。调用方负责接到具体服务。
+    let loadFavicon: () -> Void
 
     var body: some View {
         ZStack {
-            if let favicon = appModel.faviconImage(for: app) {
+            if let favicon {
                 Image(nsImage: favicon)
                     .resizable()
                     .interpolation(.high)
@@ -32,7 +34,7 @@ struct WebAppIconView: View {
                 .stroke(.white.opacity(0.08), lineWidth: 1)
         }
         .task {
-            appModel.ensureFaviconLoaded(for: app)
+            loadFavicon()
         }
     }
 

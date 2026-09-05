@@ -4,11 +4,11 @@
 
 macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 
-通用工程规范：[Swift 规范](../_standards/swift.md)
+通用工程规范：[Swift 规范](/Users/geraltgraham/Codes/_standards/swift.md)
 
 ## 文档导航
 
-- [app-macos/AGENTS.md](app-macos/AGENTS.md)：改、评审或排查 WebApp 容器功能前必读。
+- [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatWebApp/app-macos/AGENTS.md)：改、评审或排查 WebApp 容器功能前必读。
 
 <!-- managed:inherited-agents:end -->
 
