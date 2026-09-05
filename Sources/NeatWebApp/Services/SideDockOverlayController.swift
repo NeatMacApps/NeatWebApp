@@ -1,4 +1,5 @@
 import AppKit
+import MacKitGlass
 import Observation
 import SwiftUI
 

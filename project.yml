@@ -43,7 +43,7 @@ packages:
     from: "2.9.4"
   MacKit:
     url: https://github.com/x0c/mac-kit-swift
-    from: "0.1.0"
+    from: "0.1.2"
 
 fileGroups:
   - scripts
@@ -80,6 +80,8 @@ targets:
         product: MacKitLaunchAtLogin
       - package: MacKit
         product: MacKitLifecycle
+      - package: MacKit
+        product: MacKitGlass
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.geraltgraham.NeatWebApp

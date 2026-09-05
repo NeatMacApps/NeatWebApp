@@ -46,7 +46,6 @@
 		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
 		5F4410B4386D010AE8CDA0F0 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
 		60CE1016D049876F3849958F /* RuntimeEventPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */; };
-		6280E750F5CE69B658668FCD /* ClearLiquidGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 240A47338060B03D8E69B6C5 /* ClearLiquidGlass.swift */; };
 		62A03E5BBF4DA98830BD7735 /* RuntimeWindowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30FF2F672DE51BE72D9EDBC5 /* RuntimeWindowCoordinator.swift */; };
 		63AD3C45FA8BB7FB529986E6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
 		64E4056FA14F0ECB93F3EAF5 /* BrowserSelectorFinderScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB10AA221B5D6084CE21715 /* BrowserSelectorFinderScript.swift */; };
@@ -64,6 +63,7 @@
 		81D743A4C462116F8795445A /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */; };
 		841A0DC1EABE5B409CE32E32 /* BrowserElementHidingScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */; };
+		845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */ = {isa = PBXBuildFile; productRef = FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */; };
 		898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
 		958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */; };
 		975833919EE8C49A5F5EB1A3 /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
@@ -167,7 +167,6 @@
 		1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeSupportDirectory.swift; sourceTree = "<group>"; };
 		227C0DAE2EAFC68634EB0C6B /* 0.3.4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.4.md; sourceTree = "<group>"; };
 		22AB86B7F555EAF061B89125 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
-		240A47338060B03D8E69B6C5 /* ClearLiquidGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearLiquidGlass.swift; sourceTree = "<group>"; };
 		249468F78ECB158EF76D893C /* LauncherOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayController.swift; sourceTree = "<group>"; };
 		257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometryTests.swift; sourceTree = "<group>"; };
 		25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowPlacement.swift; sourceTree = "<group>"; };
@@ -273,6 +272,7 @@
 				FAF7FBAF8D6E3369A3705DF2 /* MacKitCore in Frameworks */,
 				DA2F86395CCCBF1CF6C3F27B /* MacKitLaunchAtLogin in Frameworks */,
 				99E063C94472E720E4759907 /* MacKitLifecycle in Frameworks */,
+				845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,7 +448,6 @@
 		7C10B1C8FFAC0233790A4FFE /* SideDock */ = {
 			isa = PBXGroup;
 			children = (
-				240A47338060B03D8E69B6C5 /* ClearLiquidGlass.swift */,
 				4358833521E486B408BC9DBC /* SideDockOverlayRootView.swift */,
 			);
 			path = SideDock;
@@ -679,6 +678,7 @@
 				4432EC9595E47AAEBDF6385C /* MacKitCore */,
 				2D9B2A868187A831F2C1C3BA /* MacKitLaunchAtLogin */,
 				A82CEC9C739DBA32DB5BEC54 /* MacKitLifecycle */,
+				FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */,
 			);
 			productName = NeatWebApp;
 			productReference = D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */;
@@ -785,7 +785,6 @@
 				0937D755A341693BD29F6C32 /* AppPreferencesStore.swift in Sources */,
 				10CEDA335E08D5DDCFD2A49A /* AppUpdater.swift in Sources */,
 				4493182F44AAD82381CE5F32 /* BrowserChromeMetrics.swift in Sources */,
-				6280E750F5CE69B658668FCD /* ClearLiquidGlass.swift in Sources */,
 				997D901F57BB98D9038EE3CD /* CustomWebAppStore.swift in Sources */,
 				EDB3ADFDB1A47F94A4B018C9 /* DashboardView.swift in Sources */,
 				01E935DAB3406150276C32A2 /* EdgeAttachedShape.swift in Sources */,
@@ -1243,7 +1242,7 @@
 			repositoryURL = "https://github.com/x0c/mac-kit-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
+				minimumVersion = 0.1.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1268,6 +1267,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7C92EE8F3F20640F3788DB13 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitGlass;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
