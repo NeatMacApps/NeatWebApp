@@ -20,8 +20,8 @@ settings:
     # 版本号的唯一来源：两个 Info.plist 都通过构建变量取值，不再各写各的。
     # MARKETING_VERSION 是给人看的展示版本（SemVer）；
     # CURRENT_PROJECT_VERSION 是 Sparkle 判断新旧的唯一权威值，必须是严格递增的正整数。
-    MARKETING_VERSION: 0.3.12
-    CURRENT_PROJECT_VERSION: 3030
+    MARKETING_VERSION: 0.3.13
+    CURRENT_PROJECT_VERSION: 3031
   configs:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG

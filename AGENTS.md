@@ -201,3 +201,4 @@ done
 - [docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md](docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md)：安装、构建、改 App 图标，或排查 Spotlight 出现多个 NeatWebApp、图标不刷新、旧副本残留时必读。
 - [docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md](docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md)：改、评审或排查侧边 Dock 的选屏与定位（多显示器下乱跳、拔插显示器后跑偏、Dock 该出现却没出现），或需要在真机上验证 Dock 位置时必读；含 `NSScreen.main` 语义陷阱与验证手法。
 - [docs/troubleshooting/2026-08-04-webview-passkey-unavailable.md](docs/troubleshooting/2026-08-04-webview-passkey-unavailable.md)：排查内嵌网页用不了通行密钥 / 密码自动填充等系统代管的凭据能力，或评估要不要申请浏览器专用权限前必读；含「这是苹果的平台限制不是本项目缺配置」的结论与三条出路。
+- [docs/troubleshooting/2026-09-05-host-memory-pressure-mainactor-crash.md](docs/troubleshooting/2026-09-05-host-memory-pressure-mainactor-crash.md)：排查「菜单栏宿主突然没了 / 进程消失 / EXC_BREAKPOINT + `_dispatch_assert_queue_fail`」、或改内存压力订阅前**必读**。不读会把主线程隔离闭包挂到后台压力回调上，系统一报压力就闪退。
