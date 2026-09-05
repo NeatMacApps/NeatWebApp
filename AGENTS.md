@@ -191,14 +191,11 @@ done
 - [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发版、改发版脚本、改版本号、改签名或权限配置、改自动更新行为，或排查「别人机器装不上 / 装了升不了级 / **另一台电脑收不到更新提醒** / **公开仓附件上传报 Connection reset 或超时**」前必读；含本项目专有取值、温和提醒不弹窗、先核公开 appcast 构建号，以及附件上传假失败时禁止重开归档公证。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
 - [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作方式、进程划分，以及浏览器窗口生命周期（关闭 / 隐藏 / 收进侧边 Dock / 跨桌面空间行为 / 新打开尚未运行的网页应用时的启动盖衔接）前阅读。
-- [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留。
+- [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
 - [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围判定、规则生效范围与持久化、还原入口，或需要新增／升级注入到页面里的脚本时必读；含已裁定不可推翻的产品决策、内嵌第三方选择器库的升级方式与已知边界。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器窗口顶部控件区（收起 / 置顶 / **收藏当前页与收藏列表** / 刷新 / 网页标识 / 下载指示的排布、顶部让位带高度、渐变、配色与对比度、窗口拖动区域）前必读；也是判断「该不该在窗口内部用液态玻璃 / 系统材质」的依据，含已实现后被推翻的方案与根因，以及顶栏改动的截图验收要求。收藏列表必须按网页应用隔离，不要做成整浏览器共享书签。
 - [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何识别、launcher 激活逻辑、**硬件刘海 100ms / 虚拟刘海 260ms 悬停停留**、路过误开前阅读；无刘海屏幕 / 外接显示器的虚拟刘海热区（几何推导、悬停停留判定、开关偏好、与菜单栏的冲突处理）也在这里，验证覆盖层是否真的唤出时同样先读本文的验证手法一节。
 - [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前阅读。
-- [docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md](docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md)：安装、构建、改 App 图标，或排查 Spotlight 出现多个 NeatWebApp、图标不刷新、旧副本残留时必读。
-- [docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md](docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md)：改、评审或排查侧边 Dock 的选屏与定位（多显示器下乱跳、拔插显示器后跑偏、Dock 该出现却没出现），或需要在真机上验证 Dock 位置时必读；含 `NSScreen.main` 语义陷阱与验证手法。
-- [docs/troubleshooting/2026-08-04-webview-passkey-unavailable.md](docs/troubleshooting/2026-08-04-webview-passkey-unavailable.md)：排查内嵌网页用不了通行密钥 / 密码自动填充等系统代管的凭据能力，或评估要不要申请浏览器专用权限前必读；含「这是苹果的平台限制不是本项目缺配置」的结论与三条出路。
-- [docs/troubleshooting/2026-09-05-host-memory-pressure-mainactor-crash.md](docs/troubleshooting/2026-09-05-host-memory-pressure-mainactor-crash.md)：排查「菜单栏宿主突然没了 / 进程消失 / EXC_BREAKPOINT + `_dispatch_assert_queue_fail`」、或改内存压力订阅前**必读**。不读会把主线程隔离闭包挂到后台压力回调上，系统一报压力就闪退。
+- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用等**排查类**任务前必读；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
