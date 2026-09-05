@@ -36,12 +36,6 @@ macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 
 已接入公共行为包：开机自启走系统三态（待批准不能显示成已开启），菜单和主窗口设置可隐藏/恢复菜单栏图标。图标隐藏后再次从“应用程序”、Spotlight 打开应唤出主窗口。本机是 Linux，不能编译或覆盖安装；回 Mac 后先 `xcodegen generate`，再按仓库命令构建并装进「应用程序」验收。验收清单见公共包 `docs/MAC_ACCEPTANCE.md`。
 
-## 已检查的额外规则文件
-- 已检查 `.cursor/rules/`：未找到规则文件。
-- 已检查 `.cursorrules`：未找到规则文件。
-- 已检查 `.github/copilot-instructions.md`：未找到规则文件。
-- 因此当前仓库没有额外的 Cursor/Copilot 本地规则；本文件即仓库内 agent 约定的主要来源。
-
 ## 仓库结构
 - `project.yml`：XcodeGen 配置，是工程结构的真实来源。
 - `NeatWebApp.xcodeproj`：生成产物；除非 `project.yml` 无法表达，否则不要手改。
@@ -190,12 +184,12 @@ done
 - [../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md](../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md)：改、评审或排查签名、公证、安装包制作、应用内自更新、Homebrew 渠道时的**通用做法与踩坑速查**以此为准；本项目专有取值见下一条，两者不重复。
 - [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发版、改发版脚本、改版本号、改签名或权限配置、改自动更新行为，或排查「别人机器装不上 / 装了升不了级 / **另一台电脑收不到更新提醒** / **公开仓附件上传报 Connection reset 或超时**」前必读；含本项目专有取值、温和提醒不弹窗、先核公开 appcast 构建号，以及附件上传假失败时禁止重开归档公证。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
-- [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作方式、进程划分，以及浏览器窗口生命周期（关闭 / 隐藏 / 收进侧边 Dock / 跨桌面空间行为 / 新打开尚未运行的网页应用时的启动盖衔接）前阅读。
+- [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作、进程划分，或浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖）前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
-- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
-- [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围判定、规则生效范围与持久化、还原入口，或需要新增／升级注入到页面里的脚本时必读；含已裁定不可推翻的产品决策、内嵌第三方选择器库的升级方式与已知边界。
-- [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器窗口顶部控件区（收起 / 置顶 / **收藏当前页与收藏列表** / 刷新 / 网页标识 / 下载指示的排布、顶部让位带高度、渐变、配色与对比度、窗口拖动区域）前必读；也是判断「该不该在窗口内部用液态玻璃 / 系统材质」的依据，含已实现后被推翻的方案与根因，以及顶栏改动的截图验收要求。收藏列表必须按网页应用隔离，不要做成整浏览器共享书签。
-- [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何识别、launcher 激活逻辑、**硬件刘海 100ms / 虚拟刘海 260ms 悬停停留**、路过误开前阅读；无刘海屏幕 / 外接显示器的虚拟刘海热区（几何推导、悬停停留判定、开关偏好、与菜单栏的冲突处理）也在这里，验证覆盖层是否真的唤出时同样先读本文的验证手法一节。
-- [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前阅读。
-- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用等**排查类**任务前必读；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
+- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前**必读**。不读会把已否决的延时/阈值加回去，或让窗口压住侧边 Dock。
+- [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围、规则持久化、还原入口，或新增／升级注入脚本前**必读**。不读会弄丢整批用户脚本重装，或把规则作用域写错。
+- [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器顶栏控件区（收起 / 置顶 / **收藏** / 刷新 / 网页标识 / 下载指示、让位带、渐变与拖动区）前**必读**。不读会把已推翻的液态玻璃顶栏再做一遍；收藏必须按网页应用隔离。
+- [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何、launcher 激活、**硬件 100ms / 虚拟 260ms 悬停**、路过误开，或无刘海屏虚拟热区前**必读**。不读会取消悬停等待导致虚拟热区失灵，或用截图 skill 误判覆盖层。
+- [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前**必读**。不读会把多网页应用会话边界打穿。
+- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
