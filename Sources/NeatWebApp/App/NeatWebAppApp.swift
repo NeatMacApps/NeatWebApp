@@ -41,10 +41,21 @@ struct NeatWebAppApp: App {
                     openMainWindow()
                 }
         }
-        .defaultLaunchBehavior(appModel.isMenuBarIconVisible ? .suppressed : .presented)
+        // 登录与图标可见时的冷启动都不自动开主窗；图标已隐藏且非登录时由 AppDelegate 唤回。
+        .defaultLaunchBehavior(.suppressed)
         .windowResizability(.contentSize)
         .commands {
             AppCommands(appModel: appModel)
+            CommandGroup(after: .appInfo) {
+                Color.clear
+                    .frame(width: 0, height: 0)
+                    .accessibilityHidden(true)
+                    .onAppear {
+                        appDelegate.installMainWindowPresenter {
+                            openMainWindow()
+                        }
+                    }
+            }
         }
 
         MenuBarExtra(
@@ -55,9 +66,6 @@ struct NeatWebAppApp: App {
                 set: { visible in
                     guard visible != appModel.isMenuBarIconVisible else { return }
                     appModel.setMenuBarIconVisible(visible)
-                    if !visible {
-                        openMainWindow()
-                    }
                 }
             )
         ) {
@@ -81,7 +89,6 @@ struct NeatWebAppApp: App {
 
             Button("隐藏菜单栏图标") {
                 appModel.setMenuBarIconVisible(false)
-                openMainWindow()
             }
 
             Button(updateButtonTitle) {

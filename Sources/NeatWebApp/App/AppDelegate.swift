@@ -13,14 +13,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let terminationGuard = TerminationGuard()
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
+    private var presentMainWindow: (() -> Void)?
+    private var pendingRecoveryPresentation = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         terminationGuard.isUpdateSessionInProgress = { [weak self] in
             self?.isUpdateSessionInProgress() ?? false
         }
-        if MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: isMenuBarIconVisible()) {
-            NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
+        let isLoginLaunch = LoginLaunchDetector.isLaunchedAsLoginItem
+        if MenuBarReopenPolicy.shouldShowRecoveryWindow(
+            iconVisible: menuBarIconVisibleFromDefaults(),
+            isLoginLaunch: isLoginLaunch
+        ) {
+            pendingRecoveryPresentation = true
+            flushPendingRecoveryIfPossible()
         }
+    }
+
+    /// 启动早期 Window 还未注入闭包，必须直接读偏好，不能等 onAppear。
+    private func menuBarIconVisibleFromDefaults() -> Bool {
+        let key = "menuBar.iconVisible"
+        if UserDefaults.standard.object(forKey: key) == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: key)
+    }
+
+    /// 由界面注入 openWindow；suppressed 启动后若需恢复窗，等注入完成再出示。
+    func installMainWindowPresenter(_ present: @escaping () -> Void) {
+        presentMainWindow = present
+        flushPendingRecoveryIfPossible()
+    }
+
+    private func flushPendingRecoveryIfPossible() {
+        guard pendingRecoveryPresentation, let presentMainWindow else { return }
+        pendingRecoveryPresentation = false
+        presentMainWindow()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -32,9 +60,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if MenuBarReopenPolicy.presentation(iconVisible: isMenuBarIconVisible(), isReopenOrLaunch: true)
-            == .showRecoveryWindow {
-            NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
+        if MenuBarReopenPolicy.presentation(
+            iconVisible: isMenuBarIconVisible(),
+            isReopenOrLaunch: true
+        ) == .showRecoveryWindow {
+            if let presentMainWindow {
+                presentMainWindow()
+            } else {
+                NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
+            }
         }
         return true
     }
