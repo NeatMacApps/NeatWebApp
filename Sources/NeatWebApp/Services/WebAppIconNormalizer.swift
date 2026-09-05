@@ -1,7 +1,10 @@
 import AppKit
 
 enum WebAppIconNormalizer {
-    static func normalizedLauncherIcon(from image: NSImage, canvasSize: CGFloat = 256) -> NSImage? {
+    static func normalizedLauncherIcon(
+        from image: NSImage,
+        canvasSize: CGFloat = WebAppFaviconImagePreparing.normalizedCanvasPoints
+    ) -> NSImage? {
         guard
             let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
             let analysis = analyze(cgImage)

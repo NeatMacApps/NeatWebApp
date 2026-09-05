@@ -175,51 +175,6 @@ final class FloatingWebAppIconPanel: NSPanel {
     }
 }
 
-final class WindowSnapshotTransitionPanel: NSPanel {
-    private let snapshotView = NSImageView()
-
-    var snapshotImage: NSImage? {
-        get { snapshotView.image }
-        set { snapshotView.image = newValue }
-    }
-
-    override var canBecomeKey: Bool {
-        false
-    }
-
-    override var canBecomeMain: Bool {
-        false
-    }
-
-    override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing bufferingType: NSWindow.BackingStoreType, defer flag: Bool) {
-        super.init(contentRect: contentRect, styleMask: style, backing: bufferingType, defer: flag)
-
-        let contentView = NSView()
-        contentView.wantsLayer = true
-        contentView.layer?.cornerRadius = 14
-        contentView.layer?.masksToBounds = true
-
-        snapshotView.translatesAutoresizingMaskIntoConstraints = false
-        snapshotView.imageScaling = .scaleAxesIndependently
-        snapshotView.animates = false
-
-        contentView.addSubview(snapshotView)
-        NSLayoutConstraint.activate([
-            snapshotView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            snapshotView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            snapshotView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            snapshotView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-        ])
-
-        self.contentView = contentView
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
 final class FloatingWebAppIconView: NSView {
     private enum AnimationMetrics {
         static let rippleDuration: CFTimeInterval = 1

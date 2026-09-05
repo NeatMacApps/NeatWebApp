@@ -34,6 +34,10 @@ final class WebAppFaviconStore {
         return NSImage(contentsOf: url)
     }
 
+    func contains(appID: String) -> Bool {
+        fileManager.fileExists(atPath: fileURL(for: appID).path)
+    }
+
     func save(_ image: NSImage, for appID: String) {
         guard let data = image.pngRepresentation else {
             return

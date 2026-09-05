@@ -178,6 +178,7 @@ Tests are split by ownership:
 
 ## Design Constraints
 
+- Memory footprint: UX-first rules (keep collapsed runtimes alive, borrow the system compressor, never unload pages under pressure) live in [design/memory-footprint.md](design/memory-footprint.md). Do not reintroduce unload-on-collapse or custom full-page heap compression.
 - The project targets macOS 15, so it stays with `WKWebView` instead of newer WebKit APIs that require newer OS versions.
 - AppKit bridges are intentionally narrow and only used where SwiftUI cannot fully express the required behavior.
 - The host process must never own browser windows. It does own the shared side Dock because that is cross-runtime navigation UI; each runtime only owns its browser window and publishes lifecycle state.

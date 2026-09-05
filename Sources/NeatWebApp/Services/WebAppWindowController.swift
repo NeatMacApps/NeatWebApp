@@ -36,8 +36,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private let preferredGeometry: ScreenNotchGeometry?
     private let faviconStore = WebAppFaviconStore()
     private var floatingIconPanel: FloatingWebAppIconPanel?
-    private var transitionSnapshotPanel: WindowSnapshotTransitionPanel?
-    private var collapsedWindowSnapshot: NSImage?
     private var expandedWindowFrameBeforeCollapse: CGRect?
     private var isAnimatingFloatingIconTransition = false
     private var lastExternalFrontmostApplication: NSRunningApplication?
@@ -286,8 +284,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         stopEnvironmentObservers()
         persistWindowFrame()
         hideFloatingIcon()
-        hideTransitionSnapshot()
-        collapsedWindowSnapshot = nil
         window?.orderOut(nil)
         publishRuntimeUpdate(phase: .hidden, windowFrame: window?.frame, floatingIconFrame: nil)
     }
@@ -309,8 +305,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         stopCoverageWatch()
         persistWindowFrame()
         hideFloatingIcon()
-        hideTransitionSnapshot()
-        collapsedWindowSnapshot = nil
         eventSink.webAppWindowDidRequestClose(self)
     }
 
@@ -364,9 +358,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         persistWindowFrame()
         expandedWindowFrameBeforeCollapse = window.frame
         let shouldAnimateTransition = shouldAnimateFloatingIconTransition()
-        collapsedWindowSnapshot = nil
         hideFloatingIcon()
-        hideTransitionSnapshot()
 
         guard shouldAnimateTransition else {
             window.orderOut(nil)
@@ -420,7 +412,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private func expandFromFloatingIcon(shouldFocusWebView: Bool = true) {
         guard let window, !isAnimatingFloatingIconTransition else {
             hideFloatingIcon()
-            hideTransitionSnapshot()
             return
         }
 
@@ -445,8 +436,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             topLeft: iconTopLeft
         )
         restoredFrame = clampToVisibleFrame(restoredFrame, around: iconTopLeft)
-        let snapshotPanel = collapsedWindowSnapshot.map { showTransitionSnapshot(image: $0, frame: iconFrame) }
-        snapshotPanel?.alphaValue = 0
         window.setFrame(restoredFrame, display: false)
         window.alphaValue = 1
 
@@ -457,20 +446,13 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
 
             panel?.animator().alphaValue = 0
-            if let snapshotPanel {
-                snapshotPanel.animator().alphaValue = 1
-                snapshotPanel.animator().setFrame(restoredFrame, display: true)
-            }
-        } completionHandler: { [weak self, weak window, weak snapshotPanel] in
-            Task { @MainActor [weak self, weak window, weak snapshotPanel] in
+        } completionHandler: { [weak self, weak window] in
+            Task { @MainActor [weak self, weak window] in
                 guard let self, let window else {
-                    snapshotPanel?.orderOut(nil)
                     return
                 }
 
-                self.hideTransitionSnapshot()
                 self.hideFloatingIcon()
-                self.collapsedWindowSnapshot = nil
                 NSApp.activate(ignoringOtherApps: true)
                 window.deminiaturize(nil)
                 window.orderFrontRegardless()
@@ -489,22 +471,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     private func hideFloatingIcon() {
         floatingIconPanel?.orderOut(nil)
         floatingIconPanel = nil
-    }
-
-    @discardableResult
-    private func showTransitionSnapshot(image: NSImage, frame: CGRect) -> WindowSnapshotTransitionPanel {
-        let panel = transitionSnapshotPanel ?? makeTransitionSnapshotPanel()
-        transitionSnapshotPanel = panel
-        panel.snapshotImage = image
-        panel.setFrame(frame, display: false)
-        panel.alphaValue = 1
-        panel.orderFrontRegardless()
-        return panel
-    }
-
-    private func hideTransitionSnapshot() {
-        transitionSnapshotPanel?.orderOut(nil)
-        transitionSnapshotPanel = nil
     }
 
     private func floatingIconFrame(alignedToTopLeft topLeft: CGPoint) -> CGRect {
@@ -592,44 +558,6 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             self?.expandFromFloatingIcon()
         }
         return panel
-    }
-
-    private func makeTransitionSnapshotPanel() -> WindowSnapshotTransitionPanel {
-        let panel = WindowSnapshotTransitionPanel(
-            contentRect: .zero,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-
-        panel.isFloatingPanel = true
-        panel.becomesKeyOnlyIfNeeded = false
-        panel.level = WindowMetrics.floatingIconLevel
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.hasShadow = true
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hidesOnDeactivate = false
-        panel.ignoresMouseEvents = true
-        return panel
-    }
-
-    private func captureWindowSnapshot(from window: NSWindow) -> NSImage? {
-        guard let contentView = window.contentView else {
-            return nil
-        }
-
-        let bounds = contentView.bounds
-        guard !bounds.isEmpty,
-              let bitmapRepresentation = contentView.bitmapImageRepForCachingDisplay(in: bounds) else {
-            return nil
-        }
-
-        contentView.cacheDisplay(in: bounds, to: bitmapRepresentation)
-
-        let snapshot = NSImage(size: bounds.size)
-        snapshot.addRepresentation(bitmapRepresentation)
-        return snapshot
     }
 
     private func rememberFrontmostExternalApplication() {

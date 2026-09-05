@@ -44,6 +44,16 @@ final class WebAppFaviconStoreTests: XCTestCase {
         store.delete(for: "figma")
 
         XCTAssertNil(store.load(for: "figma"))
+        XCTAssertFalse(store.contains(appID: "figma"))
+    }
+
+    func testContainsReportsSavedFavicon() {
+        let store = WebAppFaviconStore(directoryURL: temporaryDirectoryURL)
+        XCTAssertFalse(store.contains(appID: "notion"))
+
+        store.save(makeImage(color: .systemPurple), for: "notion")
+
+        XCTAssertTrue(store.contains(appID: "notion"))
     }
 
     private func makeImage(color: NSColor, size: NSSize = NSSize(width: 32, height: 32)) -> NSImage {

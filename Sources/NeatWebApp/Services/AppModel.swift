@@ -17,7 +17,8 @@ final class AppModel {
     private(set) var isLauncherVisible = false
     private(set) var isTemporarilySuppressed = false
     private(set) var activeRuntimeAppID: String?
-    private(set) var faviconImages: [String: NSImage] = [:]
+    /// 图标内存缓存世代：压力丢缓存或磁盘回填后递增，驱动界面重新读盘。
+    private(set) var faviconCacheGeneration: UInt64 = 0
     private(set) var isLaunchAtLoginEnabled = false
     /// 登录项被系统挂起的例外状态：正常开启不会出现，只有它曾被关掉过才会。
     /// 此时开关点了也不会生效，界面需要给出解释，否则表现为「怎么点都没反应」。
@@ -43,6 +44,16 @@ final class AppModel {
 
     @ObservationIgnored
     private let faviconStore = WebAppFaviconStore()
+
+    @ObservationIgnored
+    private let faviconMemoryCache = WebAppFaviconMemoryCache()
+
+    @ObservationIgnored
+    private var memoryPressureMonitor: HostMemoryPressureMonitor?
+
+    /// 系统内存告警期间暂停图标网络预取，压力解除后不自动恢复预取风暴（下次启动或显式刷新再抓）。
+    @ObservationIgnored
+    private var isFaviconPrefetchSuspended = false
 
     @ObservationIgnored
     private let launchAtLoginService = LaunchAtLoginService()
@@ -112,6 +123,7 @@ final class AppModel {
         refreshLaunchAtLoginState()
         runtimeCoordinator.refreshRegistry()
         preloadFavicons()
+        startMemoryPressureMonitorIfNeeded()
 
         notchActivationMonitor.start { [weak self] mouseLocation, eventType in
             self?.handleMouseEvent(mouseLocation, eventType)
@@ -209,15 +221,33 @@ final class AppModel {
     }
 
     func faviconImage(for app: WebAppDefinition) -> NSImage? {
-        faviconImages[app.id]
+        // 读世代字段，让 Observation 在压力丢缓存后刷新视图。
+        _ = faviconCacheGeneration
+
+        if let cached = faviconMemoryCache.image(for: app.id) {
+            return cached
+        }
+
+        guard let diskImage = faviconStore.load(for: app.id) else {
+            return nil
+        }
+
+        faviconMemoryCache.store(diskImage, for: app.id)
+        return diskImage
     }
 
     func ensureFaviconLoaded(for app: WebAppDefinition, refreshCachedImage: Bool = false) {
-        guard refreshCachedImage || faviconImages[app.id] == nil else {
-            return
+        if !refreshCachedImage {
+            if faviconMemoryCache.image(for: app.id) != nil || faviconStore.contains(appID: app.id) {
+                return
+            }
         }
 
         guard refreshCachedImage || !failedFaviconAppIDs.contains(app.id) else {
+            return
+        }
+
+        guard !isFaviconPrefetchSuspended || refreshCachedImage else {
             return
         }
 
@@ -233,6 +263,18 @@ final class AppModel {
 
             storeFaviconResponse(data, for: appID)
         }
+    }
+
+    /// 系统内存压力：丢掉可从磁盘重建的图标内存缓存；不卸网页、不杀保活运行时。
+    func handleHostMemoryPressure(isCritical: Bool) {
+        isFaviconPrefetchSuspended = true
+        for task in faviconLoadTasks.values {
+            task.cancel()
+        }
+        faviconLoadTasks.removeAll()
+        purgeFaviconMemoryCache()
+        // isCritical 预留给将来更积极的可重建收缩；当前与 warning 同策，刻意不杀运行时。
+        _ = isCritical
     }
 
     func zoomInActiveWebApp() {
@@ -543,9 +585,10 @@ final class AppModel {
         if app.homeURL != homeURL {
             faviconLoadTasks[app.id]?.cancel()
             faviconLoadTasks[app.id] = nil
-            faviconImages.removeValue(forKey: app.id)
+            faviconMemoryCache.remove(for: app.id)
             failedFaviconAppIDs.remove(app.id)
             faviconStore.delete(for: app.id)
+            faviconCacheGeneration &+= 1
             ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
         }
 
@@ -555,9 +598,10 @@ final class AppModel {
     func deleteCustomApp(_ app: WebAppDefinition) {
         apps.removeAll { $0.id == app.id }
         customAppStore.save(apps)
-        faviconImages.removeValue(forKey: app.id)
+        faviconMemoryCache.remove(for: app.id)
         failedFaviconAppIDs.remove(app.id)
         faviconStore.delete(for: app.id)
+        faviconCacheGeneration &+= 1
         runtimeCoordinator.refreshRegistry()
     }
 
@@ -658,6 +702,10 @@ final class AppModel {
     }
 
     private func preloadFavicons() {
+        guard !isFaviconPrefetchSuspended else {
+            return
+        }
+
         for app in apps {
             ensureFaviconLoaded(for: app, refreshCachedImage: true)
         }
@@ -669,8 +717,31 @@ final class AppModel {
                 continue
             }
 
-            faviconImages[app.id] = image
+            faviconMemoryCache.store(image, for: app.id)
         }
+        faviconCacheGeneration &+= 1
+    }
+
+    private func purgeFaviconMemoryCache() {
+        faviconMemoryCache.removeAll()
+        faviconCacheGeneration &+= 1
+    }
+
+    private func startMemoryPressureMonitorIfNeeded() {
+        guard memoryPressureMonitor == nil else {
+            return
+        }
+
+        let monitor = HostMemoryPressureMonitor(
+            onWarning: { [weak self] in
+                self?.handleHostMemoryPressure(isCritical: false)
+            },
+            onCritical: { [weak self] in
+                self?.handleHostMemoryPressure(isCritical: true)
+            }
+        )
+        memoryPressureMonitor = monitor
+        monitor.start()
     }
 
     private var screenDiagnosticsMessage: String {
@@ -705,14 +776,15 @@ final class AppModel {
             faviconLoadTasks[appID] = nil
         }
 
-        guard let data, let image = NSImage(data: data) else {
+        guard let data, let image = WebAppFaviconImagePreparing.image(from: data) else {
             failedFaviconAppIDs.insert(appID)
             return
         }
 
         let normalizedImage = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
-        faviconImages[appID] = normalizedImage
+        faviconMemoryCache.store(normalizedImage, for: appID)
         faviconStore.save(normalizedImage, for: appID)
+        faviconCacheGeneration &+= 1
         failedFaviconAppIDs.remove(appID)
     }
 

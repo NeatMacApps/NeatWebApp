@@ -191,6 +191,7 @@ done
 - [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发版、改发版脚本、改版本号、改签名或权限配置、改自动更新行为，或排查「别人机器装不上 / 装了升不了级 / **另一台电脑收不到更新提醒** / **公开仓附件上传报 Connection reset 或超时**」前必读；含本项目专有取值、温和提醒不弹窗、先核公开 appcast 构建号，以及附件上传假失败时禁止重开归档公证。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
 - [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作方式、进程划分，以及浏览器窗口生命周期（关闭 / 隐藏 / 收进侧边 Dock / 跨桌面空间行为 / 新打开尚未运行的网页应用时的启动盖衔接）前阅读。
+- [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
 - [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前必读；含已裁定不可推翻的产品决策与真机验收清单。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围判定、规则生效范围与持久化、还原入口，或需要新增／升级注入到页面里的脚本时必读；含已裁定不可推翻的产品决策、内嵌第三方选择器库的升级方式与已知边界。
