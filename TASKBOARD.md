@@ -4,4 +4,3 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| 体验优先内存优化 | 验证中 | docs/design/memory-footprint.md；Favicon/MemoryPressure；WebAppWindowController；发版 0.3.12/3030 | 18:16 | 18:25 | 即将提交发版 |
