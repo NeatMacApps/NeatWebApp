@@ -82,4 +82,50 @@ final class BrowserBookmarkTests: XCTestCase {
         XCTAssertFalse(session.isCurrentPageBookmarked)
         XCTAssertTrue(store.load(for: "claude").resolvedBookmarks.isEmpty)
     }
+
+    func testApplyDefinitionReloadsOnlyWhenHomeURLChanges() {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appending(path: "NeatWebAppApplyDefinition-\(UUID().uuidString)", directoryHint: .isDirectory)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: tempRoot)
+        }
+
+        let defaults = UserDefaults(suiteName: "NeatWebAppApplyDefinition-\(UUID().uuidString)")!
+        let store = WebAppPreferencesStore(
+            userDefaults: defaults,
+            rootDirectoryURL: tempRoot
+        )
+        let claude = WebAppDefinition.examples.first { $0.id == "claude" }!
+        let session = BrowserSession(
+            definition: claude,
+            preference: StoredWebAppPreference(),
+            preferencesStore: store
+        )
+        session.currentURL = URL(string: "https://claude.ai/chat/keep")!
+        session.pageTitle = "Claude"
+
+        let renamed = WebAppDefinition(
+            id: claude.id,
+            name: "Claude 工作区",
+            homeURL: claude.homeURL,
+            accentColorName: claude.accentColorName,
+            shortDescription: claude.shortDescription
+        )
+        session.applyDefinition(renamed)
+        XCTAssertEqual(session.definition.name, "Claude 工作区")
+        XCTAssertEqual(session.currentURL, URL(string: "https://claude.ai/chat/keep")!)
+        XCTAssertEqual(session.pageTitle, "Claude 工作区")
+
+        let relocated = WebAppDefinition(
+            id: claude.id,
+            name: "Claude 工作区",
+            homeURL: URL(string: "https://claude.ai/new-home")!,
+            accentColorName: claude.accentColorName,
+            shortDescription: claude.shortDescription
+        )
+        session.applyDefinition(relocated)
+        XCTAssertEqual(session.definition.homeURL, URL(string: "https://claude.ai/new-home")!)
+        XCTAssertEqual(session.currentURL, URL(string: "https://claude.ai/new-home")!)
+        XCTAssertTrue(session.isLoading)
+    }
 }

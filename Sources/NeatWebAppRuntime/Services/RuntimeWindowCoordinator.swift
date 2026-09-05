@@ -3,7 +3,7 @@ import Foundation
 
 @MainActor
 final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
-    private let bootstrap: RuntimeBootstrap
+    private var bootstrap: RuntimeBootstrap
     private let appModel: RuntimeAppModel
     private let registryStore: RuntimeRegistryStore
     private let appLock: RuntimeAppLock
@@ -164,7 +164,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         case .hideWindow:
             windowController?.hideWindow()
         case .reloadDefinition:
-            windowController?.showAndFocus(preferredGeometry: resolvePreferredGeometry())
+            applyReloadedDefinition(command.definition)
         case .terminateRuntime:
             prepareForTermination()
             NSApplication.shared.terminate(nil)
@@ -175,6 +175,29 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         case .resetZoom:
             windowController?.session.resetZoom()
         }
+    }
+
+    private func applyReloadedDefinition(_ definition: WebAppDefinition?) {
+        guard let definition, definition.id == bootstrap.appID else {
+            return
+        }
+
+        bootstrap = RuntimeBootstrap(
+            instanceID: bootstrap.instanceID,
+            appID: bootstrap.appID,
+            definition: definition,
+            launchReason: bootstrap.launchReason,
+            preferredDisplayID: bootstrap.preferredDisplayID,
+            runtimeBuildIdentifier: bootstrap.runtimeBuildIdentifier,
+            restoredPhase: bootstrap.restoredPhase,
+            restoredWindowFrame: bootstrap.restoredWindowFrame,
+            restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
+            createdAt: bootstrap.createdAt,
+            hostVersion: bootstrap.hostVersion
+        )
+        try? registryStore.saveBootstrap(bootstrap)
+        appModel.applyDefinition(definition)
+        windowController?.applyDefinition(definition)
     }
 
     private func resolvePreferredGeometry() -> ScreenNotchGeometry? {

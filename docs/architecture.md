@@ -162,11 +162,13 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 ## Persistence
 
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
-- `WebAppPreferencesStore` persists zoom, pinned state, saved window placement, hidden-element rules, and **per-web-app bookmarks**. Each web app's bookmark list is stored under that app's own preference record and never mixed with another app.
+- 正在跑的网页应用被改名或改首页时，宿主通过 `reloadDefinition` 把新定义推给对应运行时，并改写磁盘上的 bootstrap；只改名不打断当前页，首页变了才重新打开首页。健康重启必须读到更新后的 bootstrap，不能回到旧首页。
+- `WebAppPreferencesStore` persists zoom, pinned state, saved window placement, hidden-element rules, and **per-web-app bookmarks**. Each web app's bookmark list is stored under that app's own preference record and never mixed with another app. 宿主与多个运行时共用同一份 `web-apps.json`：保存时在文件协调锁里重读，只替换当前网页应用这一条，禁止整份覆盖把别的应用刚写入的缩放/收藏/窗口框盖掉。
 - `AppPreferencesStore` persists the side Dock edge, normalized vertical position, and target display.
 - Side-dock occupancy for window avoidance is a shared Application Support file both host and runtime read (`side-dock-reserve.json`). The host writes it whenever the Dock appears, moves, or hides.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
 - `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.
+- 站点 Cookie / 本地存储按网页应用隔离：运行时使用 `WKWebsiteDataStore(forIdentifier:)`，标识由应用 ID 稳定派生，不是共享的 `default()`。
 
 ## Testing
 

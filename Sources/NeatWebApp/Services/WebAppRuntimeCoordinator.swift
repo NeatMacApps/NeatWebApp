@@ -12,6 +12,7 @@ protocol WebAppRuntimeCoordinating {
     func increaseZoom(appID: String)
     func decreaseZoom(appID: String)
     func resetZoom(appID: String)
+    func reloadDefinition(_ definition: WebAppDefinition)
     func refreshRegistry()
 }
 
@@ -190,6 +191,34 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         }
 
         sendCommand(.resetZoom, state: state)
+    }
+
+    /// 目录里改了还在跑的网页应用时，把新定义推给对应运行时，并改掉磁盘上的 bootstrap，
+    /// 避免健康重启后又回到旧首页 / 旧名字。
+    func reloadDefinition(_ definition: WebAppDefinition) {
+        refreshRegistry()
+        guard let state = registry[definition.id] else {
+            return
+        }
+
+        if let bootstrap = registryStore.loadBootstrap(instanceID: state.instanceID) {
+            let updatedBootstrap = RuntimeBootstrap(
+                instanceID: bootstrap.instanceID,
+                appID: bootstrap.appID,
+                definition: definition,
+                launchReason: bootstrap.launchReason,
+                preferredDisplayID: bootstrap.preferredDisplayID,
+                runtimeBuildIdentifier: bootstrap.runtimeBuildIdentifier,
+                restoredPhase: bootstrap.restoredPhase,
+                restoredWindowFrame: bootstrap.restoredWindowFrame,
+                restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
+                createdAt: bootstrap.createdAt,
+                hostVersion: bootstrap.hostVersion
+            )
+            try? registryStore.saveBootstrap(updatedBootstrap)
+        }
+
+        sendCommand(.reloadDefinition, state: state, definition: definition)
     }
 
     func refreshRegistry() {
@@ -441,13 +470,17 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         }
     }
 
-    private func sendCommand(_ commandName: RuntimeCommandName, state: RuntimeState) {
+    private func sendCommand(
+        _ commandName: RuntimeCommandName,
+        state: RuntimeState,
+        definition: WebAppDefinition? = nil
+    ) {
         let command = RuntimeCommand(
             instanceID: state.instanceID,
             appID: state.appID,
             sequence: nextSequence,
             command: commandName,
-            definition: nil
+            definition: definition
         )
         nextSequence += 1
         commandBus.send(command)

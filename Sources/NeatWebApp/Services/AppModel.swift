@@ -592,6 +592,7 @@ final class AppModel {
             ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
         }
 
+        runtimeCoordinator.reloadDefinition(updatedApp)
         runtimeCoordinator.refreshRegistry()
     }
 

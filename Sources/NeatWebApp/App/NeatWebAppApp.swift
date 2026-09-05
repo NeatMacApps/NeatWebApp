@@ -94,6 +94,7 @@ struct NeatWebAppApp: App {
             Button(updateButtonTitle) {
                 appUpdater.updater.checkForUpdates()
             }
+            .disabled(!appUpdater.canCheckForUpdates)
 
             Divider()
 

@@ -153,7 +153,7 @@ done
 - launcher 的顶层状态由 `AppModel` 驱动。
 - 刘海检测基于 `NSScreen.safeAreaInsets`、`auxiliaryTopLeftArea`、`auxiliaryTopRightArea` 的组合推断。
 - 鼠标触发目前由 `NSEvent` 的 global/local monitor 组合实现。
-- 浏览器容器当前基于 `WKWebView`，并使用 `WKWebsiteDataStore.default()` 做站点数据持久化。
+- 浏览器容器当前基于 `WKWebView`，并使用**按网页应用隔离**的 `WKWebsiteDataStore(forIdentifier:)` 做站点数据持久化（不是共享的 `default()`）。
 - 页面缩放当前走 `WKWebView.pageZoom`。
 - 浏览器级快捷键（刷新、前进后退、缩放、打印、关闭窗口等）由 `Sources/NeatWebApp/Features/Browser/BrowserKeyCommand.swift` 映射、在 WebView 的 `performKeyEquivalent` 阶段消费。运行时是 `LSUIElement`，永远没有菜单栏，不要试图用菜单项挂浏览器快捷键；也不要下沉到 `keyDown`，网页输入框会先把按键吃掉。新增绑定前先读 [docs/architecture.md](docs/architecture.md) 里的快捷键表，确认不会抢走网页自己的编辑按键。
 - 每个 WebApp 运行时进程只拥有一个浏览器窗口，由 `Sources/NeatWebAppRuntime/Services/RuntimeWindowCoordinator.swift` 协调；同一个 WebApp 无法再开出第二个窗口。

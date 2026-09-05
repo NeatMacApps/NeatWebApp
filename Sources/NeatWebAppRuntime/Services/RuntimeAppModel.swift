@@ -4,12 +4,20 @@ import Observation
 @Observable
 @MainActor
 final class RuntimeAppModel {
-    let definition: WebAppDefinition
+    private(set) var definition: WebAppDefinition
     var phase: RuntimePhase = .launching
     var windowFrame: CGRect?
     var floatingIconFrame: CGRect?
 
     init(definition: WebAppDefinition) {
+        self.definition = definition
+    }
+
+    func applyDefinition(_ definition: WebAppDefinition) {
+        guard definition.id == self.definition.id else {
+            return
+        }
+
         self.definition = definition
     }
 

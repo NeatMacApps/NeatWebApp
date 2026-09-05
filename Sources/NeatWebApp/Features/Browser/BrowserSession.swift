@@ -13,7 +13,7 @@ protocol BrowserSessionCommandHandling: AnyObject {
 @Observable
 @MainActor
 final class BrowserSession {
-    let definition: WebAppDefinition
+    private(set) var definition: WebAppDefinition
 
     var pageTitle: String
     var currentURL: URL
@@ -159,6 +159,26 @@ final class BrowserSession {
 
     func reloadFromConfiguredURL() {
         loadConfiguredHomePage()
+    }
+
+    /// 宿主改了这个网页应用的名字或首页地址时，把还在跑的窗口对齐过去。
+    /// 只有首页变了才重新打开首页；只改名字不打断用户当前浏览。
+    func applyDefinition(_ newDefinition: WebAppDefinition) {
+        guard newDefinition.id == definition.id else {
+            return
+        }
+
+        let previous = definition
+        definition = newDefinition
+
+        if previous.homeURL != newDefinition.homeURL {
+            loadConfiguredHomePage()
+            return
+        }
+
+        if pageTitle == previous.name {
+            pageTitle = newDefinition.name
+        }
     }
 
     func decreaseZoom() {

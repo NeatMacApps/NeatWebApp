@@ -1,6 +1,12 @@
 # 内存占用：体验优先约束
 
-文档定位：宿主 / 运行时内存占用的产品约束与禁止路径。覆盖收起后偏胖、系统压力收缩；禁止卸页/关保活进程或自研整页压缩。
+文档定位：宿主 / 运行时内存占用的**本产品**约束与验收数字。
+
+## 权威
+
+跨产品模式（压力只丢可重建物、禁止卸 `WKWebView`、MemoryPressure 闭包禁止 `@MainActor`）：
+
+→ [macOS 原生应用内存优化指南 §5.8 / §6](~/.config/agentsync/docs/MACOS_APP_MEMORY_OPTIMIZATION_GUIDE.md)
 
 ## 已裁定产品约束
 

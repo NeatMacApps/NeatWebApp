@@ -66,4 +66,45 @@ final class WebAppPreferencesStoreTests: XCTestCase {
         ])
         XCTAssertTrue(store.load(for: "github").resolvedBookmarks.isEmpty)
     }
+
+    func testSavingOneAppDoesNotClobberSiblingPreferenceWrittenEarlier() {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appending(path: "NeatWebAppPreferenceMerge-\(UUID().uuidString)", directoryHint: .isDirectory)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: tempRoot)
+        }
+
+        let hostDefaults = UserDefaults(suiteName: "NeatWebAppPreferenceMergeHost-\(UUID().uuidString)")!
+        let runtimeDefaults = UserDefaults(suiteName: "NeatWebAppPreferenceMergeRuntime-\(UUID().uuidString)")!
+        let hostStore = WebAppPreferencesStore(
+            userDefaults: hostDefaults,
+            rootDirectoryURL: tempRoot
+        )
+        let runtimeStore = WebAppPreferencesStore(
+            userDefaults: runtimeDefaults,
+            rootDirectoryURL: tempRoot
+        )
+
+        var hostPreference = StoredWebAppPreference()
+        hostPreference.pageZoom = 1.2
+        hostPreference.windowFrame = CGRect(x: 10, y: 20, width: 800, height: 600)
+        hostStore.save(hostPreference, for: "claude")
+
+        var runtimePreference = StoredWebAppPreference()
+        runtimePreference.pageZoom = 0.9
+        runtimePreference.bookmarks = [
+            WebAppBookmark(title: "对话", urlString: "https://claude.ai/chat/1")
+        ]
+        runtimeStore.save(runtimePreference, for: "notion")
+
+        XCTAssertEqual(hostStore.load(for: "claude").pageZoom, 1.2, accuracy: 0.001)
+        XCTAssertEqual(
+            hostStore.load(for: "claude").resolvedWindowPlacement?.frame,
+            CGRect(x: 10, y: 20, width: 800, height: 600)
+        )
+        XCTAssertEqual(runtimeStore.load(for: "notion").pageZoom, 0.9, accuracy: 0.001)
+        XCTAssertEqual(runtimeStore.load(for: "notion").resolvedBookmarks.map(\.urlString), [
+            "https://claude.ai/chat/1"
+        ])
+    }
 }

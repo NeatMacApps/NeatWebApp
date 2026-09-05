@@ -190,9 +190,34 @@ final class WebAppPreferencesStore {
     }
 
     func save(_ preference: StoredWebAppPreference, for appID: String) {
-        var nextStorage = storage
-        nextStorage[appID] = preference
-        persist(nextStorage)
+        guard let sharedFileURL else {
+            var nextStorage = storage
+            nextStorage[appID] = preference
+            persist(nextStorage, sharedFileURL: nil)
+            return
+        }
+
+        // 宿主与多个运行时会并发写同一份偏好文件。写入前在协调锁里重读，
+        // 只替换当前网页应用这一条，避免把别人刚写进去的缩放/收藏/窗口框整份盖掉。
+        let coordinator = NSFileCoordinator()
+        var coordinationError: NSError?
+        var didWrite = false
+        coordinator.coordinate(
+            writingItemAt: sharedFileURL,
+            options: .forReplacing,
+            error: &coordinationError
+        ) { writableURL in
+            var nextStorage = decodePreferences(at: writableURL) ?? mergedDefaultsStorage()
+            nextStorage[appID] = preference
+            persist(nextStorage, sharedFileURL: writableURL)
+            didWrite = true
+        }
+
+        if !didWrite {
+            var nextStorage = storage
+            nextStorage[appID] = preference
+            persist(nextStorage, sharedFileURL: sharedFileURL)
+        }
     }
 
     private var storage: [String: StoredWebAppPreference] {
@@ -201,13 +226,16 @@ final class WebAppPreferencesStore {
         }
 
         let merged = mergedDefaultsStorage()
-        if sharedFileURL != nil, !merged.isEmpty {
-            persist(merged)
+        if let sharedFileURL, !merged.isEmpty {
+            persist(merged, sharedFileURL: sharedFileURL)
         }
         return merged
     }
 
-    private func persist(_ value: [String: StoredWebAppPreference]) {
+    private func persist(
+        _ value: [String: StoredWebAppPreference],
+        sharedFileURL: URL?
+    ) {
         guard let data = try? encoder.encode(value) else {
             return
         }
@@ -219,8 +247,15 @@ final class WebAppPreferencesStore {
     }
 
     private func loadSharedFile() -> [String: StoredWebAppPreference]? {
-        guard let sharedFileURL,
-              let data = try? Data(contentsOf: sharedFileURL) else {
+        guard let sharedFileURL else {
+            return nil
+        }
+
+        return decodePreferences(at: sharedFileURL)
+    }
+
+    private func decodePreferences(at url: URL) -> [String: StoredWebAppPreference]? {
+        guard let data = try? Data(contentsOf: url) else {
             return nil
         }
 

@@ -114,6 +114,24 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         clampWindowToDockReserveIfNeeded()
     }
 
+    /// 宿主改了目录里的定义后，同步窗口标题、当前会话，以及已收起时的侧边图标名称。
+    func applyDefinition(_ definition: WebAppDefinition) {
+        session.applyDefinition(definition)
+        window?.title = definition.name
+
+        guard let floatingIconPanel else {
+            return
+        }
+
+        let iconImage = faviconStore.load(for: session.definition.id)
+        floatingIconPanel.contentView = FloatingWebAppIconView(
+            iconImage: iconImage,
+            appName: session.definition.name
+        ) { [weak self] in
+            self?.expandFromFloatingIcon()
+        }
+    }
+
     func showAndFocus(preferredGeometry: ScreenNotchGeometry? = nil) {
         stopCoverageWatch()
         applyDockReserve(dockReserveStore.load())
