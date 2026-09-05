@@ -36,3 +36,5 @@
 - [`ASAuthorizationWebBrowserPublicKeyCredentialManager`](https://developer.apple.com/documentation/authenticationservices/asauthorizationwebbrowserpublickeycredentialmanager)
 - [苹果工程师说明：WKWebView 的 WebAuthn 仅限关联域名](https://developer.apple.com/forums/thread/714785)
 - [passkeys.dev：嵌入式 WebView 与系统 WebView 的能力边界](https://passkeys.dev/docs/reference/macos/)
+
+<!-- 该文档整理/压缩于 2026-09-05 -->

@@ -185,3 +185,5 @@ Tests are split by ownership:
 - Browser-like capabilities belong in the runtime process. Keep file download, upload, media permission, and external scheme handling close to the `WKWebView` bridge instead of routing them through the host.
 - One runtime process means one browser window. Multi-window / duplicate-window support for a single web app was removed deliberately and should not come back.
 - Auto-collapse is driven by invisibility alone. Do not reintroduce an idle or unfocused timeout: a window the user can still see must never disappear on its own. Rationale in [docs/design/window-auto-collapse.md](design/window-auto-collapse.md).
+
+<!-- 该文档整理/压缩于 2026-09-05 -->

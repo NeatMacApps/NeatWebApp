@@ -53,3 +53,5 @@ The source of truth for the current structure is now:
 - `project.yml`
 - `docs/architecture.md`
 - the code under `Sources/NeatWebApp`, `Sources/NeatWebAppRuntime`, and `Sources/Shared`
+
+<!-- 该文档整理/压缩于 2026-09-05 -->

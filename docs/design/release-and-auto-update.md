@@ -84,3 +84,5 @@ scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不�
 - `spctl -a -vvv -t exec` 对应用包判定为 `accepted`，正式 dmg 匿名下载后 `stapler validate` 通过。✅
 - `generate_appcast` 的构建号取到了实际值，线上 appcast 终检通过，防回退检查有效。✅
 - Sparkle 更新链路已由 `0.3.1 → 0.3.2` 的真实应用内升级验证：旧版能发现、下载并在退出时替换为新版本。✅
+
+<!-- 该文档整理/压缩于 2026-09-05 -->

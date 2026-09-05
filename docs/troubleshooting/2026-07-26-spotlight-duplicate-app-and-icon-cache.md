@@ -114,3 +114,5 @@ xcodebuild \
 4. Finder 中正式安装包显示当前 App 图标；菜单栏显示透明单色模板图标。
 
 `mdfind` 适合检查 Spotlight 元数据，但它不是应用搜索结果的唯一真相源；新安装包尚未进入元数据索引时可能返回空，LaunchServices 仍可能已经正确。排查重复 App 时必须与 LaunchServices 记录交叉验证。
+
+<!-- 该文档整理/压缩于 2026-09-05 -->
