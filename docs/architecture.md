@@ -87,7 +87,7 @@ Host and runtime are separate processes with separate preference domains. Window
 
 ### Host Services
 
-- `Sources/NeatWebApp/Services/AppModel.swift`
+- `Sources/NeatWebApp/Services/AppModel.swift`（核心状态与 `startIfNeeded`；职责 extension：`AppModel+Launcher` / `+Favicon` / `+WebApps` / `+Preferences`）
 - `Sources/NeatWebApp/Services/NotchActivationMonitor.swift`
 - `Sources/NeatWebApp/Services/LauncherOverlayController.swift`
 - `Sources/NeatWebApp/Services/SideDockOverlayController.swift`

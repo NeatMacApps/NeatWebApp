@@ -4,4 +4,4 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| 拆 AppModel.swift 巨石为 core+extension | 进行中 | Sources/NeatWebApp/Services/AppModel*.swift、project.yml/xcodegen/pbxproj | 09:54 | 2026-09-06 10:00 | WindowController 任务已收口删条；可 xcodegen/commit。勿改 WebAppWindowController/AppCommands |
+| 拆 AppModel.swift 巨石为 core+extension | 发布中 | Sources/NeatWebApp/Services/AppModel*.swift、pbxproj、AGENTS.md、docs/architecture.md | 09:54 | 2026-09-06 10:02 | Debug 绿；窄 commit+push |

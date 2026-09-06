@@ -135,7 +135,7 @@ done
   - **基线 B4 的产品豁免（已登记）**：虽然本应用有三项以上可调设置，但它是“网页应用目录 + 启动器 + 运行时窗口”一体化管理工具，所有设置都直接影响同一主界面的内容和行为；另开设置窗口会把同一条工作流拆散，且会和菜单栏、启动器加号、⌘, 三个既有入口产生重复路径。因此本应用不使用独立 `Settings` scene，统一以主窗口内嵌设置区替代。这个豁免**不**免除 ⌘, 可达、键盘焦点、VoiceOver、持久化与中英本地化要求。
 - **主窗口只放用户要操作的东西**：不摆产品介绍、路线图、诊断读数、屏幕几何等开发者信息；设置项的补充说明一律走悬停提示，界面上只留一句话标题。唯一例外是必须解释否则用户会误判的状态（如开机自启被系统挂起）。刷新几何、调试覆盖层这类开发用动作只保留快捷键，不进界面。
 - App 图标与菜单栏图标共享“三层卡片落入带凹口托盘”的品牌语义：菜单栏版本必须保留三层卡片、托盘凹口和必要负空间，禁止把彩色 App 图标直接灰度化、阈值化或整块填黑。模板图的通用规格与验收步骤见 [Apple 应用图标与品牌资产基线](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)。
-- 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
+- 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`AppModel+Launcher.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
 - 修改侧边 Dock 行为时，同时检查宿主状态、侧边 Dock 窗口协调、布局模型、设置持久化和对应测试；Dock 必须贴在当前屏幕的可用边界，不能覆盖系统程序坞或抢占其触发边缘。网页应用窗口也不得挡住这块侧边刘海（不是系统程序坞）：Dock 正在显示时，该屏窗口的可用区域是 `visibleFrame` 再扣掉 Dock 所在边的整条厚度。改、评审或排查「窗口压住侧边 Dock / 玻璃里透出网页」前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md) 里 2026-09-01 的裁定。
 - 侧边 Dock 上下不留死边距：可以一路拖到贴住可用区域的上下边缘（边距常量在放置解析器里统一管理，不要在别处再写死数值）。贴的是 `visibleFrame`，底部有系统程序坞时自然停在它内侧。
 - 侧边 Dock 拖到可用区域拐角后继续拖，会绕到相邻边（左/右 ↔ 底），上边不贴。只在已经顶到尽头且还在拐角附近时才换边，中间朝屏幕内侧拖仍是关闭手势。
