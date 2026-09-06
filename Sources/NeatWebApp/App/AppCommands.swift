@@ -28,10 +28,13 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("r", modifiers: [.command, .option, .shift])
 
+            #if DEBUG
+            // 未打磨完的调试能力：正式菜单禁止出现；仅 Debug 配置可见。
             Button(appModel.isNotchDebugOverlayVisible ? "Hide Notch Debug Overlay" : "Show Notch Debug Overlay") {
                 appModel.toggleNotchDebugOverlay()
             }
             .keyboardShortcut("d", modifiers: [.command, .option, .shift])
+            #endif
         }
 
         CommandMenu("Browser") {

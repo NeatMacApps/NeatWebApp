@@ -62,6 +62,9 @@ targets:
           - Features/Browser/**
           - Services/WebAppFloatingIconSupport.swift
           - Services/WebAppWindowController.swift
+          - Services/WebAppWindowController+*.swift
+          - Services/WebAppBrowserWindow.swift
+          - Services/RuntimeWindowEventSink.swift
           - Services/WebAppWindowCoordinator.swift
           - Services/WindowVisibleCoverage.swift
       - Sources/Shared
@@ -101,7 +104,12 @@ targets:
       - Sources/NeatWebApp/Assets.xcassets
       - Sources/NeatWebApp/Features/Browser
       - Sources/NeatWebApp/Services/WebAppFloatingIconSupport.swift
+      - Sources/NeatWebApp/Services/RuntimeWindowEventSink.swift
+      - Sources/NeatWebApp/Services/WebAppBrowserWindow.swift
       - Sources/NeatWebApp/Services/WebAppWindowController.swift
+      - Sources/NeatWebApp/Services/WebAppWindowController+AutoCollapse.swift
+      - Sources/NeatWebApp/Services/WebAppWindowController+FloatingIcon.swift
+      - Sources/NeatWebApp/Services/WebAppWindowController+FramePlacement.swift
       - Sources/NeatWebApp/Services/WindowVisibleCoverage.swift
       - Sources/NeatWebApp/Services/WebAppFaviconStore.swift
       - Sources/NeatWebApp/Models/WebAppDefinition.swift
