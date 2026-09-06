@@ -1,4 +1,5 @@
 import Combine
+import MacKitUpdater
 import Sparkle
 import SwiftUI
 
@@ -20,8 +21,7 @@ final class AppUpdater: NSObject, ObservableObject,
     private let onWillInstallUpdate: @MainActor () -> Void
     private var hasPreparedForInstall = false
 
-    private lazy var controller = SPUStandardUpdaterController(
-        startingUpdater: true,
+    private lazy var controller = SparkleUpdateChecker(
         updaterDelegate: self,
         userDriverDelegate: self
     )

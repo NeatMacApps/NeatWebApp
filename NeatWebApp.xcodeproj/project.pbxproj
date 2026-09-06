@@ -12,6 +12,7 @@
 		03DC0D096D237AE010145EDE /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
 		053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
 		0937D755A341693BD29F6C32 /* AppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAACF7514AACDFED1FCC44F /* AppPreferencesStore.swift */; };
+		0A038C6B5FD86944B36705DC /* MacKitUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = 15A2F506E8CA2097B82F9F36 /* MacKitUpdater */; };
 		0BD6E80B683962E747B95377 /* BrowserDownloadDestinationResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5251982D120DB93D8AF56428 /* BrowserDownloadDestinationResolverTests.swift */; };
 		0ECAB78372A0A9CB81E8B068 /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B6E6D82411C62C8C81826 /* BrowserWebView.swift */; };
 		10CEDA335E08D5DDCFD2A49A /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49E6C595618896648351FC8 /* AppUpdater.swift */; };
@@ -273,6 +274,7 @@
 				DA2F86395CCCBF1CF6C3F27B /* MacKitLaunchAtLogin in Frameworks */,
 				99E063C94472E720E4759907 /* MacKitLifecycle in Frameworks */,
 				845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */,
+				0A038C6B5FD86944B36705DC /* MacKitUpdater in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -679,6 +681,7 @@
 				2D9B2A868187A831F2C1C3BA /* MacKitLaunchAtLogin */,
 				A82CEC9C739DBA32DB5BEC54 /* MacKitLifecycle */,
 				FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */,
+				15A2F506E8CA2097B82F9F36 /* MacKitUpdater */,
 			);
 			productName = NeatWebApp;
 			productReference = D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */;
@@ -1242,12 +1245,17 @@
 			repositoryURL = "https://github.com/x0c/mac-kit-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.2;
+				minimumVersion = 0.1.3;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		15A2F506E8CA2097B82F9F36 /* MacKitUpdater */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitUpdater;
+		};
 		2D9B2A868187A831F2C1C3BA /* MacKitLaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
