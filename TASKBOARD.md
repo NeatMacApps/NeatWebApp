@@ -4,5 +4,4 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| 拆 AppModel.swift 巨石为 core+extension | 受阻 | Sources/NeatWebApp/Services/AppModel*.swift、project.yml/xcodegen/pbxproj | 09:54 | 2026-09-06 09:57 | 源码已拆完；等对方「拆 WebAppWindowController…」删条后再 xcodegen/commit。09:57 对方验证中含 pbxproj |
-| 拆 WebAppWindowController + 菜单去 Notch Debug | 验证中 | Services/WebAppWindowController*.swift、WebAppBrowserWindow.swift、RuntimeWindowEventSink.swift、App/AppCommands.swift、project.yml、pbxproj；不碰 AppModel/BrowserWebView | 09:53 | 2026-09-06 09:56 | 路径二；已 xcodegen；Debug 构建中 |
+| 拆 AppModel.swift 巨石为 core+extension | 进行中 | Sources/NeatWebApp/Services/AppModel*.swift、project.yml/xcodegen/pbxproj | 09:54 | 2026-09-06 10:00 | WindowController 任务已收口删条；可 xcodegen/commit。勿改 WebAppWindowController/AppCommands |
