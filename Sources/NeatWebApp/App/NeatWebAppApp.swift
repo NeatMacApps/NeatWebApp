@@ -29,6 +29,7 @@ struct NeatWebAppApp: App {
         Window("NeatWebApp", id: AppWindowID.main) {
             DashboardView()
                 .environment(appModel)
+                .environmentObject(appUpdater)
                 .onAppear {
                     appDelegate.isMenuBarIconVisible = { [appModel] in
                         appModel.isMenuBarIconVisible

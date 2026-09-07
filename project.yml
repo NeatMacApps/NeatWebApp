@@ -43,7 +43,7 @@ packages:
     from: "2.9.4"
   MacKit:
     url: https://github.com/x0c/mac-kit-swift
-    from: "0.1.3"
+    from: "0.1.4"
 
 fileGroups:
   - scripts

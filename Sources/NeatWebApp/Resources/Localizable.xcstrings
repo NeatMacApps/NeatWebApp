@@ -63,6 +63,55 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable on Displays Without a Notch" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在没有刘海的屏幕上启用" } }
       }
+    },
+    "settings.reveal_launcher" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launcher" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启动器" } }
+      }
+    },
+    "settings.reveal_launcher.action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reveal Launcher" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "唤出启动器" } }
+      }
+    },
+    "settings.check_for_updates.row" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Updates" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "更新" } }
+      }
+    },
+    "settings.check_for_updates" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check for Updates…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查更新…" } }
+      }
+    },
+    "settings.update.install_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Install NeatWebApp %@ Update…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "安装 NeatWebApp %@ 更新…" } }
+      }
+    },
+    "settings.quit.row" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出" } }
+      }
+    },
+    "settings.quit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit NeatWebApp" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出 NeatWebApp" } }
+      }
     }
   },
   "version" : "1.0"

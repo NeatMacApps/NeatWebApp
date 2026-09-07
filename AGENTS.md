@@ -34,7 +34,7 @@ macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 
 ## 2026-08-31 菜单栏专项复核：已落地（待 Mac 验收）
 
-已接入公共行为包：开机自启走系统三态（待批准不能显示成已开启），菜单和主窗口设置可隐藏/恢复菜单栏图标。图标隐藏后再次从“应用程序”、Spotlight 打开应唤出主窗口。本机是 Linux，不能编译或覆盖安装；回 Mac 后先 `xcodegen generate`，再按仓库命令构建并装进「应用程序」验收。验收清单见公共包 `docs/MAC_ACCEPTANCE.md`。
+已接入公共行为包 MacKit（from **0.1.4**）：开机自启走系统三态（待批准不能显示成已开启），菜单和主窗口设置可隐藏/恢复菜单栏图标。图标隐藏后再次从“应用程序”、Spotlight 打开应唤出主窗口。**【裁定 2026-09-07】** 菜单栏右键有的能力，主窗口设置区必须对等——含唤出启动器、**检查更新**、退出；菜单栏即主入口时，就绪后约 60 秒内再次打开须出主窗（`menubarIsPrimaryEntry`）。公开更新走 Sparkle，不走 `PersonalBuildUpdateChecker`。验收清单见公共包 `docs/MAC_ACCEPTANCE.md`；跨产品权威见 `~/.config/agentsync/docs/MACOS_APP_DEVELOPMENT_GUIDE.md`。
 
 ## 仓库结构
 - `project.yml`：XcodeGen 配置，是工程结构的真实来源。

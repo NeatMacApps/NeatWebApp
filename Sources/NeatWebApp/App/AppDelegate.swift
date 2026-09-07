@@ -15,12 +15,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var isUpdateSessionInProgress: () -> Bool = { false }
     private var presentMainWindow: (() -> Void)?
     private var pendingRecoveryPresentation = false
+    /// 后台就绪时刻；菜单栏即主入口的二次启动防呆用。
+    private var readyAt = Date()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         terminationGuard.isUpdateSessionInProgress = { [weak self] in
             self?.isUpdateSessionInProgress() ?? false
         }
         let isLoginLaunch = LoginLaunchDetector.isLaunchedAsLoginItem
+        readyAt = Date()
         if MenuBarReopenPolicy.shouldShowRecoveryWindow(
             iconVisible: menuBarIconVisibleFromDefaults(),
             isLoginLaunch: isLoginLaunch
@@ -60,9 +63,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // 菜单栏即主入口：就绪后默认 60 秒内再次打开须出主窗（与图标是否可见无关）。
         if MenuBarReopenPolicy.presentation(
             iconVisible: isMenuBarIconVisible(),
-            isReopenOrLaunch: true
+            isReopenOrLaunch: true,
+            isLoginLaunch: false,
+            menubarIsPrimaryEntry: true,
+            secondsSinceReady: Date().timeIntervalSince(readyAt)
         ) == .showRecoveryWindow {
             if let presentMainWindow {
                 presentMainWindow()

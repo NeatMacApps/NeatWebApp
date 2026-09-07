@@ -22,7 +22,7 @@ struct DashboardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .frame(width: 520, height: 620)
+        .frame(width: 520, height: 720)
         .focusEffectDisabled()
         .sheet(item: $editorTarget) { target in
             WebAppEditorSheet(appModel: appModel, target: target)
@@ -487,4 +487,5 @@ private struct AppDropDelegate: DropDelegate {
 #Preview {
     DashboardView()
         .environment(AppModel())
+        .environmentObject(AppUpdater {})
 }

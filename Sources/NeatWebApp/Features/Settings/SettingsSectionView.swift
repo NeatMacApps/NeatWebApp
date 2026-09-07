@@ -1,16 +1,31 @@
+import AppKit
 import SwiftUI
 
 /// 设置区块，内嵌在主窗口里；本应用不再提供独立的设置窗口。
 struct SettingsSectionView: View {
     @Environment(AppModel.self) private var appModel
+    @EnvironmentObject private var appUpdater: AppUpdater
     @FocusState private var focusedControl: FocusedControl?
 
     private enum FocusedControl: Hashable {
-                case launchAtLogin
-                case menuBarIcon
-                case sideDockEdge
+        case launchAtLogin
+        case menuBarIcon
+        case sideDockEdge
         case virtualNotch
         case openSystemSettings
+        case revealLauncher
+        case checkForUpdates
+        case quit
+    }
+
+    private var updateButtonTitle: String {
+        if let availableVersion = appUpdater.availableVersion {
+            return String(
+                format: String(localized: "settings.update.install_format"),
+                availableVersion
+            )
+        }
+        return String(localized: "settings.check_for_updates")
     }
 
     var body: some View {
@@ -34,6 +49,12 @@ struct SettingsSectionView: View {
                 sideDockEdgeRow
                 rowDivider
                 virtualNotchRow
+                rowDivider
+                revealLauncherRow
+                rowDivider
+                checkForUpdatesRow
+                rowDivider
+                quitRow
             }
             .panelCard()
         }
@@ -124,6 +145,46 @@ struct SettingsSectionView: View {
             .focused($focusedControl, equals: .virtualNotch)
             .settingFocusIndicator(focusedControl == .virtualNotch)
             .accessibilityLabel(Text("settings.virtual_notch.title"))
+        }
+    }
+
+    private var revealLauncherRow: some View {
+        settingRow("settings.reveal_launcher") {
+            Button("settings.reveal_launcher.action") {
+                appModel.revealLauncherManually()
+            }
+            .controlSize(.small)
+            .focusEffectDisabled()
+            .focused($focusedControl, equals: .revealLauncher)
+            .settingFocusIndicator(focusedControl == .revealLauncher)
+            .accessibilityLabel(Text("settings.reveal_launcher.action"))
+        }
+    }
+
+    private var checkForUpdatesRow: some View {
+        settingRow("settings.check_for_updates.row") {
+            Button(updateButtonTitle) {
+                appUpdater.updater.checkForUpdates()
+            }
+            .disabled(!appUpdater.canCheckForUpdates)
+            .controlSize(.small)
+            .focusEffectDisabled()
+            .focused($focusedControl, equals: .checkForUpdates)
+            .settingFocusIndicator(focusedControl == .checkForUpdates)
+            .accessibilityLabel(Text(updateButtonTitle))
+        }
+    }
+
+    private var quitRow: some View {
+        settingRow("settings.quit.row") {
+            Button("settings.quit") {
+                (NSApp.delegate as? AppDelegate)?.terminationGuard.requestTermination()
+            }
+            .controlSize(.small)
+            .focusEffectDisabled()
+            .focused($focusedControl, equals: .quit)
+            .settingFocusIndicator(focusedControl == .quit)
+            .accessibilityLabel(Text("settings.quit"))
         }
     }
 
