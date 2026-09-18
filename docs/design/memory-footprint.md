@@ -19,6 +19,7 @@
 - 宿主常驻菜单栏；每个网页应用一个 `NeatWebAppRuntime` + WebKit 内容进程族。
 - 收进侧边栏是窗口生命周期动作，**故意保留进程**以便秒开与状态恢复（见 [window-auto-collapse.md](window-auto-collapse.md)、[architecture.md](../architecture.md)）。
 - 网页引擎内容进程是多开场景下的占用大头；在体验优先前提下，这是设计成本，不是实现疏忽。
+- **长页面卡死不是缺 GPU、也不能靠卸页来修**：对话、信息流一类站点会把大量历史块留在页面上，WebKit 主线程被排版拖死；同一症状在 Safari 上也会出现。排查见 [长页面把窗口卡死](../troubleshooting/2026-09-18-long-page-webview-jank.md)。
 
 ## 允许做的优化
 

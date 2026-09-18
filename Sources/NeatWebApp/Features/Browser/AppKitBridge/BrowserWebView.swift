@@ -508,6 +508,7 @@ enum BrowserUserScripts {
         controller.addUserScript(BrowserThemeObserver.makeUserScript())
         controller.addUserScript(BrowserPasskeySupport.makeUserScript())
         controller.addUserScript(BrowserElementHidingScript.makeUserScript(rules: hiddenElementRules))
+        controller.addUserScript(BrowserOffscreenBlockParkingScript.makeUserScript())
     }
 }
 
@@ -671,6 +672,8 @@ private enum BrowserThemeObserver {
                     pendingTimeouts.clear();
                 };
 
+                let lastPostAt = 0;
+
                 const schedulePost = () => {
                     if (pendingFrame !== 0) {
                         return;
@@ -678,6 +681,13 @@ private enum BrowserThemeObserver {
 
                     pendingFrame = requestAnimationFrame(() => {
                         pendingFrame = 0;
+                        const now = performance.now();
+                        const wait = 280 - (now - lastPostAt);
+                        if (wait > 0) {
+                            schedulePostAfterDelay(wait);
+                            return;
+                        }
+                        lastPostAt = now;
                         postTheme();
                     });
                 };
@@ -737,11 +747,10 @@ private enum BrowserThemeObserver {
                     });
                 }
 
-                const observers = [
-                    observeAttributes(document.documentElement),
-                    observeAttributes(document.body),
-                    observeAttributes(document.querySelector(candidateSelector))
-                ].filter(Boolean);
+                  const observers = [
+                      observeAttributes(document.documentElement),
+                      observeAttributes(document.body)
+                  ].filter(Boolean);
 
                 const wrapHistoryMethod = (methodName) => {
                     const original = history[methodName];

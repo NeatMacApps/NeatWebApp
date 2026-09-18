@@ -90,6 +90,7 @@ final class BrowserSession {
     }
 
     func attach(webView: WKWebView) {
+        let alreadyAttached = self.webView === webView
         self.webView = webView
         self.userContentController = webView.configuration.userContentController
         webView.allowsMagnification = true
@@ -100,7 +101,7 @@ final class BrowserSession {
 
         if webView.url == nil {
             webView.load(URLRequest(url: currentURL))
-        } else {
+        } else if !alreadyAttached {
             syncNavigationState(from: webView)
         }
     }

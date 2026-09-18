@@ -146,7 +146,7 @@ done
 - 无刘海屏幕（外接显示器、Mac mini / Studio、旧款 MacBook）由虚拟刘海兜底：顶部中央合成一块与硬件刘海同构的热区，指针停留约 260ms 才展开，热区内的点击让给菜单栏。**硬件刘海也不是一碰就开**：指针移入后等 100ms，仍在区内才弹出启动器，避免路过误开。改虚拟刘海几何、悬停判定、开关或诊断文案前先读 [刘海触发说明](docs/notch-activation-research.md)，里面记了「屏幕刷新无差别取消悬停等待会让虚拟热区彻底失灵」这个坑，以及覆盖层无法用截图 skill 验证时的替代手法。
 - 修改浏览器行为时，同时检查 `Sources/NeatWebApp/Features/Browser/BrowserSession.swift`、`Sources/NeatWebApp/Features/Browser/AppKitBridge/BrowserWebView.swift`、`Sources/NeatWebApp/Services/WebAppWindowController.swift`。
 - 浏览器窗口顶部是无边框的「让位带」，不是标题栏：不画横条与分割线，图标裸放，网页内容从带子下方开始。左上角是收起、置顶、收藏当前页与这个网页应用自己的收藏列表。改这块前先读 [浏览器顶栏无界样式](docs/design/browser-top-chrome.md)，里面记了液态玻璃胶囊、悬停淡入等已被推翻的方案和推翻理由。
-- 注入网页的用户脚本（页面取色、通行密钥提示、元素隐藏）统一在 `BrowserUserScripts.install` 里装配。WebKit 只能整批清空用户脚本、不能单独摘掉一条，新增注入脚本必须加进这个入口，否则隐藏规则变更时重装会把它弄丢。
+- 注入网页的用户脚本（页面取色、通行密钥提示、元素隐藏、**长页面卸屏外大块**）统一在 `BrowserUserScripts.install` 里装配。WebKit 只能整批清空用户脚本、不能单独摘掉一条，新增注入脚本必须加进这个入口，否则隐藏规则变更时重装会把它弄丢。改长页面卡顿前先读 [长页面把窗口卡死](docs/troubleshooting/2026-09-18-long-page-webview-jank.md)。
 - 修改网站数据、缩放、置顶、窗口恢复、已隐藏元素、**按网页应用隔离的收藏**时，要连同偏好持久化一起验证；偏好里新增字段一律写成可选，老版本存档缺字段会让整份偏好解码失败。
 
 ## 与当前代码保持一致的实现提示
@@ -192,4 +192,4 @@ done
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器顶栏控件区（收起 / 置顶 / **收藏** / 刷新 / 网页标识 / 下载指示、让位带、渐变与拖动区）前**必读**。不读会把已推翻的液态玻璃顶栏再做一遍；收藏必须按网页应用隔离。
 - [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何、launcher 激活、**硬件 100ms / 虚拟 260ms 悬停**、路过误开，或无刘海屏虚拟热区前**必读**。不读会取消悬停等待导致虚拟热区失灵，或用截图 skill 误判覆盖层。
 - [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前**必读**。不读会把多网页应用会话边界打穿。
-- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
+- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用、**长页面把窗口卡死**等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
