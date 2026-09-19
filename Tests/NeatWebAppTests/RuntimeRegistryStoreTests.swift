@@ -76,6 +76,73 @@ final class RuntimeRegistryStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: lockURL.path))
     }
 
+    @MainActor
+    func testCleanupKeepsNewestLiveStateWhenAppIDDuplicatesExist() throws {
+        let temporaryRootURL = try makeTemporaryRootURL()
+        defer { try? FileManager.default.removeItem(at: temporaryRootURL) }
+
+        let store = RuntimeRegistryStore(rootDirectoryURL: temporaryRootURL)
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let newerInstanceID = UUID()
+        let olderInstanceID = UUID()
+
+        try store.saveState(
+            RuntimeState(
+                instanceID: olderInstanceID,
+                appID: "chatgpt",
+                pid: pid,
+                phase: .collapsedToFloatingIcon,
+                windowFrame: CGRect(x: 0, y: 0, width: 400, height: 700),
+                floatingIconFrame: nil,
+                lastUpdatedAt: Date(timeIntervalSince1970: 100)
+            )
+        )
+        try store.saveState(
+            RuntimeState(
+                instanceID: newerInstanceID,
+                appID: "chatgpt",
+                pid: pid,
+                phase: .windowVisible,
+                windowFrame: CGRect(x: 10, y: 10, width: 400, height: 700),
+                floatingIconFrame: nil,
+                lastUpdatedAt: Date(timeIntervalSince1970: 200)
+            )
+        )
+
+        store.cleanupStaleStates()
+
+        XCTAssertNotNil(store.loadState(instanceID: newerInstanceID))
+        XCTAssertNil(store.loadState(instanceID: olderInstanceID))
+        XCTAssertEqual(store.state(forAppID: "chatgpt")?.instanceID, newerInstanceID)
+    }
+
+    @MainActor
+    func testAcquireFailsWhenLiveStateExistsEvenWithoutLockDirectory() throws {
+        let temporaryRootURL = try makeTemporaryRootURL()
+        defer { try? FileManager.default.removeItem(at: temporaryRootURL) }
+
+        let store = RuntimeRegistryStore(rootDirectoryURL: temporaryRootURL)
+        let lock = RuntimeAppLock(
+            registryStore: store,
+            rootDirectoryURL: temporaryRootURL
+        )
+        let existingInstanceID = UUID()
+        try store.saveState(
+            RuntimeState(
+                instanceID: existingInstanceID,
+                appID: "notion",
+                pid: ProcessInfo.processInfo.processIdentifier,
+                phase: .windowVisible,
+                windowFrame: CGRect(x: 0, y: 0, width: 400, height: 700),
+                floatingIconFrame: nil,
+                lastUpdatedAt: .now
+            )
+        )
+
+        let acquired = try lock.acquire(appID: "notion", instanceID: UUID())
+        XCTAssertFalse(acquired)
+    }
+
     private func makeTemporaryRootURL() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appending(path: UUID().uuidString, directoryHint: .isDirectory)

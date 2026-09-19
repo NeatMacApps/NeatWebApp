@@ -223,8 +223,11 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
 
     func refreshRegistry() {
         registryStore.cleanupStaleStates()
+        // States are keyed by instance on disk; the same appID can briefly appear twice
+        // during restart races. Keep the newest entry (loadAllStates is newest-first).
         registry = Dictionary(
-            uniqueKeysWithValues: registryStore.loadAllStates().map { ($0.appID, $0) }
+            registryStore.loadAllStates().map { ($0.appID, $0) },
+            uniquingKeysWith: { first, _ in first }
         )
         migrateOutdatedRuntimesIfNeeded()
 
@@ -457,6 +460,12 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
 
             try? await Task.sleep(for: .milliseconds(100))
         }
+
+        // Always drop this instance's registry artifacts before a replacement launch,
+        // even if the process linger check timed out. Leaving it behind lets the next
+        // refreshRegistry see two live rows for the same appID.
+        registryStore.removeState(instanceID: state.instanceID)
+        registryStore.removeBootstrap(instanceID: state.instanceID)
     }
 
     private func relaunchPhase(for phase: RuntimePhase) -> RuntimePhase? {

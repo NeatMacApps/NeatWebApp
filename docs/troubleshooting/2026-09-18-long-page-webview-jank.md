@@ -1,20 +1,25 @@
 # Long pages freeze the WebApp window
 
-When to read: any WebApp becomes unusable as on-page content grows — typing lags, scrolling stutters, the window feels frozen. Also read before assuming the Mac is too slow, before adding GPU / unload-page “fixes”, or before special-casing one website.
+When to read: any WebApp becomes unusable as on-page content grows — typing lags, scrolling stutters, the window feels frozen. Also read before assuming the Mac is too slow, before adding GPU / unload-page “fixes”, or before injecting scripts that hide, skip-paint, or re-scan long lists.
 
 ## Conclusion
 
 NeatWebApp is a **generic** WebApp container. Long-page jank is a WebKit + site-frontend problem that shows up in chats, feeds, and similar lists. The same cliff is widely reported in Safari on fast Apple silicon. A fresh short page is immediately smooth; that rules out “the chip cannot keep up.”
 
-Do **not** add a host allowlist or a ChatGPT-only selector. The display path must apply to every WebApp.
+Do **not** add a host allowlist or a ChatGPT-only selector.
 
-## What the container does now (2026-09-18)
+## Veto (2026-09-19): no off-screen list parking
+
+Do **not** inject a page script that parks, skip-paints, or re-scans off-screen list blocks (`content-visibility`, `data-neat-parked`, subtree mutation observers that re-bind the whole tree, or any rename of the same idea).
+
+That approach was shipped as a container-wide display optimization. Streaming chats (Gemini-class) mutate the DOM constantly; the extra scan made NeatWebApp feel far slower than Chrome on the same machine and network. The user rejected it: delete it, do not debounce it, do not bring it back under another name.
+
+## What the container still does
 
 Silent, no extra chrome. Do not “fix” lag by unloading the page or killing the runtime; collapsed windows must stay instant. See [memory-footprint.md](../design/memory-footprint.md).
 
-1. **Off-screen block parking (all sites).** Homogeneous vertical lists with enough siblings skip paint for blocks well outside the viewport (`content-visibility: hidden` + reserved height). Nodes stay in the tree (React-safe). Newest siblings and the focused block stay live. Do **not** switch this to `content-visibility: auto` — WebKit can leave on-screen content blank.
-2. **Theme sampling no longer watches `main`.** Hit-testing the top edge is coalesced (~280ms). Streaming UIs mutate `main` constantly; observing it was extra layout work on a huge document.
-3. **No-op web-view re-attach.** Chrome-state SwiftUI updates no longer re-sync navigation state into the session.
+1. **Theme sampling no longer watches `main`.** Hit-testing the top edge is coalesced (~280ms). Streaming UIs mutate `main` constantly; observing it was extra layout work on a huge document.
+2. **No-op web-view re-attach.** Chrome-state SwiftUI updates no longer re-sync navigation state into the session.
 
 Hardware composition is already the system default on Apple silicon. Extra GPU / 120 Hz flags do not fix a blocked page thread.
 
@@ -30,15 +35,10 @@ Hardware composition is already the system default on Apple silicon. Extra GPU /
 
 ## Remaining limits
 
-- Lists shorter than the sibling threshold are left untouched.
-- Site composers (rich text boxes) stay the site’s; parking cuts competing layout, it does not replace the input.
-- Do not detach nodes from the document, share content processes, or chase GPU / 120 Hz flags for this symptom.
+- Site composers (rich text boxes) stay the site’s.
+- Do not detach nodes from the document, share content processes, chase GPU / 120 Hz flags, or re-introduce list parking for this symptom.
 
 ## Evidence
 
 - Same family of client-side freezes on long chat threads in Safari (example reports on ChatGPT web; the mechanism is not unique to that site).
-- Parking source: `BrowserOffscreenBlockParkingScript`. Install entry: `BrowserUserScripts.install`.
-- Theme observer: `html` / `body` / `head` only; `main` is sampled when posting a color, not observed.
-- Confirm on a long page in **any** affected WebApp after a window reload: scrolling and typing stay usable; a short page is unchanged.
-
-<!-- reviewed: 2026-09-18 -->
+- 2026-09-19: parking script removed after it made Gemini in NeatWebApp worse than Chrome. Guard: `BrowserUserScriptsInstallTests`.

@@ -127,6 +127,23 @@ final class RuntimeRegistryStore {
             releaseLockIfPresent(for: state.appID)
             removeBootstrap(instanceID: state.instanceID)
         }
+
+        // One appID may still have multiple live instance files after a restart race.
+        // Keep the newest (loadAllStates is newest-first) and drop the rest.
+        var claimedAppIDs = Set<String>()
+        for state in loadAllStates() {
+            if claimedAppIDs.contains(state.appID) {
+                if let application = NSRunningApplication(processIdentifier: state.pid),
+                   application.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+                    application.terminate()
+                }
+                removeState(instanceID: state.instanceID)
+                removeBootstrap(instanceID: state.instanceID)
+                continue
+            }
+
+            claimedAppIDs.insert(state.appID)
+        }
     }
 
     private func isProcessRunning(_ pid: Int32) -> Bool {

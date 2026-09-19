@@ -508,7 +508,6 @@ enum BrowserUserScripts {
         controller.addUserScript(BrowserThemeObserver.makeUserScript())
         controller.addUserScript(BrowserPasskeySupport.makeUserScript())
         controller.addUserScript(BrowserElementHidingScript.makeUserScript(rules: hiddenElementRules))
-        controller.addUserScript(BrowserOffscreenBlockParkingScript.makeUserScript())
     }
 }
 

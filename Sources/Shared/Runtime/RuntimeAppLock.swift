@@ -23,19 +23,30 @@ final class RuntimeAppLock {
             fileManager: fileManager
         )
 
+        // Always consult live registry state — not only when a lock directory exists.
+        // A missing lock with a still-running instance used to let a second runtime start,
+        // which then crashed the host on Dictionary(uniqueKeysWithValues:).
+        registryStore.cleanupStaleStates()
+
+        if let activeState = registryStore.state(forAppID: appID),
+           activeState.instanceID != instanceID {
+            return false
+        }
+
         if fileManager.fileExists(atPath: lockURL.path) {
-            registryStore.cleanupStaleStates()
-
-            if let activeState = registryStore.state(forAppID: appID),
-               activeState.instanceID != instanceID {
-                return false
-            }
-
             try? fileManager.removeItem(at: lockURL)
         }
 
-        try fileManager.createDirectory(at: lockURL, withIntermediateDirectories: false)
-        return true
+        do {
+            try fileManager.createDirectory(at: lockURL, withIntermediateDirectories: false)
+            return true
+        } catch {
+            // Lost the mkdir race to another launcher for the same appID.
+            if fileManager.fileExists(atPath: lockURL.path) {
+                return false
+            }
+            throw error
+        }
     }
 
     func release(appID: String) {
