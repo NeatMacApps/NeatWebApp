@@ -1,0 +1,25 @@
+<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>NeatWebApp</title>
+        <item>
+            <title>0.3.19</title>
+            <pubDate>Tue, 22 Sep 2026 20:44:05 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3037</sparkle:version>
+            <sparkle:shortVersionString>0.3.19</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.19
+
+- 开源并搬到 GitHub（NeatMacApps/NeatWebApp），更新检查与安装包都从 GitHub 走。
+- 支持 Homebrew 一键安装：`brew tap x0c/tap && brew install --cask neatwebapp`。
+- 除此之外与 0.3.18 一致，没有行为变化。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.19/NeatWebApp-0.3.19.zip" length="5765983" type="application/octet-stream" sparkle:edSignature="wzZPXtZUScqFu+hMZw4upGfLPsGpSxaEvgarOYZJWyvnkM/LT6bvyURI3WcVOS9rsVfYAIl/CVA8tJbj0v5MCg=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: cW93zJsoz5MJh9wOJzWMT1wDjnogfl4c0DPSoumkiUZVtuUKWfWMf1BKx8wSxPtH9V93HyhqpfJWJ9/N7Y18Cg==
+length: 1472
+-->
