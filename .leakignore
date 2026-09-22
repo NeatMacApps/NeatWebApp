@@ -1,3 +1,7 @@
 # 私有源码仓文档/发版脚本里的内网 Git 地址；公网反代抖动导致可见性判成 public 时的误报豁免
 fp:1956dd42af579a5b
 fp:04dc84b7bf3c8070
+# 更新清单里的 EdDSA 签名是公开的验签数据，不是密钥
+rule:high-entropy:appcast.xml
+# 本地配置模板的占位符账号名被误判为内部域名
+rule:internal-domain:scripts/publish-local.env.example

@@ -34,7 +34,7 @@
     <string>网页应用需要在你授权后使用麦克风，例如语音通话或录音。</string>
     <!-- 应用内自动更新（Sparkle）。更新清单只放在公开更新仓，不含源码，匿名可读。 -->
     <key>SUFeedURL</key>
-    <string>https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml</string>
+    <string>https://raw.githubusercontent.com/NeatMacApps/NeatWebApp/main/appcast.xml</string>
     <!-- EdDSA 更新公钥。私钥只存在发版机钥匙串里，仓库里永远只有公钥。
          首次发版前必须在 Mac 上用 Sparkle 的 generate_keys 生成并把公钥填到这里，
          发版脚本会检查这个占位值还在不在，没换掉就直接退出。 -->

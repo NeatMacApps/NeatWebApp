@@ -3,19 +3,18 @@
 #   Release 归档 → 按 Developer ID 导出 → 宿主、内嵌运行时与自更新框架嵌套组件的签名自检
 #   → 苹果公证 → 装订票据
 #   → 生成 Sparkle 签名更新包与 appcast → 打 dmg → 公证 dmg
-#   → 提交 / 打 tag / 推送 → 私有源码仓发布 dmg → 公开更新仓发布 zip、dmg 与 appcast
+#   → 提交 / 打 tag / 推送 → GitHub Release（先建空再传 dmg/zip）-> appcast 入库
+#   -> Homebrew cask -> 匿名终检
 #
 # 用法：
 #   scripts/publish-release.sh              完整发版
-#   scripts/publish-release.sh --local-only 只做到「本地产出已公证的 dmg」，不碰 git 与 Forgejo
+#   scripts/publish-release.sh --local-only 只做到「本地产出已公证的 dmg」，不碰 git 与 GitHub
 #
 # 前置条件（缺任何一项脚本会直接报错退出）：
-#   1. 钥匙串里有 "Developer ID Application: … (SHZQ3MWP3B)" 证书及其私钥
-#   2. 公证密钥文件在 ~/Documents/P8 密钥/发布公证密钥/（可用 NOTARY_KEY / NOTARY_KEY_ID / NOTARY_ISSUER 覆盖）
-#   3. 钥匙串里有 NeatWebApp 专用的 Sparkle 更新签名密钥（account 见 SPARKLE_ACCOUNT）
-#      首次发版前生成：<Sparkle 工具目录>/generate_keys --account neatwebapp
-#      然后把打印出的公钥填进 Sources/NeatWebApp/App/Info.plist 的 SUPublicEDKey
-#   4. 环境变量 FORGEJO_REPO_TOKEN（--local-only 时不需要）
+#   1. 钥匙串里有 "Developer ID Application" 证书及其私钥
+#   2. 本地配置 `scripts/publish-local.env`（未入库，模板见 `publish-local.env.example`）
+#      提供公证密钥三件套与 Sparkle 签名账号；也可用同名环境变量覆盖
+#   3. gh 已登录且有目标仓库权限（--local-only 时不需要）
 #
 # 必须在 macOS 本机运行：codesign / notarytool / stapler 都依赖本机 xcrun 与钥匙串，
 # Linux 开发机上代跑不了，这不是偏好问题而是硬限制。
@@ -24,26 +23,25 @@
 
 set -euo pipefail
 
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT_DIR
-# 公证凭据：直接用 .p8 密钥文件，不走钥匙串档案。
-# 钥匙串档案（notarytool store-credentials）在非交互 shell 里会因为「User interaction is not allowed」
-# 写不进去、也读不出来，脚本一跑就废；密钥文件路径与两个编号可用环境变量覆盖。
-readonly NOTARY_KEY="${NOTARY_KEY:-${HOME}/Documents/P8 密钥/发布公证密钥/AuthKey_D7YQ9HD7D6_Notarize.p8}"
-readonly NOTARY_KEY_ID="${NOTARY_KEY_ID:-D7YQ9HD7D6}"
-readonly NOTARY_ISSUER="${NOTARY_ISSUER:-c98fe4b8-d1bf-4b4a-b998-9eb8f3be9fe4}"
+readonly APP_NAME="NeatWebApp"
+readonly REPO="NeatMacApps/NeatWebApp"
+readonly REPO_WEB="https://github.com/${REPO}"
+readonly FEED_URL="https://raw.githubusercontent.com/${REPO}/main/appcast.xml"
+readonly CASK_NAME="neatwebapp"
+readonly TAP_REPO="x0c/homebrew-tap"
+# 本地私有配置（不入库）：公证密钥三件套 + Sparkle 签名账号；同名环境变量优先。
+local_env="${ROOT_DIR}/scripts/publish-local.env"
+[[ -f "${local_env}" ]] && source "${local_env}"
+readonly NOTARY_KEY="${NOTARY_KEY:?缺少公证密钥文件路径（NOTARY_KEY），见 scripts/publish-local.env.example}"
+readonly NOTARY_KEY_ID="${NOTARY_KEY_ID:?缺少公证 Key ID（NOTARY_KEY_ID）}"
+readonly NOTARY_ISSUER="${NOTARY_ISSUER:?缺少公证 Issuer ID（NOTARY_ISSUER）}"
+readonly SPARKLE_ACCOUNT="${SPARKLE_ACCOUNT:?缺少 Sparkle 签名账号（SPARKLE_ACCOUNT）}"
 readonly SIGN_IDENTITY="Developer ID Application"
-# 公网反代偶发 502 时，可设 FORGEJO_API_ORIGIN=http://127.0.0.1:13000（本机 SSH 隧道到容器）
-readonly FORGEJO_API_ORIGIN="${FORGEJO_API_ORIGIN:-https://forgejo.caozc.top}"
-readonly API_BASE="${FORGEJO_API_ORIGIN}/api/v1/repos/Max/NeatWebApp"
-readonly UPDATE_API_BASE="${FORGEJO_API_ORIGIN}/api/v1/repos/Max/NeatWebApp-updates"
-readonly UPDATE_REPO_REMOTE="ssh://git@10.10.10.2:2222/Max/NeatWebApp-updates.git"
-readonly UPDATE_REPO_WEB="https://forgejo.caozc.top/Max/NeatWebApp-updates"
-readonly UPDATE_FEED_URL="${UPDATE_REPO_WEB}/raw/branch/main/appcast.xml"
-# NeatWebApp 用自己的一把更新签名密钥，不与其他应用共用：
-# 一把密钥出问题时不会连累另一个产品。
-readonly SPARKLE_ACCOUNT="neatwebapp"
-readonly SOURCE_BRANCH="master"
+readonly SOURCE_BRANCH="main"
 readonly BUILD_DIR="${ROOT_DIR}/build"
 readonly DERIVED_DATA="${BUILD_DIR}/DerivedData.noindex"
 # 发版产物走「归档 → 按 Developer ID 导出」，不能直接取 Build/Products/Release 下的构建产物：
@@ -63,51 +61,6 @@ local_only=false
 
 log_step() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
-
-upsert_release() {
-  local api_base="$1" tag="$2" notes_file="$3" target_branch="$4"
-  local release_id
-
-  release_id="$(curl -sS -X POST "${api_base}/releases" \
-    -H "Authorization: token ${FORGEJO_REPO_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$(jq -n --arg tag "${tag}" --arg name "${tag}" --arg target "${target_branch}" --rawfile body "${notes_file}" \
-          '{tag_name: $tag, target_commitish: $target, name: $name, body: $body, draft: false, prerelease: false}')" \
-    | jq -r '.id // empty')"
-
-  if [[ -z "${release_id}" ]]; then
-    release_id="$(curl -fsS "${api_base}/releases/tags/${tag}" \
-      -H "Authorization: token ${FORGEJO_REPO_TOKEN}" | jq -r '.id')" \
-      || die "拿不到 ${tag} 的 Release"
-    [[ -n "${release_id}" && "${release_id}" != "null" ]] || die "拿不到 ${tag} 的 Release ID"
-    curl -fsS -X PATCH "${api_base}/releases/${release_id}" \
-      -H "Authorization: token ${FORGEJO_REPO_TOKEN}" \
-      -H "Content-Type: application/json" \
-      -d "$(jq -n --rawfile body "${notes_file}" '{body: $body}')" >/dev/null \
-      || die "更新 ${tag} 的 Release 说明失败"
-  fi
-
-  echo "${release_id}"
-}
-
-replace_release_asset() {
-  local api_base="$1" release_id="$2" asset_name="$3" asset_path="$4"
-  local old_asset_id
-
-  old_asset_id="$(curl -fsS "${api_base}/releases/${release_id}/assets" \
-    -H "Authorization: token ${FORGEJO_REPO_TOKEN}" \
-    | jq -r --arg name "${asset_name}" 'first(.[] | select(.name == $name) | .id) // empty')"
-  if [[ -n "${old_asset_id}" ]]; then
-    curl -fsS -X DELETE "${api_base}/releases/${release_id}/assets/${old_asset_id}" \
-      -H "Authorization: token ${FORGEJO_REPO_TOKEN}" >/dev/null \
-      || die "删除旧附件 ${asset_name} 失败"
-  fi
-
-  curl -fsS -X POST "${api_base}/releases/${release_id}/assets?name=${asset_name}" \
-    -H "Authorization: token ${FORGEJO_REPO_TOKEN}" \
-    -F "attachment=@${asset_path}" >/dev/null \
-    || die "上传附件 ${asset_name} 失败"
-}
 
 # 校验单个可执行程序包的签名是否满足公证要求。宿主与内嵌运行时各调一次。
 assert_signed_for_distribution() {
@@ -161,7 +114,7 @@ claim_submission_id() {
     history_json="$(xcrun notarytool history --key "${NOTARY_KEY}" --key-id "${NOTARY_KEY_ID}" \
       --issuer "${NOTARY_ISSUER}" --output-format json 2>/dev/null)" || continue
     claimed="$(jq -r --arg name "${basename_file}" --arg since "${started_at}" \
-      '[.history[]? | select(.name == $name and .createdDate >= $since)]
+      '[.history[]? | select(.name==$name and .createdDate >= $since)]
        | sort_by(.createdDate) | last | .id // empty' <<<"${history_json}" 2>/dev/null || true)"
     [[ -n "${claimed}" ]] && { echo "${claimed}"; return 0; }
   done
@@ -224,7 +177,7 @@ notarize_and_wait() {
       --issuer "${NOTARY_ISSUER}" 2>/dev/null | head -40 || true
     die "公证被拒（状态 ${status}），详细原因见上方日志"
   done
-  die "公证等待超过 $(( NOTARY_TIMEOUT / 60 )) 分钟仍无结果，稍后用 xcrun notarytool info ${submission_id} --key \"${NOTARY_KEY}\" --key-id ${NOTARY_KEY_ID} --issuer ${NOTARY_ISSUER} 继续查"
+  die "公证等待超过 $(( NOTARY_TIMEOUT / 60 )) 分钟仍无结果，稍后用 notarytool info ${submission_id} 继续查"
 }
 
 # 打拖拽安装式 dmg。
@@ -257,10 +210,9 @@ notary_check="$(xcrun notarytool history --key "${NOTARY_KEY}" --key-id "${NOTAR
   --issuer "${NOTARY_ISSUER}" 2>&1)" \
   || die "公证密钥不可用（检查密钥文件、Key ID、Issuer ID 是否匹配）。原始报错：$(head -1 <<<"${notary_check}")"
 if [[ "${local_only}" == false ]]; then
-  [[ -n "${FORGEJO_REPO_TOKEN:-}" ]] || die "缺少环境变量 FORGEJO_REPO_TOKEN"
-  curl -fsS -H "Authorization: token ${FORGEJO_REPO_TOKEN}" "${UPDATE_API_BASE}" \
-    | jq -e '.private == false' >/dev/null \
-    || die "公开更新仓 Max/NeatWebApp-updates 不存在或不是公开仓库"
+  gh auth status >/dev/null 2>&1 || die "gh 未登录"
+  gh repo view "${REPO}" --json visibility --jq 'select(.visibility=="PUBLIC")' >/dev/null \
+    || die "${REPO} 不存在或不是公开仓库"
 fi
 
 # 版本号的唯一来源是 project.yml，两个 Info.plist 都用构建变量取值，所以这里不需要跨文件比对。
@@ -271,6 +223,7 @@ build_number="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: //p' project.yml | tr -d '
   || die "内部构建号必须是正整数，当前为：${build_number}"
 readonly version
 readonly build_number
+readonly tag="v${version}"
 readonly dmg_path="${BUILD_DIR}/NeatWebApp-${version}.dmg"
 readonly update_zip_path="${BUILD_DIR}/NeatWebApp-${version}.zip"
 readonly sparkle_bin_dir="${DERIVED_DATA}/SourcePackages/artifacts/sparkle/Sparkle/bin"
@@ -281,13 +234,11 @@ readonly work_dir
 sparkle_public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' Sources/NeatWebApp/App/Info.plist 2>/dev/null || true)"
 [[ -n "${sparkle_public_key}" ]] || die "宿主 Info.plist 缺少 Sparkle 更新公钥 SUPublicEDKey"
 [[ "${sparkle_public_key}" != "REPLACE_WITH_SPARKLE_PUBLIC_KEY" ]] \
-  || die "还没生成 NeatWebApp 专用的更新签名密钥。先构建一次让 Sparkle 工具就位，再运行
-  ${sparkle_bin_dir}/generate_keys --account ${SPARKLE_ACCOUNT}
-把打印出的公钥填进 Sources/NeatWebApp/App/Info.plist 的 SUPublicEDKey，然后重跑本脚本。"
+  || die "还没生成 NeatWebApp 专用的更新签名密钥，见 docs/design/release-and-auto-update.md 的换机步骤"
 
 # 防回退：排队错序或重复执行都可能把线上清单写回更低的构建号，用户端表现为「升级变降级」。
 if [[ "${local_only}" == false ]] \
-  && curl -fsSL "${UPDATE_FEED_URL}" -o "${work_dir}/current-appcast.xml" 2>/dev/null; then
+  && curl -fsSL "${FEED_URL}" -o "${work_dir}/current-appcast.xml" 2>/dev/null; then
   # 构建号在 appcast 里既可能是元素也可能是 enclosure 上的属性，两种写法都要认，
   # 只认一种的话检查会静默失效，防回退等于没做
   current_published_build="$(xmllint --xpath \
@@ -298,7 +249,7 @@ if [[ "${local_only}" == false ]] \
     die "拒绝回退公开更新清单：线上内部构建号 ${current_published_build}，本次为 ${build_number}"
   fi
 fi
-log_step "本次发布版本：v${version}（内部构建号 ${build_number}）"
+log_step "本次发布版本：${tag}（内部构建号 ${build_number}）"
 
 # ---------- 1. 归档并导出 Developer ID 版本 ----------
 # 这里必须是 archive + exportArchive 两步，不能用 xcodebuild build：
@@ -343,6 +294,7 @@ xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" \
 [[ -d "${APP_PATH}" ]] || die "导出产物不存在：${APP_PATH}"
 [[ -d "${EMBEDDED_RUNTIME_PATH}" ]] || die "内嵌运行时不存在：${EMBEDDED_RUNTIME_PATH}"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
+[[ -x "${sparkle_bin_dir}/sign_update" ]] || die "找不到 Sparkle 的 sign_update 工具"
 [[ "$("${sparkle_bin_dir}/generate_keys" --account "${SPARKLE_ACCOUNT}" -p 2>/dev/null)" == "${sparkle_public_key}" ]] \
   || die "钥匙串里的 Sparkle 更新签名密钥缺失或与应用公钥不匹配（account: ${SPARKLE_ACCOUNT}）"
 
@@ -384,28 +336,22 @@ EOF
 fi
 
 appcast_dir="${work_dir}/appcast"
-update_repo_dir="${work_dir}/NeatWebApp-updates"
 mkdir -p "${appcast_dir}"
 rm -f "${update_zip_path}"
 ditto -c -k --keepParent "${APP_PATH}" "${update_zip_path}"
 ditto "${update_zip_path}" "${appcast_dir}/NeatWebApp-${version}.zip"
 ditto "${release_notes_file}" "${appcast_dir}/NeatWebApp-${version}.md"
-
-if [[ "${local_only}" == false ]]; then
-  git clone --depth 1 "${UPDATE_REPO_REMOTE}" "${update_repo_dir}" >/dev/null \
-    || die "拉取公开更新仓失败"
-  if [[ -f "${update_repo_dir}/appcast.xml" ]]; then
-    ditto "${update_repo_dir}/appcast.xml" "${appcast_dir}/appcast.xml"
-  fi
+if [[ -f appcast.xml ]]; then
+  ditto appcast.xml "${appcast_dir}/appcast.xml"
 fi
 
 # 应用开了 SURequireSignedFeed，generate_appcast 会连清单本身和版本说明一起签名。
 # 这之后不允许再手工改 appcast，改了签名就废。
 "${sparkle_bin_dir}/generate_appcast" \
   --account "${SPARKLE_ACCOUNT}" \
-  --download-url-prefix "${UPDATE_REPO_WEB}/releases/download/v${version}/" \
+  --download-url-prefix "${REPO_WEB}/releases/download/${tag}/" \
   --embed-release-notes \
-  --link "${UPDATE_REPO_WEB}" \
+  --link "${REPO_WEB}" \
   --versions "${build_number}" \
   --maximum-versions 10 \
   -o "${appcast_dir}/appcast.xml" \
@@ -414,10 +360,12 @@ fi
 xmllint --noout "${appcast_dir}/appcast.xml" || die "Sparkle appcast 不是合法 XML"
 grep -q "sparkle:edSignature=" "${appcast_dir}/appcast.xml" \
   || die "Sparkle appcast 缺少更新包的 EdDSA 签名"
-# 清单自身的签名不是 XML 属性（那会自我指涉），而是 generate_appcast 追加在文件末尾的
-# `<!-- sparkle-signatures: … -->` 注释块。应用开了 SURequireSignedFeed，缺这块客户端会拒收全部更新。
-grep -q "sparkle-signatures:" "${appcast_dir}/appcast.xml" \
-  || die "Sparkle appcast 自身没有被签名，但应用开了 SURequireSignedFeed，客户端会拒收全部更新"
+"${sparkle_bin_dir}/sign_update" --account "${SPARKLE_ACCOUNT}" --verify "${appcast_dir}/appcast.xml" >/dev/null \
+  || die "Sparkle appcast 完整性校验失败：拒绝发布未经签名或已被改写的更新清单"
+# 版本说明必须内嵌（外链文件若被引用，必须与 appcast 一并入库并在终检核对长度）
+if grep -q "releaseNotesLink" "${appcast_dir}/appcast.xml"; then
+  die "appcast 引用了外链版本说明；请确认说明文件已随 appcast 一并提交，并核对 sparkle:length"
+fi
 
 # ---------- 5. 打 dmg ----------
 log_step "打包 dmg"
@@ -448,53 +396,146 @@ log_step "提交改动并打 tag"
 # 一并纳入工作区里其他 Agent 的改动，不挑拣
 git add -A
 if ! git diff --cached --quiet; then
-  git commit -m "chore: 发布 v${version}"
+  git commit -m "chore: 发布 ${tag}"
 else
   echo "工作区无改动，跳过提交"
 fi
-if git rev-parse "v${version}" >/dev/null 2>&1; then
-  echo "tag v${version} 已存在，沿用"
+if git rev-parse "${tag}" >/dev/null 2>&1; then
+  echo "tag ${tag} 已存在，沿用"
 else
-  git tag -a "v${version}" -m "v${version}"
+  git tag -a "${tag}" -m "${tag}"
 fi
 git push origin "${SOURCE_BRANCH}"
-git push origin "v${version}"
+git push origin "${tag}"
 
-# ---------- 7. Forgejo Release ----------
-log_step "发布私有源码仓安装包"
-source_release_id="$(upsert_release "${API_BASE}" "v${version}" "${release_notes_file}" "${SOURCE_BRANCH}")"
-replace_release_asset "${API_BASE}" "${source_release_id}" "NeatWebApp-${version}.dmg" "${dmg_path}"
+# ---------- 7. GitHub Release ----------
+# 禁止 create 时带附件：uploads.github.com 会 404，Release 可能留下空壳或根本不存在。
+# 先建空 Release，再用 upload --clobber 传文件（可重复执行）。
+log_step "发布 GitHub Release（先建空再传 dmg + 更新 zip）"
+if ! gh release view "${tag}" --repo "${REPO}" >/dev/null 2>&1; then
+  gh release create "${tag}" --repo "${REPO}" \
+    --title "${tag}" --notes-file "${release_notes_file}" \
+    || die "创建 GitHub Release 失败"
+fi
+gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" --clobber \
+  || die "上传 dmg 失败"
+gh release upload "${tag}" --repo "${REPO}" "${update_zip_path}" --clobber \
+  || die "上传 zip 失败"
 
-log_step "发布公开更新仓安装包"
-update_release_id="$(upsert_release "${UPDATE_API_BASE}" "v${version}" "${release_notes_file}" main)"
-replace_release_asset "${UPDATE_API_BASE}" "${update_release_id}" "NeatWebApp-${version}.zip" "${update_zip_path}"
-replace_release_asset "${UPDATE_API_BASE}" "${update_release_id}" "NeatWebApp-${version}.dmg" "${dmg_path}"
+# 两条一起传时，GitHub 可能回报成功但只留下其中一个。逐个传完必须回读确认。
+python3 - "${REPO}" "${tag}" "NeatWebApp-${version}.dmg" "NeatWebApp-${version}.zip" <<'PY' \
+  || die "GitHub Release 附件回读失败：dmg 或 zip 不在发行页上"
+import json, subprocess, sys
+repo, tag, *need = sys.argv[1:]
+raw = subprocess.check_output(
+    ["gh", "api", f"repos/{repo}/releases/tags/{tag}"],
+    text=True,
+)
+names = {a["name"] for a in json.loads(raw).get("assets", []) if a.get("state") == "uploaded"}
+missing = [n for n in need if n not in names]
+if missing:
+    raise SystemExit("missing " + ", ".join(missing))
+PY
 
-log_step "更新公开 appcast"
-ditto "${appcast_dir}/appcast.xml" "${update_repo_dir}/appcast.xml"
-git -C "${update_repo_dir}" add appcast.xml
-if ! git -C "${update_repo_dir}" diff --cached --quiet; then
-  git -C "${update_repo_dir}" commit -m "chore: 发布 NeatWebApp v${version} 更新清单" >/dev/null
-  git -C "${update_repo_dir}" push origin main >/dev/null
+log_step "更新公开 appcast（随源码仓发布）"
+ditto "${appcast_dir}/appcast.xml" appcast.xml
+git add appcast.xml
+if ! git diff --cached --quiet; then
+  git commit -m "chore: 发布 ${tag} 更新清单" >/dev/null
+  git push origin "${SOURCE_BRANCH}"
 fi
 
+# ---------- 8. Homebrew cask ----------
+log_step "更新 Homebrew cask（防版本回退）"
+dmg_sha="$(shasum -a 256 "${dmg_path}" | awk '{print $1}')"
+tap_dir="${work_dir}/homebrew-tap"
+git clone --depth 20 "git@github.com:${TAP_REPO}.git" "${tap_dir}"
+cask_file="${tap_dir}/Casks/${CASK_NAME}.rb"
+existing_version=""
+if [[ -f "${cask_file}" ]]; then
+  existing_version="$(python3 - "${cask_file}" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r'version\s+"([^"]+)"', text)
+print(m.group(1) if m else "")
+PY
+)"
+fi
+if [[ -n "${existing_version}" ]]; then
+  python3 - "${existing_version}" "${version}" <<'PY' || die "拒绝回退 Homebrew 配方：线上 ${existing_version}，本次 ${version}"
+import sys
+def parse(v):
+    parts = []
+    for piece in v.split("."):
+        n = ""
+        for ch in piece:
+            if ch.isdigit():
+                n += ch
+            else:
+                break
+        parts.append(int(n or "0"))
+    return tuple(parts)
+old, new = sys.argv[1], sys.argv[2]
+raise SystemExit(0 if parse(new) >= parse(old) else 1)
+PY
+fi
+python3 - "${cask_file}" "${version}" "${dmg_sha}" <<'PY'
+import pathlib, re, sys
+path, version, sha = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+text = path.read_text(encoding="utf-8")
+text, n1 = re.subn(r'version\s+"[^"]+"', f'version "{version}"', text, count=1)
+text, n2 = re.subn(r'sha256\s+"[^"]+"', f'sha256 "{sha}"', text, count=1)
+if n1 != 1 or n2 != 1:
+    raise SystemExit("Homebrew 配方缺少 version 或 sha256 行")
+path.write_text(text, encoding="utf-8")
+PY
+git -C "${tap_dir}" add "Casks/${CASK_NAME}.rb"
+if git -C "${tap_dir}" diff --cached --quiet; then
+  echo "Homebrew 配方已是 ${version}，无需更新"
+else
+  git -C "${tap_dir}" commit -m "${CASK_NAME} ${version}"
+  git -C "${tap_dir}" push origin HEAD
+fi
+
+# ---------- 9. 匿名终检 ----------
 log_step "匿名下载与更新清单终检"
-public_zip_url="${UPDATE_REPO_WEB}/releases/download/v${version}/NeatWebApp-${version}.zip"
-public_dmg_url="${UPDATE_REPO_WEB}/releases/download/v${version}/NeatWebApp-${version}.dmg"
-curl -fsSL "${UPDATE_FEED_URL}" -o "${work_dir}/published-appcast.xml" \
-  || die "公开 appcast 无法匿名下载"
-xmllint --noout "${work_dir}/published-appcast.xml" || die "线上 appcast 不是合法 XML"
-grep -qE "sparkle:version=\"${build_number}\"|<sparkle:version>${build_number}</sparkle:version>" \
-  "${work_dir}/published-appcast.xml" \
-  || die "线上 appcast 没有当前内部构建号 ${build_number}"
-curl -fsSL --range 0-0 "${public_zip_url}" -o /dev/null || die "Sparkle 更新包无法匿名下载"
-curl -fsSL --range 0-0 "${public_dmg_url}" -o /dev/null || die "首次安装 dmg 无法匿名下载"
+# raw.githubusercontent.com/main 常有 CDN 延迟，推送后立刻读可能仍是旧清单；重试并在末次回退到 GitHub Contents API。
+appcast_ok=0
+for attempt in 1 2 3 4 5 6 7 8; do
+  if curl -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
+    && xmllint --noout "${work_dir}/published-appcast.xml" \
+    && grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml"; then
+    appcast_ok=1
+    break
+  fi
+  echo "公开 appcast 尚未见到构建号 ${build_number}（第 ${attempt} 次，多半是 CDN 未刷新）"
+  sleep 15
+done
+if [[ "${appcast_ok}" -ne 1 ]]; then
+  curl -fsSL -H "Accept: application/vnd.github.raw" \
+    "https://api.github.com/repos/${REPO}/contents/appcast.xml?ref=main" \
+    -o "${work_dir}/published-appcast.xml" \
+    || die "公开 appcast 无法匿名下载（CDN 与 API 均失败）"
+  xmllint --noout "${work_dir}/published-appcast.xml" || die "线上 appcast 不是合法 XML"
+  grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml" \
+    || die "线上 appcast 没有当前内部构建号 ${build_number}"
+  echo "CDN 仍滞后，已用 GitHub Contents API 核对 appcast 构建号 ${build_number}"
+fi
+"${sparkle_bin_dir}/sign_update" --account "${SPARKLE_ACCOUNT}" --verify "${work_dir}/published-appcast.xml" >/dev/null \
+  || die "线上 appcast 完整性校验失败：公开更新清单未签名或传输后被改写"
+curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/NeatWebApp-${version}.zip" -o /dev/null \
+  || die "Sparkle 更新包无法匿名下载"
+curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/NeatWebApp-${version}.dmg" -o /dev/null \
+  || die "首次安装 dmg 无法匿名下载"
+curl -fsSL "https://raw.githubusercontent.com/${TAP_REPO}/HEAD/Casks/${CASK_NAME}.rb" \
+  | grep -q "version \"${version}\"" \
+  || die "Homebrew 配方未指向 ${version}"
 
 log_step "发布完成"
 cat <<EOF
-版本：v${version}
-首次安装：${public_dmg_url}
-自动更新：${UPDATE_FEED_URL}
-状态：安装包可匿名下载，宿主与内嵌运行时均已完成 Developer ID 签名、苹果公证与票据装订，
-      更新包与更新清单已用 NeatWebApp 专用的 EdDSA 密钥签名
+版本：${tag}（内部构建号 ${build_number}）
+首次安装：${REPO_WEB}/releases/latest
+一键安装：brew tap x0c/tap && brew install --cask ${CASK_NAME}
+自动更新：${FEED_URL}
+状态：安装包可匿名下载，已完成 Sparkle 签名、Developer ID 签名、苹果公证与票据装订
 EOF

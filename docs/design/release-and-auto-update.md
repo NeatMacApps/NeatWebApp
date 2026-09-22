@@ -2,16 +2,15 @@
 
 > 通用做法——分发形态选择、证书与密钥体系、构建配置基线、公证与票据装订、安装包制作、Sparkle 自更新、发版脚本骨架、踩坑速查表——见工作区共享文档 [macOS 应用签名、公证、分发与应用内自更新](../../../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md)。**本文只记 NeatWebApp 独有的取值与决策**，不重复通用规则。
 
-**状态**：已于 2026-08-03 在 Mac 上完成首次发版，v0.3.0 与 v0.3.1 均已签名、公证、装订并发布到两仓，正式 dmg 经匿名下载、票据校验与 Gatekeeper 判定验证通过。更新签名密钥已生成，公钥已写入宿主 `Info.plist`。
+**状态（2026-09-22）**：已迁移到 GitHub 公开仓 `NeatMacApps/NeatWebApp`（默认分支 `main`），Forgejo 双仓停止更新，v0.3.18 是最后一个 Forgejo 版本。首次发版（2026-08-03，v0.3.0/v0.3.1）均已签名、公证、装订，正式 dmg 经匿名下载、票据校验与 Gatekeeper 判定验证通过。更新签名密钥已生成，公钥已写入宿主 `Info.plist`。
 
-## 分发拓扑
+## 分发拓扑（2026-09-22 起走 GitHub，Forgejo 双仓已停更）
 
-- 私有源码仓 `Max/NeatWebApp`（默认分支 `master`）：源码、提交、标签和 dmg 备份，浏览器需登录。Git 远端走内网直连 `ssh://git@10.10.10.2:2222/Max/NeatWebApp.git`。
-- 公开只读更新仓 `Max/NeatWebApp-updates`（默认分支 `main`）：只放 appcast、版本说明、zip 更新包和 dmg 首装包，不含源码，匿名可下载。
-  - 首次安装页：`https://forgejo.caozc.top/Max/NeatWebApp-updates/releases/latest`
-  - 自动更新清单：`https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml`
-  - 更新仓 Git 远端：`ssh://git@10.10.10.2:2222/Max/NeatWebApp-updates.git`
-- 不把私有源码仓改公开，也不把 Forgejo 访问令牌嵌进应用；已安装客户端不需要保存任何令牌。
+- 公开源代码仓 `NeatMacApps/NeatWebApp`（默认分支 `main`）：源码、提交、标签、GitHub Release（dmg 首装包 + zip 更新包）与 `appcast.xml` 更新清单，全部匿名可下载。
+  - 首次安装页：`https://github.com/NeatMacApps/NeatWebApp/releases/latest`
+  - 自动更新清单：`https://raw.githubusercontent.com/NeatMacApps/NeatWebApp/main/appcast.xml`
+  - 一键安装：`brew tap x0c/tap && brew install --cask neatwebapp`
+- 不把任何令牌嵌进应用；已安装客户端不需要保存任何凭据。
 
 ## NeatWebApp 的具体取值
 
@@ -35,9 +34,9 @@
 - **发版产物必须来自「归档 → 按 Developer ID 导出」，不能取直接构建的产物。** 通用根因见共享文档，这里只记本项目的落地：脚本先 `archive` 到 `build/NeatWebApp.xcarchive`，再用 `method: developer-id` 的最小 `ExportOptions.plist`（脚本内联生成，不额外留文件）导出到 `build/export`，后续公证、装订、打包全部基于导出产物。首次发版时正是踩在这条上——直接构建的产物里 Sparkle 框架内部的 `Updater.app`、`Autoupdate` 与两个 XPC 服务仍是临时签名，苹果逐字打回。
 - **内嵌运行时必须设 `SKIP_INSTALL: YES`。** 不设的话它会作为独立产品进归档，`Products/Applications/` 下同时出现宿主与运行时两个应用，Xcode 判定不出分发方式，导出报「`method` 的可选值列表为空」，看起来像参数写错，实际是归档不合法。判据：正常归档的 `Info.plist` 含 `ApplicationProperties`。设了之后运行时照常作为宿主依赖被内嵌进 `Contents/Library/LoginItems`。
 - **签名自检必须逐个核对嵌套组件的签发者与时间戳。** `codesign --verify --deep --strict` 对临时签名的嵌套组件照样返回通过（它只看结构完整性），本地查不出任何异常，唯一反馈渠道是几十分钟后苹果的公证结果。脚本的 `assert_nested_helpers_signed` 就是补这个洞的。
-- **首装用 dmg、更新用 zip**，两者挂在公开更新仓同一版本的 Release 下；dmg 内不放任何 Gatekeeper 绕过脚本。
+- **首装用 dmg、更新用 zip**，两者挂在 GitHub 同一版本 Release 下；dmg 内不放任何 Gatekeeper 绕过脚本。
 - **Sparkle 行为**：每天自动检查，默认自动下载并安装；菜单栏保留「检查更新…」手动入口，且必须按更新器上已订阅的 `canCheckForUpdates` 禁用（不可在按钮初始化时新建观察对象，否则菜单栏主线程会打满）；宿主是 `LSUIElement`（常驻菜单栏、无主窗口），所以打开了温和提醒——只有用户主动触发时才让更新窗口抢焦点。**后台发现更新时不会弹窗**，只把菜单改成「安装 NeatWebApp x.x.x 更新…」；别把「没弹窗」当成「没更新」。
-- **「另一台电脑收不到更新」先查公开 appcast，再查本机构建号。** 匿名打开 `https://forgejo.caozc.top/Max/NeatWebApp-updates/raw/branch/main/appcast.xml`，看最新 `sparkle:version`；若本地 `project.yml` 已抬版本但 appcast 仍是旧号，说明**还没跑完整 `publish-release.sh`**，不是客户端坏了。本机构建号 ≥ 线上最新时，Sparkle 正确表现为「已是最新」。
+- **「收不到更新」先查公开 appcast，再查本机构建号。** 匿名打开 `https://raw.githubusercontent.com/NeatMacApps/NeatWebApp/main/appcast.xml`，看最新 `sparkle:version`；若本地 `project.yml` 已抬版本但 appcast 仍是旧号，说明**还没跑完整 `publish-release.sh`**，不是客户端坏了。本机构建号 ≥ 线上最新时，Sparkle 正确表现为「已是最新」。
 - **一上来就开签名清单校验。** `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction` 成对开启（Sparkle 要求必须成对），不只签更新包，连更新清单本身和版本说明也验签。清单自身的签名不是 XML 属性，而是 `generate_appcast` 追加在文件末尾的 `<!-- sparkle-signatures: … -->` 注释块，发版脚本按这个特征做检查。**开启后不允许再手工改已签名的 appcast**，脚本里不得出现「生成完再 sed 改两下」这种步骤。
 
 ## v0.3.2 发布与升级验证（2026-08-10）
@@ -64,12 +63,12 @@
 
 ```bash
 scripts/publish-release.sh              # 完整发版
-scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 Forgejo
+scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 GitHub
 ```
 
-前置：钥匙串有 Developer ID 证书与 account 为 `neatwebapp` 的 Sparkle 签名密钥、`.p8` 公证密钥在位、环境变量 `FORGEJO_REPO_TOKEN`（`--local-only` 不需要）。脚本可重复执行，tag / Release 已存在时走更新路径。
+前置：钥匙串有 Developer ID 证书与 account 为 `neatwebapp` 的 Sparkle 签名密钥、`.p8` 公证密钥在位、`scripts/publish-local.env` 已配好（模板见同目录 `.example`）、`gh` 已登录且有目标仓库权限（`--local-only` 不需要后两项）。脚本可重复执行，tag / Release 已存在时走更新路径。
 
-**公开仓附件上传：字节发完仍可能报失败，先查 Release 列表再决定要不要续传。** 经 `https://forgejo.caozc.top` 把 zip/dmg 传到公开更新仓时，curl 常在进度 100% 之后卡住，随后报 `Connection reset by peer` 或超时。这不等于文件没到服务器——先查该版本 Release 的附件列表：名字和体积对得上就不要重传，更不要重开归档和公证。只有列表里没有才续传；续传时把等回执的时间拉长（上传后等 JSON 可能要两分钟以上）。v0.3.10 发版时 zip 第一次被重置、第二次成功；dmg 第一次 curl 超时，但列表里已经有体积正确的附件。
+**GitHub Release 附件先建空再传，传完回读确认。** 建 Release 时带附件会 404 或留下空壳；两条附件要逐个传、逐个回读（脚本内已有 Python 回读段）。只有附件列表里名字和 `uploaded` 状态都对上才算发完，不要重开归档和公证。
 
 发版前只需改 `project.yml` 里的展示版本与内部构建号。构建号非正整数、或低于公开更新清单上的构建号，脚本都会直接退出。
 

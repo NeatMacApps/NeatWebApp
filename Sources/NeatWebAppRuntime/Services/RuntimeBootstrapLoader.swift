@@ -47,7 +47,7 @@ struct RuntimeBootstrapLoader {
 
     /// 从启动参数里读宿主进程号（`--host-pid`）：宿主异常没了时，运行时靠它认出
     /// 「当初拉起我的那个宿主已经不在」，再自己收尾退出。只认正数，缺失或非法返回 nil。
-    static func processIdentifier(after flag: String, in arguments: [String]) -> Int32? {
+    nonisolated static func processIdentifier(after flag: String, in arguments: [String]) -> Int32? {
         guard let index = arguments.firstIndex(of: flag),
               arguments.indices.contains(index + 1),
               let value = Int32(arguments[index + 1]),

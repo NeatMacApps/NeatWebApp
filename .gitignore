@@ -28,3 +28,4 @@ Package.resolved
 *.lock
 .pickup-pastes/
 .build-menubar-fix/
+scripts/publish-local.env

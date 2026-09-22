@@ -1,138 +1,80 @@
+**Languages:** English | [简体中文](README.zh-CN.md)
+
 # NeatWebApp
 
-NeatWebApp is an experimental macOS web app shell built with SwiftUI and WebKit. It combines a notch-triggered launcher, content-first browser windows, and a lightweight runtime model where each web app is hosted by its own helper process.
+<p align="center">
+  <img src="docs/images/app-icon.png" width="128" height="128" alt="NeatWebApp app icon">
+</p>
 
-The project currently targets Apple Silicon and Intel Macs running macOS 15 or later, and is developed with Xcode 16.2+ and Swift 6.
+**Turn websites into focused macOS apps.** Pin a site as its own window with its own cookies and data, then open it from a launcher at the notch — no tabs, no browser chrome in the way.
 
-## Highlights
+**Requires macOS 15 or later, Apple silicon or Intel.** Open source under the MIT License. Your sites and their data stay on your Mac — there is no account and no sync.
 
-- Notch-triggered launcher built with SwiftUI and AppKit window coordination
-- Content-first `WKWebView` windows with per-site zoom, persistence, and favicon caching
-- Daily browser capabilities in the runtime: camera/microphone prompts, file upload, automatic Downloads-folder saving, external app links, and native JavaScript dialogs
-- Runtime isolation: each web app window is hosted by `NeatWebAppRuntime` instead of the main app process
-- Shared side notch for collapsed WebApps, draggable from anywhere, with no hover drawer and left/right placement
-- Custom web app catalog with add, delete, URL editing, and drag-to-reorder management in the dashboard
-- Public-API notch detection based on `NSScreen.safeAreaInsets` and auxiliary top areas
-
-## Status
-
-NeatWebApp is a real working prototype, not a polished end-user product yet.
-
-What is already in place:
-
-- Launcher reveal and retention behavior for notched displays
-- Dashboard for managing custom web apps, including configured URLs, and inspecting notch geometry
-- Runtime registry refresh and takeover of outdated helper builds
-- Persistent site data through `WKWebsiteDataStore.default()`
-- Download status in the browser top bar, with completed downloads revealable in Finder
-- Unit tests for notch and side-Dock geometry, runtime registry persistence, favicon storage, browser chrome theme, and window auto-collapse behavior
-
-What is still intentionally evolving:
-
-- No stable import/export format for user-defined app catalogs yet
-- The dashboard still doubles as a control surface and diagnostics view
-- Multi-display and non-notched fallback behavior need more productization
+<!-- Screenshots: capture the launcher, a browser window and the dashboard into docs/images/, then uncomment
+<p align="center">
+  <img src="docs/images/launcher.png" width="360" alt="NeatWebApp notch launcher with pinned web apps">
+  <img src="docs/images/browser.png" width="360" alt="NeatWebApp browser window showing a pinned site">
+</p>
+<p align="center">
+  <img src="docs/images/dashboard.png" width="480" alt="NeatWebApp dashboard managing web apps and settings">
+</p>
+-->
 
 ## Install
 
-NeatWebApp ships as a signed and notarized drag-to-install disk image. No login and no Gatekeeper workaround is required.
+### Homebrew (recommended)
 
-1. Download the latest `NeatWebApp-<version>.dmg` from the [releases page](https://forgejo.caozc.top/Max/NeatWebApp-updates/releases/latest).
-2. Open the disk image and drag **NeatWebApp** into **Applications**.
-3. Launch it from Applications. NeatWebApp lives in the menu bar — it has no Dock icon.
+```sh
+brew tap x0c/tap
+brew install --cask neatwebapp
+```
 
-Updates are handled in-app: NeatWebApp checks daily, then downloads and installs new versions automatically. You can also trigger a check at any time from the menu bar item (**检查更新…**).
+### Direct download
 
-Requires macOS 15.0 or later on Apple Silicon or Intel.
+Grab the latest **signed and notarized** `NeatWebApp-x.y.z.dmg` from the [releases](https://github.com/NeatMacApps/NeatWebApp/releases/latest) page, then drag NeatWebApp to `/Applications`.
 
-## Requirements (development)
+NeatWebApp checks for updates automatically (via [Sparkle](https://sparkle-project.org)); there is also a **Check for Updates…** item in the menu bar menu.
 
-- macOS 15.0+
-- Xcode 16.2+
-- Swift 6
-- [XcodeGen 2.44+](https://github.com/yonaskolb/XcodeGen)
+### Build from source
 
-Dependencies are resolved through Swift Package Manager; [Sparkle](https://sparkle-project.org/) provides the in-app updater.
+Requires Xcode 16.2+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
-## Getting Started
-
-Generate the Xcode project:
-
-```bash
+```sh
+git clone https://github.com/NeatMacApps/NeatWebApp.git
+cd NeatWebApp
 xcodegen generate
+xcodebuild -project NeatWebApp.xcodeproj -scheme NeatWebApp -configuration Release \
+  -destination 'platform=macOS' -derivedDataPath build/DerivedData build
+rm -rf /Applications/NeatWebApp.app
+ditto build/DerivedData/Build/Products/Release/NeatWebApp.app /Applications/NeatWebApp.app
+open /Applications/NeatWebApp.app
 ```
 
-Build:
+NeatWebApp lives in the menu bar — it has no Dock icon. Hover the notch (or the top-center hot zone on displays without a notch) to open the launcher.
 
-```bash
-xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex build
-```
+## Usage
 
-Run tests:
+1. Open the dashboard from the launcher's **+** button and add a site: name plus URL.
+2. Hover the notch to open the launcher, click the site to open it in its own window.
+3. Each site keeps its own cookies, local storage, zoom level and bookmarks, separate from your browser and from other sites.
+4. Drag a window mostly off-screen and it tucks into the side dock; click its icon there to bring it back.
 
-```bash
-xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex test
-```
+## Features
 
-Install the freshly built app into `/Applications` and launch it:
+- Notch launcher: hover to reveal, click to open, plus a top-center hot zone on notch-less displays
+- Isolated browser windows: per-site cookies, storage, zoom and bookmarks via separate data stores
+- Side dock for tucked-away windows, draggable along screen edges
+- Per-site element hiding, download saving with reveal in Finder, file upload and camera/microphone prompts
+- Menu-bar presence with automatic Sparkle updates, no Dock icon
 
-```bash
-pkill -x "NeatWebApp" || true
-rm -rf "/Applications/NeatWebApp.app"
-ditto "build/DerivedData.noindex/Build/Products/Debug/NeatWebApp.app" "/Applications/NeatWebApp.app"
-for attempt in 1 2 3; do
-    if open "/Applications/NeatWebApp.app"; then
-        break
-    fi
-    if [ "$attempt" -eq 3 ]; then
-        echo "Failed to launch NeatWebApp after 3 attempts" >&2
-        exit 1
-    fi
-    sleep 1
-done
-```
+## Supported platforms
 
-## Repository Layout
+macOS 15 or later, Apple silicon or Intel. There is no Windows, Linux, iOS or web version — NeatWebApp is built on WebKit and AppKit APIs that only exist on the Mac.
 
-```text
-.
-├── project.yml
-├── README.md
-├── CONTRIBUTING.md
-├── docs/
-│   ├── architecture.md
-│   ├── notch-activation-research.md
-│   └── webapp-runtime-isolation-refactor.md
-├── scripts/
-│   └── publish-release.sh   # One-command release: build, sign, notarize, package, publish
-├── Sources/
-│   ├── NeatWebApp/          # Host app: dashboard, launcher, app catalog, runtime orchestration
-│   ├── NeatWebAppRuntime/   # Helper app: isolated browser window runtime
-│   └── Shared/              # Shared runtime models, IPC, persistence, and placement helpers
-└── Tests/
-    ├── NeatWebAppTests/
-    └── NeatWebAppRuntimeTests/
-```
+## Not in scope
 
-## Architecture At A Glance
+Tab browsing, extensions, profiles, cloud sync, shared browsing sessions, an App Store build, or an import/export format for site catalogs (the catalog currently lives in the app's local storage).
 
-- `NeatWebApp` is the host process. It owns the dashboard, menu bar controls, launcher UI, side-notch Dock, custom app catalog, favicon cache, and runtime coordination.
-- `NeatWebAppRuntime` is a helper app embedded into the host. Each launched web app gets its own runtime process with its own browser window lifecycle.
-- `Sources/Shared` contains runtime bootstrap models, event bus definitions, support-directory helpers, and placement utilities shared by both targets.
+## License
 
-More detail lives in [docs/architecture.md](docs/architecture.md). Historical context for the runtime split is documented in [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md).
-
-## Releasing
-
-Releases are cut from a maintainer's Mac with a single command. It builds, signs both the host app and the embedded runtime with a Developer ID identity, notarizes and staples them, produces the disk image and the update archive, and publishes both along with the signed update feed:
-
-```bash
-scripts/publish-release.sh              # full release
-scripts/publish-release.sh --local-only # produce a notarized dmg only, no publishing
-```
-
-Signing, notarization and stapling all require macOS tooling and a local keychain, so this cannot run on a Linux machine.
-
-## Contributing
-
-Development setup, validation workflow, and contribution expectations are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+[MIT](LICENSE)
