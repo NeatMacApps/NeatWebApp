@@ -59,6 +59,19 @@ final class BrowserSession {
     @ObservationIgnored
     private weak var userContentController: WKUserContentController?
 
+    /// attach 是高频入口：SwiftUI 每次刷新都会调一次。WebKit 的属性设置不是免费的
+    /// （跨进程 IPC，甚至触发重排），值没变时必须跳过，否则窗口缩放/任何界面刷新
+    /// 都会给内容进程加税。
+
+    @ObservationIgnored
+    private var lastAppliedPageZoom: Double?
+
+    @ObservationIgnored
+    private var lastAppliedUserAgentIsMobile: Bool?
+
+    @ObservationIgnored
+    private var lastAppliedBackgroundColor: BrowserThemeColor?
+
     @ObservationIgnored
     weak var commandHandler: (any BrowserSessionCommandHandling)?
 
@@ -95,9 +108,18 @@ final class BrowserSession {
         self.userContentController = webView.configuration.userContentController
         webView.allowsMagnification = true
         webView.allowsBackForwardNavigationGestures = true
-        webView.pageZoom = pageZoom
-        webView.underPageBackgroundColor = chromeTheme.pageColor.nsColor
-        applyUserAgent()
+        if lastAppliedPageZoom != pageZoom {
+            lastAppliedPageZoom = pageZoom
+            webView.pageZoom = pageZoom
+        }
+        if lastAppliedBackgroundColor != chromeTheme.pageColor {
+            lastAppliedBackgroundColor = chromeTheme.pageColor
+            webView.underPageBackgroundColor = chromeTheme.pageColor.nsColor
+        }
+        if lastAppliedUserAgentIsMobile != isMobileUA {
+            lastAppliedUserAgentIsMobile = isMobileUA
+            applyUserAgent()
+        }
 
         if webView.url == nil {
             webView.load(URLRequest(url: currentURL))
@@ -124,6 +146,7 @@ final class BrowserSession {
     }
 
     private func applyUserAgent() {
+        lastAppliedUserAgentIsMobile = isMobileUA
         webView?.customUserAgent = isMobileUA ? Self.mobileUserAgent : nil
     }
 
@@ -301,6 +324,8 @@ final class BrowserSession {
         case let .failed(reason):
             isPickingElement = false
             elementHidingNotice = reason
+        case let .broad(_, count, label):
+            elementHidingNotice = "「\(label)」在本站命中了 \(count) 处，已全部隐藏。若页面看起来不对、越用越卡，去魔法棒里还原最近隐藏的那条"
         }
     }
 
@@ -343,6 +368,10 @@ final class BrowserSession {
         commitHiddenElementRules()
 
         webView?.evaluateJavaScript(BrowserElementHidingScript.undoToastScript(label: label))
+        // 刚藏完就数一遍命中数：通用类名超标时页面会主动报 broad，面板里给出还原指引。
+        webView?.evaluateJavaScript(
+            BrowserElementHidingScript.reportBroadRuleScript(selector: selector, label: label)
+        )
     }
 
     private func restoreMostRecentlyHiddenElement() {
@@ -419,6 +448,16 @@ final class BrowserSession {
         downloadItems[index].message = message
     }
 
+    /// 把完成或失败的下载状态从顶栏拿掉，只清界面提示，不删已落盘的文件。
+    /// 正在下载的不让关：关掉会像取消下载，但文件其实还在继续写。
+    func clearDownload(id: UUID) {
+        guard let item = downloadItems.first(where: { $0.id == id }), item.phase != .running else {
+            return
+        }
+
+        downloadItems.removeAll { $0.id == id }
+    }
+
     func revealLatestDownload() {
         guard let destinationURL = downloadItems.first(where: { $0.destinationURL != nil })?.destinationURL else {
             return
@@ -434,6 +473,7 @@ final class BrowserSession {
         }
 
         chromeTheme = nextTheme
+        lastAppliedBackgroundColor = nextTheme.pageColor
         webView?.underPageBackgroundColor = nextTheme.pageColor.nsColor
         onChromeThemeChange?(nextTheme)
     }
@@ -465,6 +505,7 @@ final class BrowserSession {
         }
 
         pageZoom = clampedZoom
+        lastAppliedPageZoom = clampedZoom
         webView?.pageZoom = clampedZoom
         persistPreference()
     }

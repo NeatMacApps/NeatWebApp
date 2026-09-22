@@ -9,6 +9,7 @@ struct DashboardView: View {
     @State private var editorTarget: WebAppEditorTarget?
     @State private var appToDelete: WebAppDefinition?
     @State private var draggedApp: WebAppDefinition?
+    @State private var dropTargetID: String?
     @State private var hoveredAppID: String?
     @FocusState private var focusedAppID: String?
 
@@ -81,8 +82,19 @@ struct DashboardView: View {
     private func appRow(for app: WebAppDefinition) -> some View {
         let isHovered = hoveredAppID == app.id
         let isFocused = focusedAppID == app.id
+        let isDropTarget = dropTargetID == app.id && draggedApp?.id != app.id
 
         return HStack(spacing: 12) {
+            // 拖动把手：整行都能拖，但只有这个手柄在视觉上承诺可拖动。
+            // 把手不抢打开/更多按钮的点击，也不触发双击打开。
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(.tertiary)
+                .frame(width: 16, height: 46)
+                .contentShape(Rectangle())
+                .help("拖动排序")
+                .accessibilityLabel("拖动\(app.name)排序")
+
             WebAppIconView(
                 app: app,
                 size: 24,
@@ -136,9 +148,20 @@ struct DashboardView: View {
             .allowsHitTesting(isHovered || isFocused)
         }
         .padding(.horizontal, 14)
+        .padding(.leading, 2)
         .frame(height: 46)
         .contentShape(Rectangle())
         .background((isHovered || isFocused) ? Color.primary.opacity(0.05) : Color.clear)
+        // 拖到这一行时只画一条插入线：不改行高、不跳动，原顺序松手前不动。
+        .overlay(alignment: .top) {
+            if isDropTarget {
+                Rectangle()
+                    .fill(Color.accentColor)
+                    .frame(height: 2)
+                    .padding(.leading, 30)
+                    .padding(.trailing, 8)
+            }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(Color.primary.opacity(isFocused ? 0.7 : 0), lineWidth: 2)
@@ -167,6 +190,7 @@ struct DashboardView: View {
         }
         .onDrag {
             draggedApp = app
+            dropTargetID = nil
             return NSItemProvider(object: app.id as NSString)
         }
         .onDrop(
@@ -175,6 +199,7 @@ struct DashboardView: View {
                 item: app,
                 items: appModel.apps,
                 draggedItem: $draggedApp,
+                dropTargetID: $dropTargetID,
                 appModel: appModel
             )
         )
@@ -454,23 +479,25 @@ private struct AppDropDelegate: DropDelegate {
     let item: WebAppDefinition
     let items: [WebAppDefinition]
     @Binding var draggedItem: WebAppDefinition?
+    @Binding var dropTargetID: String?
     let appModel: AppModel
 
+    /// 拖过时只记「准备放到哪一行前面」，不改数组、不写盘、不刷新运行时。
+    /// 真正换位和持久化只在松手那一刻做一次；中途取消则什么都不发生。
     func dropEntered(info: DropInfo) {
         guard let draggedItem,
               draggedItem.id != item.id,
-              let from = items.firstIndex(of: draggedItem),
-              let to = items.firstIndex(of: item) else {
+              items.contains(where: { $0.id == draggedItem.id }),
+              items.contains(where: { $0.id == item.id }) else {
             return
         }
 
-        if from != to {
-            var indexSet = IndexSet()
-            indexSet.insert(from)
-            let destination = to > from ? to + 1 : to
-            withAnimation(.default) {
-                appModel.moveCustomApps(from: indexSet, to: destination)
-            }
+        dropTargetID = item.id
+    }
+
+    func dropExited(info: DropInfo) {
+        if dropTargetID == item.id {
+            dropTargetID = nil
         }
     }
 
@@ -479,7 +506,29 @@ private struct AppDropDelegate: DropDelegate {
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        draggedItem = nil
+        defer {
+            draggedItem = nil
+            dropTargetID = nil
+        }
+
+        guard let draggedItem,
+              draggedItem.id != item.id,
+              let from = items.firstIndex(of: draggedItem),
+              let to = items.firstIndex(of: item) else {
+            return false
+        }
+
+        // 无变化的松手不写盘：避免一次空拖也触发保存和运行时刷新。
+        guard from != to else {
+            return true
+        }
+
+        var indexSet = IndexSet()
+        indexSet.insert(from)
+        let destination = to > from ? to + 1 : to
+        withAnimation(.default) {
+            appModel.moveCustomApps(from: indexSet, to: destination)
+        }
         return true
     }
 }

@@ -47,6 +47,12 @@ extension AppModel {
         runtimeCoordinator.terminateAll()
     }
 
+    /// 宿主正常退出也要收掉所有 WebApp 运行时：它们是从应用包里启动的独立进程，
+    /// 宿主没了它们还会留在后台。和更新覆盖安装共用同一条收口。
+    func prepareForApplicationTermination() {
+        runtimeCoordinator.terminateAll()
+    }
+
     func addCustomApp(_ app: WebAppDefinition) {
         apps.append(app)
         customAppStore.save(apps)

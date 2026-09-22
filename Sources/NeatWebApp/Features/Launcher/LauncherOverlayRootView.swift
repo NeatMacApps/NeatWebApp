@@ -199,8 +199,6 @@ struct LauncherOverlayRootView: View {
     }
 
     private func handleDragChanged(for app: WebAppDefinition, value: DragGesture.Value) {
-        debugDragLog("BEGIN app=\(app.name) orderedCount=\(orderedApps.count) trans=\(value.translation.width)")
-
         if draggingAppID != app.id {
             draggingAppID = app.id
             draggingStartIndex = orderedApps.firstIndex(of: app) ?? 0
@@ -209,7 +207,6 @@ struct LauncherOverlayRootView: View {
 
         let slotWidth = context.layout.iconSize + context.layout.iconSpacing
         guard slotWidth > 0, let currentIndex = orderedApps.firstIndex(of: app) else {
-            debugDragLog("EARLY-RETURN slotWidth=\(slotWidth) found=\(orderedApps.contains(app))")
             return
         }
 
@@ -234,8 +231,6 @@ struct LauncherOverlayRootView: View {
             startIndex: draggingStartIndex,
             slotWidth: slotWidth
         )
-
-        debugDragLog("MOVE start=\(draggingStartIndex) current=\(currentIndex) target=\(targetIndex) offset=\(dragOffsetX) order=\(orderedApps.map(\.name).joined(separator: ","))")
     }
 
     private func handleDragEnded() {
@@ -243,21 +238,6 @@ struct LauncherOverlayRootView: View {
         draggingAppID = nil
         dragOffsetX = 0
         appModel.applyAppOrder(finalOrder)
-    }
-
-    private func debugDragLog(_ message: String) {
-        let url = URL(fileURLWithPath: "/tmp/neatwebapp_drag.log")
-        if !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
-        }
-        guard let handle = try? FileHandle(forWritingTo: url) else {
-            return
-        }
-        try? handle.seekToEnd()
-        if let data = "[\(Date().timeIntervalSince1970)] \(message)\n".data(using: .utf8) {
-            try? handle.write(contentsOf: data)
-        }
-        try? handle.close()
     }
 
     @ViewBuilder

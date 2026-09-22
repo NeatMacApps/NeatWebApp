@@ -19,6 +19,7 @@ enum BrowserElementHidingScript {
         case cancelled
         case undoLatest
         case failed(reason: String)
+        case broad(selector: String, count: Int, label: String)
 
         init?(body: Any) {
             guard let payload = body as? [String: Any], let type = payload["type"] as? String else {
@@ -46,6 +47,29 @@ enum BrowserElementHidingScript {
                 self = .undoLatest
             case "failed":
                 self = .failed(reason: payload["reason"] as? String ?? "这个元素没法被稳定定位")
+            case "broad":
+                guard
+                    let selector = (payload["selector"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                    !selector.isEmpty
+                else {
+                    return nil
+                }
+                let count: Int
+                if let int = payload["count"] as? Int {
+                    count = int
+                } else if let double = payload["count"] as? Double {
+                    count = Int(double)
+                } else if let number = payload["count"] as? NSNumber {
+                    count = number.intValue
+                } else {
+                    return nil
+                }
+                let label = (payload["label"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                self = .broad(
+                    selector: selector,
+                    count: count,
+                    label: (label?.isEmpty == false ? label! : "这块元素")
+                )
             default:
                 return nil
             }
@@ -72,6 +96,15 @@ enum BrowserElementHidingScript {
 
     static func undoToastScript(label: String) -> String {
         "window.__neatWebAppElementHiding?.showUndoToast(\(jsonString(label)));"
+    }
+
+    /// 刚隐藏完立刻数一下这条选择器命中了多少元素：超过阈值说明它不是用户指的那一小块，
+    /// 而是全站通用类名（如 `.visible`），页面脚本一多就会反复触发全量样式匹配、越用越卡。
+    /// 只回传超标的情况，不打扰正常的单块隐藏。
+    static let broadRuleMatchLimit = 30
+
+    static func reportBroadRuleScript(selector: String, label: String, limit: Int = broadRuleMatchLimit) -> String {
+        "window.__neatWebAppElementHiding?.reportBroadRule(\(jsonString(selector)), \(jsonString(label)), \(limit));"
     }
 
     /// 规则序列化成 JSON。选择器里出现花括号说明它已经不是选择器了，直接丢掉，
@@ -492,7 +525,18 @@ enum BrowserElementHidingScript {
                 },
                 startPicking,
                 stopPicking,
-                showUndoToast
+                showUndoToast,
+                reportBroadRule: (selector, label, limit) => {
+                    let count = 0;
+                    try {
+                        count = document.querySelectorAll(selector).length;
+                    } catch (error) {
+                        return;
+                    }
+                    if (count > limit) {
+                        handler?.postMessage({ type: 'broad', selector, label, count });
+                    }
+                }
             };
 
             applyRules();

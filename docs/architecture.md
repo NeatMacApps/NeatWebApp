@@ -30,6 +30,7 @@ The helper app owns:
 - a single web app runtime identified by `WebAppDefinition.id`
 - `WKWebView` and browser session state
 - the browser window lifecycle and collapse-state publication
+- host-lifecycle supervision (implemented 2026-09-21, unit-tested, installed-app acceptance pending): a normally quitting host asks runtimes to terminate cooperatively, while an unexpectedly terminated host is detected by the runtime through a captured host application identity before the runtime performs its own registry/lock cleanup and exits
 - runtime event publication back to the host
 
 ### `Sources/Shared`
@@ -58,6 +59,8 @@ Placeholder windows live in the host process only as a **covering lid** while La
 Host and runtime are separate processes with separate preference domains. Window size and position therefore live in a shared Application Support file both processes read, and the host still passes the exact frame in the bootstrap so the first appearance cannot drift even if the two processes would otherwise pick different screens.
 
 ## Runtime Window Lifecycle
+
+The 2026-09-21 implementation passes the host process identifier only as a launch-time supervision hint. The runtime resolves that identifier to an `NSRunningApplication` object before starting its monitor, so a reused PID is not treated as the original host. The monitor is cancelled during normal runtime cleanup. Site data remains in the existing per-web-app WebKit data store; lifecycle cleanup removes only runtime registry/bootstrap/lock artifacts. Build plus full unit tests pass; installed-app acceptance (real Quit linkage, abnormal-termination drill) is still pending.
 
 - The top chrome band's `×` button and `Command W` collapse the browser into the side notch. The old separate circle collapse button has been removed.
 - Ending a WebApp is a deliberate side-notch gesture: drag its icon toward the screen center past the close threshold and release. The host then asks that runtime to terminate; it removes its state/bootstrap files and exits.
@@ -136,6 +139,8 @@ The browser bridge owns daily browser capabilities that WebKit does not enable b
 | `Command D` | bookmark or unbookmark the current page for this web app only |
 
 Two deliberate exclusions: `Command ←`/`Command →` stay with the page because they mean "start/end of line" inside a web text field, and `Command H` stays the system hide command, so home is only reachable with Shift. Interception has to happen in `performKeyEquivalent` rather than `keyDown` — a focused web input would otherwise swallow the key first.
+
+The runtime's SwiftUI `App` still needs a `Scene` even though its only window is built by AppKit (`RuntimeWindowCoordinator`), so `NeatWebAppRuntimeApp` declares `Settings { EmptyView() }` purely as a placeholder. That placeholder implicitly binds `Command ,` to a blank Settings window, so it strips the binding back out with an empty `CommandGroup(replacing: .appSettings)`. The runtime must never grow a real Settings UI: preferences live in the host's main window, where `Command ,` intentionally opens that window instead.
 
 The host app intentionally does not receive browser media entitlements. Only `NeatWebAppRuntime` owns camera and microphone capability because it is the process that hosts webpage content.
 

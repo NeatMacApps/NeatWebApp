@@ -220,21 +220,25 @@ struct SettingsSectionView: View {
     }
 
     /// 设置行统一形态：左侧一句话标题，右侧控件；补充说明只作为悬停提示，不占版面。
+    /// 标题列固定最小宽度、控件列右对齐：标题再长也只换行不顶控件，开关边永远一条线。
     private func settingRow<Control: View>(
         _ title: LocalizedStringKey,
         help: LocalizedStringKey? = nil,
         @ViewBuilder control: () -> Control
     ) -> some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Text(title)
                 .font(.system(size: 13))
+                .frame(minWidth: 120, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 12)
 
             control()
+                .frame(minWidth: 176, alignment: .trailing)
         }
         .padding(.horizontal, 14)
-        .frame(height: 38)
+        .frame(minHeight: 38)
         .contentShape(Rectangle())
         .modifier(OptionalHelpModifier(text: help))
     }

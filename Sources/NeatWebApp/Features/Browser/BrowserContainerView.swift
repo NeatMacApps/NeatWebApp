@@ -109,36 +109,62 @@ private struct BrowserDownloadIndicator: View {
 
     var body: some View {
         if let latestDownload = session.downloadItems.first {
-            Button(action: session.revealLatestDownload) {
-                HStack(spacing: 4) {
-                    Image(systemName: iconName(for: latestDownload.phase))
-                        .font(.system(size: 10, weight: .semibold))
+            HStack(spacing: 0) {
+                Button(action: session.revealLatestDownload) {
+                    HStack(spacing: 4) {
+                        Image(systemName: iconName(for: latestDownload.phase))
+                            .font(.system(size: 10, weight: .semibold))
 
-                    Text(title(for: latestDownload))
-                        .font(.system(size: 10, weight: .semibold))
-                        .lineLimit(1)
+                        Text(title(for: latestDownload))
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(theme.foregroundColor.color.opacity(0.88))
+                    .padding(.leading, 7)
+                    .padding(.trailing, isDismissible(latestDownload) ? 6 : 7)
+                    .frame(height: BrowserChromeLayout.buttonSize)
                 }
-                .foregroundStyle(theme.foregroundColor.color.opacity(0.88))
-                .padding(.horizontal, 7)
-                .frame(height: BrowserChromeLayout.buttonSize)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(theme.highlightedFillColor.color)
-                )
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .focused($isFocused)
+                .disabled(latestDownload.destinationURL == nil)
+                .help(helpText(for: latestDownload))
+                .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
+                .accessibilityHint(helpText(for: latestDownload))
+
+                if isDismissible(latestDownload) {
+                    Rectangle()
+                        .fill(theme.foregroundColor.color.opacity(0.2))
+                        .frame(width: 1, height: 12)
+
+                    Button {
+                        session.clearDownload(id: latestDownload.id)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(theme.foregroundColor.color.opacity(0.72))
+                            .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
+                    }
+                    .buttonStyle(.plain)
+                    .focusEffectDisabled()
+                    .help(Text("browser.download.dismiss"))
+                    .accessibilityLabel(localized("browser.download.dismiss"))
+                }
             }
-            .buttonStyle(.plain)
-            .focusEffectDisabled()
-            .focused($isFocused)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(theme.highlightedFillColor.color)
+            )
             .overlay {
                 Capsule(style: .continuous)
                     .stroke(theme.foregroundColor.color.opacity(isFocused ? 0.8 : 0), lineWidth: 2)
                     .padding(-2)
             }
-            .disabled(latestDownload.destinationURL == nil)
-            .help(helpText(for: latestDownload))
-            .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
-            .accessibilityHint(helpText(for: latestDownload))
         }
+    }
+
+    private func isDismissible(_ item: BrowserDownloadItem) -> Bool {
+        item.phase != .running
     }
 
     private func title(for item: BrowserDownloadItem) -> String {
@@ -191,7 +217,7 @@ private struct BrowserBookmarkListControl: View {
 
     var body: some View {
         BrowserChromeButton(
-            systemImage: "bookmark",
+            systemImage: "list.bullet.rectangle",
             theme: theme,
             isHighlighted: isPanelPresented,
             accessibilityLabel: localized("browser.chrome.bookmark.list"),

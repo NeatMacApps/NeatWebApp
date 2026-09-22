@@ -539,9 +539,39 @@ private enum BrowserThemeObserver {
                     'contain: strict'
                 ].join('; ');
 
+                // computed style 已经是 rgb()/rgba() 时直接解析，不建探测节点、不读布局；
+                // 只有站点写了颜色名、hex 等非 rgb 写法时，才走探测节点归一化。
+                const fastRgbMatch = (value) => {
+                    if (typeof value !== 'string') {
+                        return null;
+                    }
+
+                    const match = value.match(/^rgba?\\(([0-9]+),\\s*([0-9]+),\\s*([0-9]+)(?:,\\s*([0-9.]+))?\\)$/i);
+                    if (!match) {
+                        return null;
+                    }
+
+                    const alpha = match[4] === undefined ? 1 : Number(match[4]);
+                    if (!Number.isFinite(alpha) || alpha <= 0.01) {
+                        return null;
+                    }
+
+                    return {
+                        red: Number(match[1]) / 255,
+                        green: Number(match[2]) / 255,
+                        blue: Number(match[3]) / 255,
+                        alpha
+                    };
+                };
+
                 const parseColor = (value) => {
                     if (!value || value === 'transparent') {
                         return null;
+                    }
+
+                    const fast = fastRgbMatch(value);
+                    if (fast) {
+                        return fast;
                     }
 
                     const probe = ensureProbe();
@@ -572,6 +602,7 @@ private enum BrowserThemeObserver {
 
                 // 顶栏让位带要和页面顶端严丝合缝，所以直接取视口最上沿真正被绘制出来的颜色：
                 // 从顶端中点向上找第一个不透明背景，命中的往往就是站点自己的顶部导航底色。
+                // 顶端颜色命中即返回解析结果：外层不再对它做第二次解析。
                 const readTopEdgeBackground = () => {
                     const width = window.innerWidth || document.documentElement?.clientWidth || 0;
                     if (width <= 0) {
@@ -583,7 +614,7 @@ private enum BrowserThemeObserver {
                         const backgroundColor = getComputedStyle(node).backgroundColor;
                         const parsed = parseColor(backgroundColor);
                         if (parsed && parsed.alpha > 0.95) {
-                            return backgroundColor;
+                            return parsed;
                         }
                         node = node.parentElement;
                     }
@@ -594,9 +625,10 @@ private enum BrowserThemeObserver {
                 const readCandidateColors = () => {
                     const candidates = [];
 
+                    // 顶端命中直接就是第一候选：找到了就不用再翻 body/html/main 和主题色。
                     const topEdgeBackground = readTopEdgeBackground();
                     if (topEdgeBackground) {
-                        candidates.push(topEdgeBackground);
+                        return [topEdgeBackground];
                     }
 
                     const nodes = [
@@ -620,7 +652,7 @@ private enum BrowserThemeObserver {
                     }
 
                     // 页面没有任何显式背景时，浏览器实际画的是白色；退回深色会让让位带变成一条黑条。
-                    candidates.push('rgb(255, 255, 255)');
+                    candidates.push({ red: 1, green: 1, blue: 1, alpha: 1 });
 
                     return candidates;
                 };
@@ -648,7 +680,8 @@ private enum BrowserThemeObserver {
 
                 const postTheme = () => {
                     for (const candidate of readCandidateColors()) {
-                        const color = parseColor(candidate);
+                        // 候选已经是解析结果（顶端命中）或原始颜色字符串：字符串才需要再解析。
+                        const color = typeof candidate === 'string' ? parseColor(candidate) : candidate;
                         if (!color) {
                             continue;
                         }
@@ -669,11 +702,19 @@ private enum BrowserThemeObserver {
                         clearTimeout(timeout);
                     }
                     pendingTimeouts.clear();
+                    pendingDelayedPost.timeout = null;
                 };
 
                 let lastPostAt = 0;
+                let pendingDelayedPost = { timeout: null };
 
                 const schedulePost = () => {
+                    // 藏起来的标签页不取色：elementFromPoint 照样强制布局，纯属浪费；
+                    // 回到可见时 visibilitychange 会主动重同步。
+                    if (document.hidden) {
+                        return;
+                    }
+
                     if (pendingFrame !== 0) {
                         return;
                     }
@@ -692,18 +733,51 @@ private enum BrowserThemeObserver {
                 };
 
                 const schedulePostAfterDelay = (delay) => {
+                    // 普通节流最多留一个待执行的定时器：高频变更时旧的直接作废，
+                    // 不堆出一串排队回调。导航/加载的主动重同步走 scheduleResyncBurst。
+                    if (pendingDelayedPost.timeout !== null) {
+                        return;
+                    }
+
                     const timeout = setTimeout(() => {
+                        pendingDelayedPost.timeout = null;
                         pendingTimeouts.delete(timeout);
                         schedulePost();
                     }, delay);
+                    pendingDelayedPost.timeout = timeout;
                     pendingTimeouts.add(timeout);
                 };
 
                 const scheduleResyncBurst = () => {
                     clearPendingTimeouts();
                     schedulePost();
-                    schedulePostAfterDelay(180);
-                    schedulePostAfterDelay(900);
+                    // 导航/加载后的两次补采：第一次清掉待执行的旧节流，第二次直接排新定时器，
+                    // 不走「最多留一个」的普通节流上限，免得第一次占位把第二次吞掉。
+                    const first = setTimeout(() => {
+                        pendingTimeouts.delete(first);
+                        schedulePost();
+                    }, 180);
+                    pendingTimeouts.add(first);
+                    const second = setTimeout(() => {
+                        pendingTimeouts.delete(second);
+                        schedulePost();
+                    }, 900);
+                    pendingTimeouts.add(second);
+                };
+
+                const headChildListAffectsTheme = (record) => {
+                    const affects = (list) => {
+                        for (const node of list) {
+                            if (node && node.nodeType === 1) {
+                                const tag = node.tagName;
+                                if (tag === 'META' || tag === 'STYLE' || tag === 'LINK') {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    };
+                    return affects(record.addedNodes) || affects(record.removedNodes);
                 };
 
                 const observeAttributes = (node) => {
@@ -722,8 +796,14 @@ private enum BrowserThemeObserver {
                 const headObserver = new MutationObserver((records) => {
                     for (const record of records) {
                         if (record.type === 'childList') {
-                            schedulePost();
-                            return;
+                            // head 里脚本、预加载等与顶部颜色无关的节点增删很频繁：
+                            // 只有可能影响取色的 META/STYLE/LINK 才触发重采，
+                            // 否则每次都会走 elementFromPoint + computed style 强制布局。
+                            if (headChildListAffectsTheme(record)) {
+                                schedulePost();
+                                return;
+                            }
+                            continue;
                         }
 
                         if (

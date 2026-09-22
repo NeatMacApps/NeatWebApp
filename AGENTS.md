@@ -9,6 +9,7 @@ macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 ## 文档导航
 
 - [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatWebApp/app-macos/AGENTS.md)：改、评审或排查 WebApp 容器功能前必读。
+- [docs/design/dashboard-settings.md](docs/design/dashboard-settings.md)：改、评审或排查主窗口网页应用目录与内嵌设置布局前必读。
 
 <!-- managed:inherited-agents:end -->
 
@@ -177,6 +178,8 @@ done
 - 若你改动了测试或新增了测试设施，请同步更新本文件中的命令示例。
 
 ## 文档导航
+
+- [docs/design/app-improvement-plan.md](docs/design/app-improvement-plan.md): **Must read before resuming the 2026-09-20 app improvement work** (host quit, partial off-screen placement, downloads/bookmarks, long-page performance, management layout and sorting). Records confirmed causes, proposed behavior, acceptance gates and retained unverified prototypes; do not restart implementation or publish the prototypes merely because this plan exists.
 
 - [../../_standards/workspace-docs/swift-docs/macos-system-permissions.md](../../_standards/workspace-docs/swift-docs/macos-system-permissions.md)：新增全局按键监听、屏幕内容读取、摄像头或通知能力前必读；含权限被拒后的降级引导与开发期授权失效的根因。
 - [../../_standards/workspace-docs/swift-docs/apple-app-preferences.md](../../_standards/workspace-docs/swift-docs/apple-app-preferences.md)：新增用户可调设置项、或纠结某个值该存哪之前必读。

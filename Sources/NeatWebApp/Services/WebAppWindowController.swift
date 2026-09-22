@@ -26,6 +26,9 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     var isAnimatingFloatingIconTransition = false
     var lastExternalFrontmostApplication: NSRunningApplication?
     var coverageWatchTask: Task<Void, Never>?
+    /// 窗口拖动时 windowDidMove 高频触发：全量偏好编解码 + 文件协调锁不能每 tick 跑，
+    /// 先记一笔、停稳再写；隐藏/关闭/缩放结束走立即落盘。
+    var pendingFramePersistTask: Task<Void, Never>?
     var environmentObservers: [NSObjectProtocol] = []
     var suppressAutoCollapseUntil = Date.distantPast
     /// 宿主已经把占位窗摆到这个框上时，首次显示禁止再挪，否则会跳一下。
@@ -218,11 +221,26 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return
         }
 
-        persistWindowFrame()
+        schedulePersistWindowFrame()
+    }
+
+    func windowDidChangeScreen(_ notification: Notification) {
+        // 只有显示器断开、整扇窗掉到所有屏幕之外时才找回；
+        // 普通拖到屏幕边缘（还压着当前屏）不碰，免得刚拖出去就被拽回来。
+        guard let window else {
+            return
+        }
+
+        let stillOnSomeScreen = NSScreen.screens.contains { $0.frame.intersects(window.frame) }
+        guard !stillOnSomeScreen else {
+            return
+        }
+
+        ensureWindowFrameIsVisible(preferredGeometry: preferredGeometry)
     }
 
     func windowDidEndLiveResize(_ notification: Notification) {
-        persistWindowFrame()
+        flushPendingFramePersist()
     }
 
     func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {

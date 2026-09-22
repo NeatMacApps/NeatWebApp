@@ -18,9 +18,13 @@ struct NeatWebAppApp: App {
     init() {
         let appModel = AppModel()
         appModel.startIfNeeded()
-        self.appModel = appModel
-        appUpdater = AppUpdater {
+        let updater = AppUpdater {
             appModel.prepareForApplicationUpdate()
+        }
+        self.appModel = appModel
+        self.appUpdater = updater
+        appDelegate.prepareForTermination = { [weak appModel] in
+            appModel?.prepareForApplicationTermination()
         }
     }
 

@@ -9,16 +9,19 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private let appLock: RuntimeAppLock
     private let eventPublisher: RuntimeEventPublisher
     private let commandListener: RuntimeCommandListener
+    private let hostProcessID: Int32?
     private let preferencesStore = WebAppPreferencesStore()
     private let dockReserveStore = SideDockReserveStore()
     private var windowController: WebAppWindowController?
     private var hasPreparedTermination = false
     private var dockReserveObserver: NSObjectProtocol?
+    private var hostLifecycleTask: Task<Void, Never>?
 
     init(
         bootstrap: RuntimeBootstrap,
         registryStore: RuntimeRegistryStore = RuntimeRegistryStore(),
-        commandBus: RuntimeCommandBus = RuntimeCommandBus()
+        commandBus: RuntimeCommandBus = RuntimeCommandBus(),
+        hostProcessID: Int32? = nil
     ) {
         self.bootstrap = bootstrap
         self.appModel = RuntimeAppModel(definition: bootstrap.definition)
@@ -30,6 +33,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             commandBus: commandBus
         )
         self.commandListener = RuntimeCommandListener(commandBus: commandBus)
+        self.hostProcessID = hostProcessID
     }
 
     func start() throws {
@@ -42,6 +46,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         commandListener.start(instanceID: bootstrap.instanceID) { [weak self] command in
             self?.handle(command)
         }
+        startHostLifecycleMonitor()
 
         eventPublisher.publish(
             eventName: .runtimeStarted,
@@ -80,6 +85,8 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             dockReserveStore.removeObserver(dockReserveObserver)
             self.dockReserveObserver = nil
         }
+        hostLifecycleTask?.cancel()
+        hostLifecycleTask = nil
         commandListener.stop()
         let windowFrame = windowController?.window?.frame ?? appModel.windowFrame
         let floatingIconFrame = appModel.floatingIconFrame
@@ -207,6 +214,30 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         }
 
         return NSScreen.main.flatMap(ScreenNotchGeometry.init(screen:))
+    }
+
+    /// 宿主异常退出时的兜底：正常退出走宿主发来的结束命令；宿主没机会发（崩溃、被杀），
+    /// 就靠启动时记下的宿主身份发现「它已经不在」，再自己收掉注册状态并退出。
+    /// 身份在启动瞬间解析成对象后不再按号码重查，所以号码被系统回收给新进程也不会误伤。
+    private func startHostLifecycleMonitor() {
+        guard let hostProcessID,
+              hostProcessID != ProcessInfo.processInfo.processIdentifier,
+              let hostApplication = NSRunningApplication(processIdentifier: hostProcessID) else {
+            return
+        }
+
+        hostLifecycleTask?.cancel()
+        hostLifecycleTask = Task { [weak self, hostApplication] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                guard hostApplication.isTerminated else { continue }
+
+                self?.prepareForTermination()
+                NSApplication.shared.terminate(nil)
+                return
+            }
+        }
     }
 
     private func restoreInitialPresentation(with controller: WebAppWindowController) {

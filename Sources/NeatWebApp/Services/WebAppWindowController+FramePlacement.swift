@@ -121,6 +121,8 @@ extension WebAppWindowController {
     }
 
     func persistWindowFrame() {
+        pendingFramePersistTask?.cancel()
+        pendingFramePersistTask = nil
         guard let window, !shouldHoldLaunchFrame, !window.isZoomed else {
             return
         }
@@ -138,5 +140,24 @@ extension WebAppWindowController {
         }
 
         session.persistWindowFrame(window.frame, on: window.screen)
+    }
+
+    /// 拖动中的合并写：停稳约 400ms 才真正落盘。隐藏/关闭/缩放结束等明确时间点
+    /// 走 persistWindowFrame 立即写，不会丢位置。
+    func schedulePersistWindowFrame() {
+        pendingFramePersistTask?.cancel()
+        pendingFramePersistTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else {
+                return
+            }
+            self?.persistWindowFrame()
+        }
+    }
+
+    func flushPendingFramePersist() {
+        pendingFramePersistTask?.cancel()
+        pendingFramePersistTask = nil
+        persistWindowFrame()
     }
 }

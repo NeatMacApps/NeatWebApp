@@ -31,7 +31,8 @@ final class RuntimeLauncher: RuntimeLaunching {
         configuration.createsNewApplicationInstance = true
         configuration.arguments = [
             "--instance-id", bootstrap.instanceID.uuidString,
-            "--bootstrap-path", bootstrapURL.path
+            "--bootstrap-path", bootstrapURL.path,
+            "--host-pid", String(ProcessInfo.processInfo.processIdentifier)
         ]
 
         NSWorkspace.shared.openApplication(at: runtimeURL, configuration: configuration) { _, error in

@@ -105,6 +105,14 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载：%@" } }
       }
     },
+    "browser.download.dismiss" : {
+      "comment" : "下载完成或失败提示上的关闭按钮，只清除状态提示，不删除文件。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss Download Notice" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭下载提示" } }
+      }
+    },
     "browser.download.help.reveal" : {
       "comment" : "下载完成时的操作提示，%@ 是文件名。",
       "extractionState" : "manual",

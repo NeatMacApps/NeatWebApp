@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let terminationGuard = TerminationGuard()
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
+    var prepareForTermination: () -> Void = {}
     private var presentMainWindow: (() -> Void)?
     /// 后台就绪时刻；菜单栏即主入口的二次启动防呆用。
     private var readyAt = Date()
@@ -38,7 +39,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        terminationGuard.shouldTerminate() ? .terminateNow : .terminateCancel
+        guard terminationGuard.shouldTerminate() else {
+            return .terminateCancel
+        }
+
+        // The browser runtimes are separate processes. Ask them to finish their
+        // own cleanup before AppKit tears down the host process.
+        prepareForTermination()
+        return .terminateNow
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Keep this idempotent: this is also the fallback for termination paths
+        // that do not give the normal quit action another callback opportunity.
+        prepareForTermination()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

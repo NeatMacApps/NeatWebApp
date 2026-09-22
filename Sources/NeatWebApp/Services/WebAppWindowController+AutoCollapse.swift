@@ -51,7 +51,7 @@ extension WebAppWindowController {
 
         coverageWatchTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(100))
+                try? await Task.sleep(for: .milliseconds(250))
                 guard !Task.isCancelled, let self else {
                     return
                 }
@@ -85,6 +85,17 @@ extension WebAppWindowController {
             return false
         }
 
+        // 便宜条件先行：窗口列表快照（WindowServer IPC + 全窗口矩形差集）很贵，
+        // 置顶/已收起/动画中/可见/最小化任一不满足就直接返回，不碰快照。
+        guard !session.isPinned,
+              floatingIconPanel == nil,
+              !isAnimatingFloatingIconTransition,
+              window.isVisible,
+              !window.isKeyWindow,
+              !window.isMiniaturized else {
+            return false
+        }
+
         return Self.shouldCollapseWindowWhenOccluded(
             isPinned: session.isPinned,
             hasFloatingIconPanel: floatingIconPanel != nil,
@@ -107,6 +118,8 @@ extension WebAppWindowController {
         isMiniaturized: Bool,
         hiddenFraction: CGFloat
     ) -> Bool {
+        // 注意：实例侧 isEligibleForAutoCollapse 会先做一遍同样的便宜检查，
+        // 这里保留全量判断，供单测与无窗口上下文的调用方使用。
         !isPinned &&
         !hasFloatingIconPanel &&
         !isAnimatingFloatingIconTransition &&
