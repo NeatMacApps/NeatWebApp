@@ -96,11 +96,12 @@ xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration D
 ### 发版
 ```bash
 scripts/publish-release.sh              # 完整发版
-scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 Forgejo
+scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 GitHub
 ```
-- 构建、签名、公证、装订、打 dmg、生成签名更新清单、提交打 tag、两仓发布、匿名终检全在里面，可重复执行。
+- 构建、签名、公证、装订、打 dmg、生成签名更新清单、提交打 tag、GitHub Release、appcast 入库、Homebrew cask、匿名终检全在里面，可重复执行。
 - 发版前只改 `project.yml` 里的 `MARKETING_VERSION` 与 `CURRENT_PROJECT_VERSION`（两个 `Info.plist` 都从这里取值）；构建号只增不减，不递增就等于用户端永远提示「已是最新」。
-- 只能在 macOS 本机跑；细节、排障「收不到更新」与待发 v0.3.2 接手清单见 [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)。
+- **【裁定 2026-09-23】工作完成且验证通过后，主动走完「升号 → 发版脚本 → 本机安装核验」全链路，不等用户说「发布」。** 公证排队是外部等待：进后台独立进程、日志可查，确认启动后即汇报，不轮询空等；跑完接着做匿名终检核对与覆盖安装验版本号。
+- 只能在 macOS 本机跑；细节与排障「收不到更新」见 [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)。
 
 ### 分析 / 近似 lint
 ```bash
@@ -188,7 +189,7 @@ done
 - [../../_standards/workspace-docs/swift-docs/apple-localization.md](../../_standards/workspace-docs/swift-docs/apple-localization.md)：新增、修改、评审或排查任何用户可见文案、中英语言覆盖、字符串目录与伪语言验收前**必读**；否则宿主与运行时会继续把不可翻译的字面量写进代码，无法达到 macOS 基线 A3。
 - [../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改、评审或排查本应用任何位置的玻璃与半透明材质前必读；本项目两条玻璃裁定（顶栏不用玻璃、侧边 Dock 底板用玻璃）的通用部分已上收至此，其中还记录了非激活窗口玻璃变暗所依赖的私有方法风险。
 - [../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md](../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md)：改、评审或排查签名、公证、安装包制作、应用内自更新、Homebrew 渠道时的**通用做法与踩坑速查**以此为准；本项目专有取值见下一条，两者不重复。
-- [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发版、改发版脚本、改版本号、改签名或权限配置、改自动更新行为，或排查「别人机器装不上 / 装了升不了级 / **另一台电脑收不到更新提醒** / **公开仓附件上传报 Connection reset 或超时**」前必读；含本项目专有取值、温和提醒不弹窗、先核公开 appcast 构建号，以及附件上传假失败时禁止重开归档公证。
+- [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发版、改发版脚本、改版本号、改签名或权限配置、改自动更新行为，或排查「别人机器装不上 / 装了升不了级 / 收不到更新提醒」前必读；含本项目专有取值、温和提醒不弹窗、先核公开 appcast 构建号。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
 - [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作、进程划分，或浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖）前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
