@@ -293,7 +293,7 @@ final class BrowserSession {
 
     func beginElementPicking() {
         guard !currentSiteHost.isEmpty else {
-            elementHidingNotice = "当前页面不是普通网页，没法在上面隐藏元素"
+            elementHidingNotice = String(localized: "browser.hiding.not_webpage")
             return
         }
 
@@ -325,7 +325,7 @@ final class BrowserSession {
             isPickingElement = false
             elementHidingNotice = reason
         case let .broad(_, count, label):
-            elementHidingNotice = "「\(label)」在本站命中了 \(count) 处，已全部隐藏。若页面看起来不对、越用越卡，去魔法棒里还原最近隐藏的那条"
+            elementHidingNotice = String(format: String(localized: "browser.hiding.hidden_format"), label, count)
         }
     }
 
@@ -353,7 +353,7 @@ final class BrowserSession {
             !resolvedHost.isEmpty,
             BrowserElementHidingScript.isUsableSelector(selector)
         else {
-            elementHidingNotice = "这个元素没法被稳定定位，换一块试试"
+            elementHidingNotice = String(localized: "browser.hiding.unstable")
             return
         }
 

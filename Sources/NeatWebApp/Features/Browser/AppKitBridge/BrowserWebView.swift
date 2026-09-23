@@ -428,11 +428,11 @@ struct BrowserWebView: NSViewRepresentable {
         }
 
         private func confirmExternalNavigation(url: URL?, sourceURL: URL?) -> Bool {
-            let target = url?.absoluteString ?? "未知地址"
+            let target = url?.absoluteString ?? localized("browser.external.unknown_address")
             let source = sourceURL?.host(percentEncoded: false) ?? session.definition.name
             return presentConfirmation(
-                messageText: "打开外部应用？",
-                informativeText: "\(source) 想打开：\n\(target)"
+                messageText: localized("browser.external.open_title"),
+                informativeText: String(format: localized("browser.external.open_message_format"), source, target)
             )
         }
 
@@ -447,7 +447,7 @@ struct BrowserWebView: NSViewRepresentable {
 
             if NSWorkspace.shared.open(url) == false {
                 presentAlert(
-                    messageText: "无法打开外部链接",
+                    messageText: localized("browser.external.open_failed_title"),
                     informativeText: url.absoluteString,
                     style: .warning
                 )

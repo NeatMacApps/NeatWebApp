@@ -24,6 +24,7 @@
 		1E605FE456B399F6831022C9 /* NeatWebAppRuntime.app in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1FB2A9FDAC6C02C2A8AB783F /* BrowserDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC891DBB5C3E7A9AF43B963D /* BrowserDownloadManager.swift */; };
 		21042A7DD039F33193D58EA3 /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
+		22DCA8705DF9D2457DA0BB16 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FA8E0636DDA9544F89A1DF07 /* InfoPlist.xcstrings */; };
 		2424A93CD84E461F797C6730 /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
 		28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */; };
 		28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
@@ -44,6 +45,7 @@
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */; };
 		50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
+		54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */; };
 		57255E5E31B75DA42753471B /* SettingsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD8BAF9F67E646378E54D35 /* SettingsSectionView.swift */; };
 		57AAD8C3620E8214942B09CB /* BrowserDownloadStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */; };
 		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
@@ -187,6 +189,7 @@
 		264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowMetrics.swift; sourceTree = "<group>"; };
 		26C080DE9BFB192B813F8AF3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchActivationMonitor.swift; sourceTree = "<group>"; };
+		29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		2BB10AA221B5D6084CE21715 /* BrowserSelectorFinderScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSelectorFinderScript.swift; sourceTree = "<group>"; };
 		2CA3AF66651F1FBC5BAF31CA /* WebAppBrowserWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppBrowserWindow.swift; sourceTree = "<group>"; };
 		2F7BE1250B6C8CE2B61ADCA7 /* BrowserKeyCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserKeyCommandTests.swift; sourceTree = "<group>"; };
@@ -288,6 +291,7 @@
 		F510DB1DB8B76472F5AC77B9 /* 0.3.5.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.5.md; sourceTree = "<group>"; };
 		F5F478CF4AC713B4E0DDCDA3 /* 0.3.19.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.19.md; sourceTree = "<group>"; };
 		F99DF162F766071E7C75979E /* SideDockPresentationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockPresentationContext.swift; sourceTree = "<group>"; };
+		FA8E0636DDA9544F89A1DF07 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeTheme.swift; sourceTree = "<group>"; };
 		FAEE97117BE593E10BB07730 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 		FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayRootView.swift; sourceTree = "<group>"; };
@@ -478,6 +482,7 @@
 			isa = PBXGroup;
 			children = (
 				CA36AC137155F2119DABC19B /* Info.plist */,
+				FA8E0636DDA9544F89A1DF07 /* InfoPlist.xcstrings */,
 				0EB67C38393D8498752F7523 /* NeatWebAppRuntime.entitlements */,
 				598C296D366948C8346E36D6 /* NeatWebAppRuntimeApp.swift */,
 			);
@@ -572,6 +577,7 @@
 				22AB86B7F555EAF061B89125 /* AppCommands.swift */,
 				EC457812D675337401F6B7A6 /* AppDelegate.swift */,
 				CD7BD55FB4EA79C3E38633C3 /* Info.plist */,
+				29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */,
 				3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */,
 			);
 			path = App;
@@ -791,6 +797,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */,
+				54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */,
 				A7243172079700FAA6172130 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -800,6 +807,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				63AD3C45FA8BB7FB529986E6 /* Assets.xcassets in Resources */,
+				22DCA8705DF9D2457DA0BB16 /* InfoPlist.xcstrings in Resources */,
 				FD177764B8FA812F38A6F9F0 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

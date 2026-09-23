@@ -29,19 +29,19 @@ struct DashboardView: View {
             WebAppEditorSheet(appModel: appModel, target: target)
         }
         .alert(
-            "删除「\(appToDelete?.name ?? "")」？",
+            String(format: String(localized: "dashboard.delete_title_format"), appToDelete?.name ?? ""),
             isPresented: Binding(
                 get: { appToDelete != nil },
                 set: { if !$0 { appToDelete = nil } }
             )
         ) {
-            Button("删除", role: .destructive) {
+            Button(String(localized: "dashboard.delete"), role: .destructive) {
                 if let appToDelete {
                     appModel.deleteCustomApp(appToDelete)
                 }
                 appToDelete = nil
             }
-            Button("取消", role: .cancel) {
+            Button(String(localized: "dashboard.cancel"), role: .cancel) {
                 appToDelete = nil
             }
         }
@@ -50,7 +50,7 @@ struct DashboardView: View {
     private var appsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("网页应用")
+                Text(String(localized: "dashboard.section_title"))
                     .panelSectionTitle()
 
                 Spacer()
@@ -58,11 +58,11 @@ struct DashboardView: View {
                 Button {
                     editorTarget = .new
                 } label: {
-                    Label("添加", systemImage: "plus")
+                    Label(String(localized: "dashboard.add"), systemImage: "plus")
                 }
                 .controlSize(.small)
                 .focusEffectDisabled()
-                .accessibilityLabel("添加网页应用")
+                .accessibilityLabel(String(localized: "dashboard.add_accessibility"))
             }
 
             VStack(spacing: 0) {
@@ -92,8 +92,8 @@ struct DashboardView: View {
                 .foregroundStyle(.tertiary)
                 .frame(width: 16, height: 46)
                 .contentShape(Rectangle())
-                .help("拖动排序")
-                .accessibilityLabel("拖动\(app.name)排序")
+                .help(String(localized: "dashboard.drag_help"))
+                .accessibilityLabel(String(format: String(localized: "dashboard.drag_accessibility_format"), app.name))
 
             WebAppIconView(
                 app: app,
@@ -118,20 +118,20 @@ struct DashboardView: View {
 
             // 操作按钮只在指针移到该行时出现，静态列表保持干净。
             HStack(spacing: 4) {
-                Button("打开") {
+                Button(String(localized: "dashboard.open")) {
                     appModel.openWebApp(app)
                 }
                 .controlSize(.small)
                 .focusEffectDisabled()
 
                 Menu {
-                    Button("编辑…") {
+                    Button(String(localized: "dashboard.edit")) {
                         editorTarget = .existing(app)
                     }
 
                     Divider()
 
-                    Button("删除", role: .destructive) {
+                    Button(String(localized: "dashboard.delete"), role: .destructive) {
                         appToDelete = app
                     }
                 } label: {
@@ -173,8 +173,8 @@ struct DashboardView: View {
             appModel.openWebApp(app)
             return .handled
         }
-        .accessibilityLabel("\(app.name)，\(app.homeURL.host ?? app.homeURL.absoluteString)")
-        .accessibilityHint("按下回车打开网页应用")
+        .accessibilityLabel(String(format: String(localized: "dashboard.row_accessibility_format"), app.name, app.homeURL.host ?? app.homeURL.absoluteString))
+        .accessibilityHint(String(localized: "dashboard.row_hint"))
         .accessibilityAction {
             appModel.openWebApp(app)
         }
@@ -204,17 +204,17 @@ struct DashboardView: View {
             )
         )
         .contextMenu {
-            Button("打开") {
+            Button(String(localized: "dashboard.open")) {
                 appModel.openWebApp(app)
             }
 
-            Button("编辑…") {
+            Button(String(localized: "dashboard.edit")) {
                 editorTarget = .existing(app)
             }
 
             Divider()
 
-            Button("删除", role: .destructive) {
+            Button(String(localized: "dashboard.delete"), role: .destructive) {
                 appToDelete = app
             }
         }
@@ -258,12 +258,12 @@ private struct WebAppEditorSheet: View {
     }
 
     private static let accentColors: [(name: String, label: String, color: Color)] = [
-        ("WebAppAccentBlue", "蓝色", .blue),
-        ("WebAppAccentGreen", "绿色", .green),
-        ("WebAppAccentOrange", "橙色", .orange),
-        ("WebAppAccentRed", "红色", .red),
-        ("WebAppAccentPurple", "紫色", .indigo),
-        ("WebAppAccentGray", "灰色", .gray)
+        ("WebAppAccentBlue", String(localized: "dashboard.accent.blue"), .blue),
+        ("WebAppAccentGreen", String(localized: "dashboard.accent.green"), .green),
+        ("WebAppAccentOrange", String(localized: "dashboard.accent.orange"), .orange),
+        ("WebAppAccentRed", String(localized: "dashboard.accent.red"), .red),
+        ("WebAppAccentPurple", String(localized: "dashboard.accent.purple"), .indigo),
+        ("WebAppAccentGray", String(localized: "dashboard.accent.gray"), .gray)
     ]
 
     init(appModel: AppModel, target: WebAppEditorTarget) {
@@ -302,10 +302,10 @@ private struct WebAppEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(isEditing ? "编辑网页应用" : "添加网页应用")
+            Text(isEditing ? String(localized: "dashboard.editor_title_edit") : String(localized: "dashboard.add_accessibility"))
                 .font(.system(size: 15, weight: .semibold))
 
-            textField("网址", prompt: "example.com", text: $urlString, field: .url)
+            textField(String(localized: "dashboard.field_url"), prompt: "example.com", text: $urlString, field: .url)
                 .onChange(of: urlString) { _, newValue in
                     guard !hasEditedName else {
                         return
@@ -314,7 +314,7 @@ private struct WebAppEditorSheet: View {
                     name = Self.suggestedName(from: newValue)
                 }
 
-            textField("名称", prompt: "显示在启动器中的名称", text: $name, field: .name)
+            textField(String(localized: "dashboard.field_name"), prompt: String(localized: "dashboard.field_name_prompt"), text: $name, field: .name)
                 .onChange(of: name) { _, _ in
                     if focusedField == .name {
                         hasEditedName = true
@@ -322,7 +322,7 @@ private struct WebAppEditorSheet: View {
                 }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("底色")
+                Text(String(localized: "dashboard.accent_title"))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
 
@@ -351,12 +351,12 @@ private struct WebAppEditorSheet: View {
             HStack {
                 Spacer()
 
-                Button("取消") {
+                Button(String(localized: "dashboard.cancel")) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button(isEditing ? "保存" : "添加") {
+                Button(isEditing ? String(localized: "dashboard.save") : String(localized: "dashboard.add")) {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)

@@ -14,7 +14,7 @@ extension AppModel {
         case .success:
             break
         case .failure(let error):
-            diagnosticsMessage = "设置开机自启失败：\(error.localizedDescription)"
+            diagnosticsMessage = "Failed to set launch at login: \(error.localizedDescription)"
         }
 
         refreshLaunchAtLoginState()

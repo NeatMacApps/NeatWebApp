@@ -1,390 +1,1062 @@
 {
-  "sourceLanguage" : "zh-Hans",
-  "strings" : {
-    "browser.bookmark.delete" : {
-      "comment" : "收藏列表里删除一条收藏的按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove Bookmark" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除收藏" } }
+  "sourceLanguage": "zh-Hans",
+  "strings": {
+    "browser.bookmark.delete": {
+      "comment": "收藏列表里删除一条收藏的按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Bookmark"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除收藏"
+          }
+        }
       }
     },
-    "browser.bookmark.empty" : {
-      "comment" : "收藏列表为空时的说明。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No bookmarks yet. Click the star to save this page for this web app." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没有收藏。点星星可以把当前页面加进这个网页应用的收藏。" } }
+    "browser.bookmark.empty": {
+      "comment": "收藏列表为空时的说明。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No bookmarks yet. Click the star to save this page for this web app."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有收藏。点星星可以把当前页面加进这个网页应用的收藏。"
+          }
+        }
       }
     },
-    "browser.bookmark.open" : {
-      "comment" : "收藏列表里打开一条收藏的操作提示。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Bookmark" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开收藏" } }
+    "browser.bookmark.open": {
+      "comment": "收藏列表里打开一条收藏的操作提示。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Bookmark"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开收藏"
+          }
+        }
       }
     },
-    "browser.chrome.bookmark.add" : {
-      "comment" : "浏览器窗口顶部按钮：把当前页面加入这个网页应用的收藏。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bookmark This Page" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏当前页面" } }
+    "browser.chrome.bookmark.add": {
+      "comment": "浏览器窗口顶部按钮：把当前页面加入这个网页应用的收藏。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bookmark This Page"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏当前页面"
+          }
+        }
       }
     },
-    "browser.chrome.bookmark.list" : {
-      "comment" : "浏览器窗口顶部按钮：打开当前网页应用自己的收藏列表。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bookmarks" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏列表" } }
+    "browser.chrome.bookmark.list": {
+      "comment": "浏览器窗口顶部按钮：打开当前网页应用自己的收藏列表。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bookmarks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏列表"
+          }
+        }
       }
     },
-    "browser.chrome.bookmark.remove" : {
-      "comment" : "浏览器窗口顶部按钮：把当前页面从收藏里去掉。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove Bookmark" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消收藏" } }
+    "browser.chrome.bookmark.remove": {
+      "comment": "浏览器窗口顶部按钮：把当前页面从收藏里去掉。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Bookmark"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消收藏"
+          }
+        }
       }
     },
-    "browser.chrome.collapse" : {
-      "comment" : "浏览器窗口顶部按钮：将窗口收进侧边 Dock。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Collapse to Side Dock" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收进侧边刘海" } }
+    "browser.chrome.collapse": {
+      "comment": "浏览器窗口顶部按钮：将窗口收进侧边 Dock。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse to Side Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收进侧边刘海"
+          }
+        }
       }
     },
-    "browser.chrome.pin" : {
-      "comment" : "浏览器窗口顶部按钮：使窗口保持置顶。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep Window on Top" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "窗口置顶" } }
+    "browser.chrome.pin": {
+      "comment": "浏览器窗口顶部按钮：使窗口保持置顶。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Window on Top"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "窗口置顶"
+          }
+        }
       }
     },
-    "browser.chrome.reload" : {
-      "comment" : "浏览器窗口顶部按钮：返回网页应用配置的地址并刷新。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Return to Configured Address and Reload" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "回到配置地址并刷新" } }
+    "browser.chrome.reload": {
+      "comment": "浏览器窗口顶部按钮：返回网页应用配置的地址并刷新。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to Configured Address and Reload"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回到配置地址并刷新"
+          }
+        }
       }
     },
-    "browser.chrome.unpin" : {
-      "comment" : "浏览器窗口顶部按钮：取消窗口置顶。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop Keeping Window on Top" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消窗口置顶" } }
+    "browser.chrome.unpin": {
+      "comment": "浏览器窗口顶部按钮：取消窗口置顶。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Keeping Window on Top"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消窗口置顶"
+          }
+        }
       }
     },
-    "browser.chrome.user_agent.desktop" : {
-      "comment" : "浏览器窗口顶部按钮：将网页标识切换为桌面版。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use Desktop Website Identity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换为桌面网页标识" } }
+    "browser.chrome.user_agent.desktop": {
+      "comment": "浏览器窗口顶部按钮：将网页标识切换为桌面版。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Desktop Website Identity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换为桌面网页标识"
+          }
+        }
       }
     },
-    "browser.chrome.user_agent.mobile" : {
-      "comment" : "浏览器窗口顶部按钮：将网页标识切换为手机版。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use Mobile Website Identity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换为手机网页标识" } }
+    "browser.chrome.user_agent.mobile": {
+      "comment": "浏览器窗口顶部按钮：将网页标识切换为手机版。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Mobile Website Identity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换为手机网页标识"
+          }
+        }
       }
     },
-    "browser.download.accessibility.label" : {
-      "comment" : "下载指示器的 VoiceOver 标签，%@ 是当前下载状态。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download: %@" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载：%@" } }
+    "browser.download.accessibility.label": {
+      "comment": "下载指示器的 VoiceOver 标签，%@ 是当前下载状态。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载：%@"
+          }
+        }
       }
     },
-    "browser.download.dismiss" : {
-      "comment" : "下载完成或失败提示上的关闭按钮，只清除状态提示，不删除文件。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss Download Notice" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭下载提示" } }
+    "browser.download.dismiss": {
+      "comment": "下载完成或失败提示上的关闭按钮，只清除状态提示，不删除文件。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss Download Notice"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭下载提示"
+          }
+        }
       }
     },
-    "browser.download.help.reveal" : {
-      "comment" : "下载完成时的操作提示，%@ 是文件名。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show %@ in Finder" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在访达中显示 %@" } }
+    "browser.download.help.reveal": {
+      "comment": "下载完成时的操作提示，%@ 是文件名。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show %@ in Finder"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在访达中显示 %@"
+          }
+        }
       }
     },
-    "browser.download.help.running" : {
-      "comment" : "下载进行时的操作提示，%@ 是文件名。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Downloading %@" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在下载 %@" } }
+    "browser.download.help.running": {
+      "comment": "下载进行时的操作提示，%@ 是文件名。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下载 %@"
+          }
+        }
       }
     },
-    "browser.download.status.completed" : {
-      "comment" : "下载状态。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download Complete" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载完成" } }
+    "browser.download.status.completed": {
+      "comment": "下载状态。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Complete"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载完成"
+          }
+        }
       }
     },
-    "browser.download.status.failed" : {
-      "comment" : "下载状态。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download Failed" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载失败" } }
+    "browser.download.status.failed": {
+      "comment": "下载状态。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载失败"
+          }
+        }
       }
     },
-    "browser.download.status.multiple" : {
-      "comment" : "下载状态，%lld 是正在下载的项目数量。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld Downloads in Progress" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载中 %lld" } }
+    "browser.download.status.multiple": {
+      "comment": "下载状态，%lld 是正在下载的项目数量。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Downloads in Progress"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载中 %lld"
+          }
+        }
       }
     },
-    "browser.download.status.progress" : {
-      "comment" : "下载状态，%lld 是完成百分比。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Downloading %lld%%" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载中 %lld%%" } }
+    "browser.download.status.progress": {
+      "comment": "下载状态，%lld 是完成百分比。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %lld%%"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载中 %lld%%"
+          }
+        }
       }
     },
-    "browser.download.status.running" : {
-      "comment" : "下载状态。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Downloading" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载中" } }
+    "browser.download.status.running": {
+      "comment": "下载状态。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载中"
+          }
+        }
       }
     },
-    "browser.element_hiding.empty" : {
-      "comment" : "网页元素隐藏面板的空状态。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No hidden elements yet" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没有隐藏任何元素" } }
+    "browser.element_hiding.empty": {
+      "comment": "网页元素隐藏面板的空状态。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hidden elements yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有隐藏任何元素"
+          }
+        }
       }
     },
-    "browser.element_hiding.enter" : {
-      "comment" : "浏览器顶部按钮：进入网页元素隐藏模式。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide an Element on This Page" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "隐藏网页上的元素" } }
+    "browser.element_hiding.enter": {
+      "comment": "浏览器顶部按钮：进入网页元素隐藏模式。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide an Element on This Page"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏网页上的元素"
+          }
+        }
       }
     },
-    "browser.element_hiding.enter.help" : {
-      "comment" : "进入网页元素隐藏模式的操作提示。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide an element on this page" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "隐藏网页上的元素" } }
+    "browser.element_hiding.enter.help": {
+      "comment": "进入网页元素隐藏模式的操作提示。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide an element on this page"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏网页上的元素"
+          }
+        }
       }
     },
-    "browser.element_hiding.exit" : {
-      "comment" : "浏览器顶部按钮：退出网页元素挑选模式。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exit Element Selection" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出网页元素挑选" } }
+    "browser.element_hiding.exit": {
+      "comment": "浏览器顶部按钮：退出网页元素挑选模式。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exit Element Selection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出网页元素挑选"
+          }
+        }
       }
     },
-    "browser.element_hiding.exit.help" : {
-      "comment" : "退出网页元素挑选模式的操作提示。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exit selection without hiding anything" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出挑选，不隐藏任何元素" } }
+    "browser.element_hiding.exit.help": {
+      "comment": "退出网页元素挑选模式的操作提示。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exit selection without hiding anything"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出挑选，不隐藏任何元素"
+          }
+        }
       }
     },
-    "browser.element_hiding.pick" : {
-      "comment" : "网页元素隐藏面板的主操作按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose an Element to Hide" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "挑选要隐藏的元素" } }
+    "browser.element_hiding.pick": {
+      "comment": "网页元素隐藏面板的主操作按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an Element to Hide"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "挑选要隐藏的元素"
+          }
+        }
       }
     },
-    "browser.element_hiding.restore" : {
-      "comment" : "网页元素隐藏面板里单条规则的恢复按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show Element Again" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "恢复显示" } }
+    "browser.element_hiding.restore": {
+      "comment": "网页元素隐藏面板里单条规则的恢复按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Element Again"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复显示"
+          }
+        }
       }
     },
-    "browser.element_hiding.restore_all" : {
-      "comment" : "网页元素隐藏面板：恢复所有被隐藏的元素。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore All" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部恢复" } }
+    "browser.element_hiding.restore_all": {
+      "comment": "网页元素隐藏面板：恢复所有被隐藏的元素。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部恢复"
+          }
+        }
       }
     },
-    "browser.element_hiding.section.current" : {
-      "comment" : "网页元素隐藏面板中当前站点的规则分组标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "This Website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "当前网站" } }
+    "browser.element_hiding.section.current": {
+      "comment": "网页元素隐藏面板中当前站点的规则分组标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前网站"
+          }
+        }
       }
     },
-    "browser.element_hiding.section.other" : {
-      "comment" : "网页元素隐藏面板中其他站点的规则分组标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Other Websites" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "其他网站" } }
+    "browser.element_hiding.section.other": {
+      "comment": "网页元素隐藏面板中其他站点的规则分组标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Websites"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他网站"
+          }
+        }
       }
     },
-    "browser.permission.camera.open_settings" : {
-      "comment" : "摄像头权限被拒后的系统设置入口。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Camera Settings" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开摄像头设置" } }
+    "browser.permission.camera.open_settings": {
+      "comment": "摄像头权限被拒后的系统设置入口。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Camera Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开摄像头设置"
+          }
+        }
       }
     },
-    "browser.permission.media.camera.title" : {
-      "comment" : "网页摄像头权限被拒后的提示标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Camera Is Unavailable to This Website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "网页暂时无法使用摄像头" } }
+    "browser.permission.media.camera.title": {
+      "comment": "网页摄像头权限被拒后的提示标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera Is Unavailable to This Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页暂时无法使用摄像头"
+          }
+        }
       }
     },
-    "browser.permission.media.camera_microphone.title" : {
-      "comment" : "网页摄像头和麦克风权限被拒后的提示标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Camera and Microphone Are Unavailable to This Website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "网页暂时无法使用摄像头和麦克风" } }
+    "browser.permission.media.camera_microphone.title": {
+      "comment": "网页摄像头和麦克风权限被拒后的提示标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera and Microphone Are Unavailable to This Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页暂时无法使用摄像头和麦克风"
+          }
+        }
       }
     },
-    "browser.permission.media.capability.camera" : {
-      "comment" : "摄像头权限缺失时受影响的网页功能。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "video calls or capturing photos and video" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "视频通话或拍摄" } }
+    "browser.permission.media.capability.camera": {
+      "comment": "摄像头权限缺失时受影响的网页功能。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "video calls or capturing photos and video"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频通话或拍摄"
+          }
+        }
       }
     },
-    "browser.permission.media.capability.camera_microphone" : {
-      "comment" : "摄像头和麦克风权限缺失时受影响的网页功能。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "video or voice calls" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "视频或语音通话" } }
+    "browser.permission.media.capability.camera_microphone": {
+      "comment": "摄像头和麦克风权限缺失时受影响的网页功能。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "video or voice calls"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频或语音通话"
+          }
+        }
       }
     },
-    "browser.permission.media.capability.microphone" : {
-      "comment" : "麦克风权限缺失时受影响的网页功能。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "voice calls or recording" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "语音通话或录音" } }
+    "browser.permission.media.capability.microphone": {
+      "comment": "麦克风权限缺失时受影响的网页功能。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "voice calls or recording"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语音通话或录音"
+          }
+        }
       }
     },
-    "browser.permission.media.message" : {
-      "comment" : "网页媒体权限被拒后的说明，%1$@ 是网页应用名，%2$@ 是受影响功能。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "You previously did not allow %1$@ to use the required device. You can still browse this website, but you cannot use %2$@ yet. After enabling the permission in System Settings, return here and it will be checked again automatically." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "你之前没有允许 %1$@ 使用所需设备，因此网页仍可浏览，但暂时不能进行%2$@。在系统设置中打开权限后，回到这里会自动重新检查。" } }
+    "browser.permission.media.message": {
+      "comment": "网页媒体权限被拒后的说明，%1$@ 是网页应用名，%2$@ 是受影响功能。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You previously did not allow %1$@ to use the required device. You can still browse this website, but you cannot use %2$@ yet. After enabling the permission in System Settings, return here and it will be checked again automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你之前没有允许 %1$@ 使用所需设备，因此网页仍可浏览，但暂时不能进行%2$@。在系统设置中打开权限后，回到这里会自动重新检查。"
+          }
+        }
       }
     },
-    "browser.permission.media.microphone.title" : {
-      "comment" : "网页麦克风权限被拒后的提示标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Microphone Is Unavailable to This Website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "网页暂时无法使用麦克风" } }
+    "browser.permission.media.microphone.title": {
+      "comment": "网页麦克风权限被拒后的提示标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone Is Unavailable to This Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页暂时无法使用麦克风"
+          }
+        }
       }
     },
-    "browser.permission.microphone.open_settings" : {
-      "comment" : "麦克风权限被拒后的系统设置入口。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Microphone Settings" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开麦克风设置" } }
+    "browser.permission.microphone.open_settings": {
+      "comment": "麦克风权限被拒后的系统设置入口。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Microphone Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开麦克风设置"
+          }
+        }
       }
     },
-    "browser.permission.passkey.message" : {
-      "comment" : "通行密钥在第三方网页应用内不可用的说明，%@ 是网页应用名。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "macOS allows Passkeys in embedded web content only for full browsers. Web apps such as %@ cannot use this system capability. Sign in with a password or verification code instead, or open this page in your default browser." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "macOS 只允许正式浏览器在内嵌网页里使用通行密钥（Passkey），%@ 这类网页应用拿不到这项系统能力。可以改用密码或验证码登录，也可以在默认浏览器里打开这个页面完成登录。" } }
+    "browser.permission.passkey.message": {
+      "comment": "通行密钥在第三方网页应用内不可用的说明，%@ 是网页应用名。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS allows Passkeys in embedded web content only for full browsers. Web apps such as %@ cannot use this system capability. Sign in with a password or verification code instead, or open this page in your default browser."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 只允许正式浏览器在内嵌网页里使用通行密钥（Passkey），%@ 这类网页应用拿不到这项系统能力。可以改用密码或验证码登录，也可以在默认浏览器里打开这个页面完成登录。"
+          }
+        }
       }
     },
-    "browser.permission.passkey.open_browser" : {
-      "comment" : "通行密钥限制提示中的替代操作。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Browser" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "用浏览器打开" } }
+    "browser.permission.passkey.open_browser": {
+      "comment": "通行密钥限制提示中的替代操作。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Browser"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用浏览器打开"
+          }
+        }
       }
     },
-    "browser.permission.passkey.title" : {
-      "comment" : "通行密钥在第三方网页应用内不可用的提示标题。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Passkey Sign-In Is Unavailable for This Website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这个网站的通行密钥登录用不了" } }
+    "browser.permission.passkey.title": {
+      "comment": "通行密钥在第三方网页应用内不可用的提示标题。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passkey Sign-In Is Unavailable for This Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个网站的通行密钥登录用不了"
+          }
+        }
       }
     },
-    "browser.upload.choose_file" : {
-      "comment" : "网页上传文件时系统选取面板的说明。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose files to upload to this website" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择要上传到网页的文件" } }
+    "browser.upload.choose_file": {
+      "comment": "网页上传文件时系统选取面板的说明。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose files to upload to this website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要上传到网页的文件"
+          }
+        }
       }
     },
-    "common.cancel" : {
-      "comment" : "系统样式确认对话框的取消按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
+    "common.cancel": {
+      "comment": "系统样式确认对话框的取消按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
       }
     },
-    "common.confirm" : {
-      "comment" : "系统样式确认对话框的确认按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "确定" } }
+    "common.confirm": {
+      "comment": "系统样式确认对话框的确认按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
+          }
+        }
       }
     },
-    "common.got_it" : {
-      "comment" : "信息提示对话框的关闭按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Got It" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "知道了" } }
+    "common.got_it": {
+      "comment": "信息提示对话框的关闭按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got It"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "知道了"
+          }
+        }
       }
     },
-    "common.later" : {
-      "comment" : "允许稍后处理的权限提示按钮。",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not Now" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "稍后再说" } }
+    "common.later": {
+      "comment": "允许稍后处理的权限提示按钮。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍后再说"
+          }
+        }
+      }
+    },
+    "browser.download.unnamed_file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded File"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载文件"
+          }
+        }
+      }
+    },
+    "browser.hiding.not_webpage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This page is not a regular web page, so elements can't be hidden here"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前页面不是普通网页，没法在上面隐藏元素"
+          }
+        }
+      }
+    },
+    "browser.hiding.hidden_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” matched %2$lld places on this site and is now hidden. If the page looks wrong or gets slower, restore the most recently hidden rule with the wand"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%1$@」在本站命中了 %2$lld 处，已全部隐藏。若页面看起来不对、越用越卡，去魔法棒里还原最近隐藏的那条"
+          }
+        }
+      }
+    },
+    "browser.hiding.unstable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This element can't be located reliably. Try another one"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个元素没法被稳定定位，换一块试试"
+          }
+        }
+      }
+    },
+    "browser.hiding.fallback_picked_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Page Element"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一块网页元素"
+          }
+        }
+      }
+    },
+    "browser.hiding.fallback_broad_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Element"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这块元素"
+          }
+        }
+      }
+    },
+    "browser.download.failed_missing_file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The download finished, but the saved file can't be found."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载已完成，但无法定位保存文件。"
+          }
+        }
+      }
+    },
+    "browser.download.failed_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download failed: %1$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载失败：%1$@"
+          }
+        }
+      }
+    },
+    "browser.external.unknown_address": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Address"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知地址"
+          }
+        }
+      }
+    },
+    "browser.external.open_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open External App?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开外部应用？"
+          }
+        }
+      }
+    },
+    "browser.external.open_message_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ wants to open:\n%2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 想打开：\n%2$@"
+          }
+        }
+      }
+    },
+    "browser.external.open_failed_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't Open External Link"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法打开外部链接"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

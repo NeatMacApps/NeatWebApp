@@ -10,7 +10,7 @@ struct AppCommands: Commands {
 
         // 设置并入主窗口后，⌘, 仍然沿用系统习惯，直接把主窗口带到前台。
         CommandGroup(replacing: .appSettings) {
-            Button("设置…") {
+            Button(String(localized: "menubar.settings")) {
                 openWindow(id: AppWindowID.main)
                 NSApplication.shared.activate()
             }

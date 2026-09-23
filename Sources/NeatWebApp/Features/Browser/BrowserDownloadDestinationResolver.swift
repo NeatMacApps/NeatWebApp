@@ -28,7 +28,7 @@ struct BrowserDownloadDestinationResolver {
 
     static func sanitizedFilename(from suggestedFilename: String) -> String {
         guard suggestedFilename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
-            return "下载文件"
+            return String(localized: "browser.download.unnamed_file")
         }
 
         let lastPathComponent = URL(fileURLWithPath: suggestedFilename).lastPathComponent
@@ -39,7 +39,7 @@ struct BrowserDownloadDestinationResolver {
             .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "-")))
 
         guard sanitized.isEmpty == false, sanitized != ".", sanitized != ".." else {
-            return "下载文件"
+            return String(localized: "browser.download.unnamed_file")
         }
 
         return sanitized
@@ -79,6 +79,6 @@ struct BrowserDownloadDestinationResolver {
         let nsFilename = filename as NSString
         let extensionName = nsFilename.pathExtension
         let baseName = extensionName.isEmpty ? filename : nsFilename.deletingPathExtension
-        return (baseName.isEmpty ? "下载文件" : baseName, extensionName)
+        return (baseName.isEmpty ? String(localized: "browser.download.unnamed_file") : baseName, extensionName)
     }
 }

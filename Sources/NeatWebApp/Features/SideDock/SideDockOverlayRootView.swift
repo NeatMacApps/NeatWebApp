@@ -86,7 +86,7 @@ struct SideDockOverlayRootView: View {
             // 非激活浮层上的第一次按下默认只用来激活窗口；图标必须能直接点开。
             .allowsWindowActivationEvents()
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("已收起的网页应用，可拖动调整位置")
+            .accessibilityLabel(String(localized: "sidedock.collapsed_hint"))
             .containerBackground(.clear, for: .window)
             .onChange(of: context.edge) { _, _ in
                 dragStartMouseLocation = NSEvent.mouseLocation

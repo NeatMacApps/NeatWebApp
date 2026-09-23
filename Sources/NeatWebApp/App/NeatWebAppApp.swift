@@ -74,25 +74,25 @@ struct NeatWebAppApp: App {
                 }
             )
         ) {
-            Button("打开主窗口") {
+            Button(String(localized: "menubar.open_main_window")) {
                 openMainWindow()
             }
             .keyboardShortcut("d", modifiers: [.command])
 
-            Button("唤出启动器") {
+            Button(String(localized: "menubar.reveal_launcher")) {
                 appModel.revealLauncherManually()
             }
             .keyboardShortcut("k", modifiers: [.command, .option])
 
             Toggle(
-                "开机时自动启动",
+                String(localized: "settings.login.startup.title"),
                 isOn: Binding(
                     get: { appModel.isLaunchAtLoginEnabled },
                     set: { appModel.setLaunchAtLoginEnabled($0) }
                 )
             )
 
-            Button("隐藏菜单栏图标") {
+            Button(String(localized: "menubar.hide_icon")) {
                 appModel.setMenuBarIconVisible(false)
             }
 
@@ -103,7 +103,7 @@ struct NeatWebAppApp: App {
 
             Divider()
 
-            Button("退出 NeatWebApp") {
+            Button(String(localized: "settings.quit")) {
                 appDelegate.terminationGuard.requestTermination()
             }
             .keyboardShortcut("q", modifiers: [.command])
@@ -119,8 +119,11 @@ struct NeatWebAppApp: App {
 
     private var updateButtonTitle: String {
         if let availableVersion = appUpdater.availableVersion {
-            return "安装 NeatWebApp \(availableVersion) 更新…"
+            return String(
+                format: String(localized: "settings.update.install_format"),
+                availableVersion
+            )
         }
-        return "检查更新…"
+        return String(localized: "settings.check_for_updates")
     }
 }

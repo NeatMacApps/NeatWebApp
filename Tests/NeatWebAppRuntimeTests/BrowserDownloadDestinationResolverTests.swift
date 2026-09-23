@@ -7,8 +7,8 @@ final class BrowserDownloadDestinationResolverTests: XCTestCase {
             BrowserDownloadDestinationResolver.sanitizedFilename(from: "../报告:最终版.pdf"),
             "报告-最终版.pdf"
         )
-        XCTAssertEqual(BrowserDownloadDestinationResolver.sanitizedFilename(from: "   "), "下载文件")
-        XCTAssertEqual(BrowserDownloadDestinationResolver.sanitizedFilename(from: "."), "下载文件")
+        XCTAssertEqual(BrowserDownloadDestinationResolver.sanitizedFilename(from: "   "), String(localized: "browser.download.unnamed_file"))
+        XCTAssertEqual(BrowserDownloadDestinationResolver.sanitizedFilename(from: "."), String(localized: "browser.download.unnamed_file"))
     }
 
     func testUsesSuggestedFilenameWhenNoCollisionExists() throws {

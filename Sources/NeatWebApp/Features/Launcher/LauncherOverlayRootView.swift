@@ -319,7 +319,7 @@ private enum LauncherItem: Identifiable {
         case .webApp(let app):
             return app.name
         case .dashboard:
-            return "打开主窗口"
+            return String(localized: "menubar.open_main_window")
         }
     }
 }

@@ -17,7 +17,7 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
             return
         }
 
-        let filename = BrowserDownloadDestinationResolver.sanitizedFilename(from: suggestedFilename ?? "下载文件")
+        let filename = BrowserDownloadDestinationResolver.sanitizedFilename(from: suggestedFilename ?? String(localized: "browser.download.unnamed_file"))
         let itemID = session.startDownload(filename: filename)
         let observation = download.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, _ in
             Task { @MainActor in
@@ -58,7 +58,7 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
             destinationResolver.releaseReservation(for: destinationURL)
             session.finishDownload(id: activeDownload.itemID, destinationURL: destinationURL)
         } else {
-            session.failDownload(id: activeDownload.itemID, message: "下载已完成，但无法定位保存文件。")
+            session.failDownload(id: activeDownload.itemID, message: String(localized: "browser.download.failed_missing_file"))
         }
     }
 
@@ -72,7 +72,7 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
             destinationResolver.releaseReservation(for: destinationURL)
         }
 
-        session.failDownload(id: activeDownload.itemID, message: "下载失败：\(error.localizedDescription)")
+        session.failDownload(id: activeDownload.itemID, message: String(format: String(localized: "browser.download.failed_format"), error.localizedDescription))
     }
 }
 

@@ -9,11 +9,11 @@ enum SideDockEdge: String, CaseIterable, Codable, Sendable {
     var title: String {
         switch self {
         case .left:
-            "左侧"
+            String(localized: "sidedock.edge.left")
         case .right:
-            "右侧"
+            String(localized: "sidedock.edge.right")
         case .bottom:
-            "底部"
+            String(localized: "sidedock.edge.bottom")
         }
     }
 

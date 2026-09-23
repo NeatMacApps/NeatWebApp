@@ -38,7 +38,7 @@ enum BrowserElementHidingScript {
                 let label = (payload["label"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 self = .picked(
                     selector: selector,
-                    label: label.isEmpty ? "一块网页元素" : label,
+                    label: label.isEmpty ? String(localized: "browser.hiding.fallback_picked_label") : label,
                     host: payload["host"] as? String ?? ""
                 )
             case "cancelled":
@@ -46,7 +46,7 @@ enum BrowserElementHidingScript {
             case "undo":
                 self = .undoLatest
             case "failed":
-                self = .failed(reason: payload["reason"] as? String ?? "这个元素没法被稳定定位")
+                self = .failed(reason: payload["reason"] as? String ?? String(localized: "browser.hiding.unstable"))
             case "broad":
                 guard
                     let selector = (payload["selector"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -68,7 +68,7 @@ enum BrowserElementHidingScript {
                 self = .broad(
                     selector: selector,
                     count: count,
-                    label: (label?.isEmpty == false ? label! : "这块元素")
+                    label: (label?.isEmpty == false ? label! : String(localized: "browser.hiding.fallback_broad_label"))
                 )
             default:
                 return nil
