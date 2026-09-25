@@ -31,6 +31,10 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     var pendingFramePersistTask: Task<Void, Never>?
     var environmentObservers: [NSObjectProtocol] = []
     var suppressAutoCollapseUntil = Date.distantPast
+    /// 置顶跟随鼠标聚焦的全局+本地 mouseMoved 监听。只在置顶时装上，
+    /// 不置顶、隐藏、关闭时拆掉，避免常驻唤醒。
+    var hoverFocusGlobalMonitor: Any?
+    var hoverFocusLocalMonitor: Any?
     /// 宿主已经把占位窗摆到这个框上时，首次显示禁止再挪，否则会跳一下。
     var skipNextVisibilityCorrection = false
     /// 盖子还在时不要抢焦点、不要报「窗口已显示」，否则宿主会提前揭盖，底下还是空的。
@@ -90,6 +94,9 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         }
         wireSession(to: window)
         restoreLockedFrameIfNeeded(on: window)
+        if preference.isPinned {
+            startHoverFocusMonitoringIfNeeded()
+        }
     }
 
     @available(*, unavailable)
@@ -165,17 +172,20 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
         releaseLaunchFrameHoldIfNeeded()
         session.focusWebView()
+        startHoverFocusMonitoringIfNeeded()
         publishRuntimeUpdate(phase: .windowVisible, windowFrame: window?.frame, floatingIconFrame: nil)
     }
 
     func collapseWindow() {
         stopCoverageWatch()
+        stopHoverFocusMonitoring()
         collapseToFloatingIcon()
     }
 
     func restoreCollapsedWindow(windowFrame: CGRect?, iconFrame _: CGRect?) {
         stopCoverageWatch()
         stopEnvironmentObservers()
+        stopHoverFocusMonitoring()
 
         guard !isAnimatingFloatingIconTransition else {
             return
@@ -201,12 +211,76 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         window?.level = isPinned ? WindowMetrics.pinnedWindowLevel : .normal
         if isPinned {
             stopCoverageWatch()
+            startHoverFocusMonitoringIfNeeded()
+        } else {
+            stopHoverFocusMonitoring()
         }
+    }
+
+    /// 置顶后鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。
+    /// 跟随图钉默认开，无独立开关、无悬停延迟；拖拽/缩放、盖子未揭、
+    /// 有模态或鼠标按住时不抢。
+    func startHoverFocusMonitoringIfNeeded() {
+        guard session.isPinned,
+            hoverFocusGlobalMonitor == nil,
+            hoverFocusLocalMonitor == nil
+        else {
+            return
+        }
+
+        hoverFocusGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleHoverFocusTick()
+            }
+        }
+        hoverFocusLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+            Task { @MainActor in
+                self?.handleHoverFocusTick()
+            }
+            return event
+        }
+    }
+
+    func stopHoverFocusMonitoring() {
+        if let hoverFocusGlobalMonitor {
+            NSEvent.removeMonitor(hoverFocusGlobalMonitor)
+        }
+        if let hoverFocusLocalMonitor {
+            NSEvent.removeMonitor(hoverFocusLocalMonitor)
+        }
+        hoverFocusGlobalMonitor = nil
+        hoverFocusLocalMonitor = nil
+    }
+
+    func handleHoverFocusTick() {
+        guard session.isPinned,
+            let window,
+            window.isVisible,
+            !window.isMiniaturized,
+            !window.isKeyWindow,
+            window.attachedSheet == nil,
+            NSApp.modalWindow == nil,
+            NSEvent.pressedMouseButtons == 0,
+            !isAwaitingHostCoverLift,
+            !isAnimatingFloatingIconTransition,
+            floatingIconPanel == nil
+        else {
+            return
+        }
+
+        guard window.frame.contains(NSEvent.mouseLocation) else {
+            return
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        session.focusWebView()
     }
 
     func hideWindow() {
         stopCoverageWatch()
         stopEnvironmentObservers()
+        stopHoverFocusMonitoring()
         persistWindowFrame()
         hideFloatingIcon()
         window?.orderOut(nil)
@@ -335,6 +409,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         }
 
         stopCoverageWatch()
+        stopHoverFocusMonitoring()
         persistWindowFrame()
         hideFloatingIcon()
         eventSink.webAppWindowDidRequestClose(self)
