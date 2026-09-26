@@ -83,7 +83,7 @@ private struct BrowserChromeBand: View {
                         systemImage: "arrow.clockwise",
                         theme: theme,
                         accessibilityLabel: localized("browser.chrome.reload"),
-                        action: session.reloadFromConfiguredURL
+                        action: session.reload
                     )
                     .help(Text("browser.chrome.reload"))
 
