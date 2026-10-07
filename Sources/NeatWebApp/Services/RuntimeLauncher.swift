@@ -46,6 +46,26 @@ final class RuntimeLauncher: RuntimeLaunching {
         }
     }
 
+    /// Launches an app-agnostic runtime that warms WebKit and waits for `adoptBootstrap`.
+    func launchStandby(
+        instanceID: UUID,
+        completion: @escaping @MainActor (NSRunningApplication?) -> Void
+    ) throws {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        configuration.createsNewApplicationInstance = true
+        configuration.arguments = [
+            "--standby-id", instanceID.uuidString,
+            "--host-pid", String(ProcessInfo.processInfo.processIdentifier)
+        ]
+
+        NSWorkspace.shared.openApplication(at: try runtimeApplicationURL(), configuration: configuration) { application, _ in
+            Task { @MainActor in
+                completion(application)
+            }
+        }
+    }
+
     func currentRuntimeBuildIdentifier() throws -> String {
         let runtimeURL = try runtimeApplicationURL()
         let executableURL = runtimeURL

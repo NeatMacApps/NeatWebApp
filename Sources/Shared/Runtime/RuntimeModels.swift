@@ -48,6 +48,8 @@ enum RuntimeCommandName: String, Codable, Equatable, Sendable {
     case increaseZoom
     case decreaseZoom
     case resetZoom
+    /// A warm standby runtime takes over a web app; the host has already saved the bootstrap under this instance ID.
+    case adoptBootstrap
 }
 
 struct RuntimeCommand: Codable, Sendable {
@@ -67,6 +69,8 @@ enum RuntimeEventName: String, Codable, Equatable, Sendable {
     case windowHidden
     case runtimeTerminating
     case runtimeCrashed
+    /// A warm standby runtime is ready to adopt a web app. It belongs to no web app yet, so the host keeps it out of the registry.
+    case standbyReady
 }
 
 struct RuntimeEvent: Codable, Sendable {

@@ -1,17 +1,17 @@
 <!-- managed:inherited-agents:start -->
-<!-- source: /Users/geraltgraham/Codes/NeatWebApp/AGENTS.md -->
+<!-- source: ~/Codes/NeatWebApp/AGENTS.md -->
 # NeatWebApp
 
 macOS WebApp 容器（SwiftUI + AppKit + WebKit）。
 
-通用工程规范：[Swift 规范](/Users/geraltgraham/Codes/_standards/swift.md)
+通用工程规范：[Swift 规范](~/Codes/_standards/swift.md)
 
 Remote：`app-macos` → GitHub `NeatMacApps/NeatWebApp`（公开，https://github.com/NeatMacApps/NeatWebApp）；本产品文件夹不是 git 仓库。
 
 ## 文档导航
 
-- [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatWebApp/app-macos/AGENTS.md)：改、评审或排查 WebApp 容器功能前必读。
-- [docs/design/dashboard-settings.md](docs/design/dashboard-settings.md)：改、评审或排查主窗口网页应用目录与内嵌设置布局前必读。
+- [app-macos/AGENTS.md](~/Codes/NeatWebApp/app-macos/AGENTS.md)：改、评审或排查 WebApp 容器功能前必读。
+- [docs/design/dashboard-settings.md](~/Codes/NeatWebApp/docs/design/dashboard-settings.md)：改、评审或排查主窗口网页应用目录与内嵌设置布局前必读。
 
 <!-- managed:inherited-agents:end -->
 
@@ -194,6 +194,7 @@ done
 - [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作、进程划分，或浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖）前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
+- [docs/design/warm-standby-runtime.md](docs/design/warm-standby-runtime.md)：新开尚未运行的网页应用为何比浏览器慢、怎么提速——实测冷启动分段与站点服务器等待、已排除的浏览器身份 / 注入脚本 / 数据隔离、宿主常备一个预热运行时的接手流程、内存严重压力时释放与接手失败的回退启动。
 - [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前**必读**。不读会把已否决的延时/阈值加回去，或让窗口压住侧边 Dock。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围、规则持久化、还原入口，或新增／升级注入脚本前**必读**。不读会弄丢整批用户脚本重装，或把规则作用域写错。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器顶栏控件区（收起 / 置顶 / **收藏** / 刷新 / 网页标识 / 下载指示、让位带、渐变与拖动区）前**必读**。不读会把已推翻的液态玻璃顶栏再做一遍；收藏必须按网页应用隔离。

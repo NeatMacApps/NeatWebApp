@@ -14,12 +14,15 @@ protocol WebAppRuntimeCoordinating {
     func resetZoom(appID: String)
     func reloadDefinition(_ definition: WebAppDefinition)
     func refreshRegistry()
+    func prepareStandbyRuntime()
+    func releaseStandbyRuntimeForMemoryPressure()
 }
 
 @MainActor
 final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let registryStore: RuntimeRegistryStore
     private let launcher: any RuntimeLaunching
+    private let standbyPool: (any RuntimeStandbyProviding)?
     private let commandBus: RuntimeCommandBus
     private let placeholderPresenter: any LaunchPlaceholderPresenting
     private let preferencesStore: WebAppPreferencesStore
@@ -53,6 +56,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         registryStore: RuntimeRegistryStore = RuntimeRegistryStore(),
         launcher: (any RuntimeLaunching)? = nil,
         commandBus: RuntimeCommandBus = RuntimeCommandBus(),
+        standbyPool: (any RuntimeStandbyProviding)? = nil,
         placeholderPresenter: any LaunchPlaceholderPresenting = LaunchPlaceholderController(),
         preferencesStore: WebAppPreferencesStore = WebAppPreferencesStore(),
         dockReserveStore: SideDockReserveStore = SideDockReserveStore(),
@@ -65,6 +69,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.registryStore = registryStore
         self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
         self.commandBus = commandBus
+        self.standbyPool = standbyPool
         self.placeholderPresenter = placeholderPresenter
         self.preferencesStore = preferencesStore
         self.dockReserveStore = dockReserveStore
@@ -167,6 +172,15 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         }
         placeholderPresenter.dismissAllPlaceholders()
         placeholderAppIDs.removeAll()
+        standbyPool?.terminate()
+    }
+
+    func prepareStandbyRuntime() {
+        standbyPool?.prepare()
+    }
+
+    func releaseStandbyRuntimeForMemoryPressure() {
+        standbyPool?.releaseForMemoryPressure()
     }
 
     func increaseZoom(appID: String) {
@@ -255,8 +269,34 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             placeholderAppIDs.insert(definition.id)
         }
 
-        let bootstrap = RuntimeBootstrap(
-            instanceID: UUID(),
+        // A user open goes to the warm standby when one is ready; it skips the cold start entirely.
+        let standbyInstanceID = showsPlaceholder ? standbyPool?.takeReadyStandby() : nil
+        let bootstrap = makeLaunchBootstrap(
+            instanceID: standbyInstanceID ?? UUID(),
+            definition: definition,
+            preferredGeometry: preferredGeometry,
+            reason: reason,
+            launchFrame: launchFrame
+        )
+
+        if let standbyInstanceID, adoptStandby(standbyInstanceID, bootstrap: bootstrap) {
+            activeAppID = definition.id
+            watchStandbyAdoption(standbyInstanceID, bootstrap: bootstrap)
+            return
+        }
+
+        launchFreshRuntime(bootstrap)
+    }
+
+    private func makeLaunchBootstrap(
+        instanceID: UUID,
+        definition: WebAppDefinition,
+        preferredGeometry: ScreenNotchGeometry?,
+        reason: RuntimeLaunchReason,
+        launchFrame: CGRect
+    ) -> RuntimeBootstrap {
+        RuntimeBootstrap(
+            instanceID: instanceID,
             appID: definition.id,
             definition: definition,
             launchReason: reason,
@@ -268,21 +308,73 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             createdAt: .now,
             hostVersion: hostVersion
         )
+    }
 
+    private func launchFreshRuntime(_ bootstrap: RuntimeBootstrap) {
+        let appID = bootstrap.appID
         do {
             try launcher.launch(bootstrap) { [weak self] message in
-                self?.dismissLaunchPlaceholder(appID: definition.id)
-                if self?.activeAppID == definition.id {
+                self?.dismissLaunchPlaceholder(appID: appID)
+                if self?.activeAppID == appID {
                     self?.activeAppID = nil
                 }
                 self?.onDiagnosticMessage(message)
             }
-            activeAppID = definition.id
+            activeAppID = appID
         } catch {
-            dismissLaunchPlaceholder(appID: definition.id)
+            dismissLaunchPlaceholder(appID: appID)
             onDiagnosticMessage(error.localizedDescription)
         }
     }
+
+    private func adoptStandby(_ instanceID: UUID, bootstrap: RuntimeBootstrap) -> Bool {
+        guard (try? registryStore.saveBootstrap(bootstrap)) != nil else {
+            standbyPool?.discardAdoptedStandby(instanceID)
+            return false
+        }
+
+        let command = RuntimeCommand(
+            instanceID: instanceID,
+            appID: bootstrap.appID,
+            sequence: nextSequence,
+            command: .adoptBootstrap,
+            definition: bootstrap.definition
+        )
+        nextSequence += 1
+        commandBus.send(command)
+        return true
+    }
+
+    /// The adopted standby publishes its start-up state immediately. If it has not within the
+    /// deadline it is gone or stuck: kill it and launch fresh under the same, still-showing lid.
+    private func watchStandbyAdoption(_ instanceID: UUID, bootstrap: RuntimeBootstrap) {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.standbyAdoptionDeadline)
+            guard let self, self.registryStore.loadState(instanceID: instanceID) == nil else {
+                return
+            }
+
+            self.standbyPool?.discardAdoptedStandby(instanceID)
+            self.registryStore.removeBootstrap(instanceID: instanceID)
+            self.launchFreshRuntime(
+                RuntimeBootstrap(
+                    instanceID: UUID(),
+                    appID: bootstrap.appID,
+                    definition: bootstrap.definition,
+                    launchReason: bootstrap.launchReason,
+                    preferredDisplayID: bootstrap.preferredDisplayID,
+                    runtimeBuildIdentifier: bootstrap.runtimeBuildIdentifier,
+                    restoredPhase: bootstrap.restoredPhase,
+                    restoredWindowFrame: bootstrap.restoredWindowFrame,
+                    restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
+                    createdAt: .now,
+                    hostVersion: bootstrap.hostVersion
+                )
+            )
+        }
+    }
+
+    static let standbyAdoptionDeadline: Duration = .seconds(2)
 
     private func migrateOutdatedRuntimesIfNeeded() {
         let outdatedRuntimes = registry.values.compactMap { state -> (RuntimeState, RuntimeBootstrap)? in
@@ -496,6 +588,11 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     }
 
     private func handle(_ event: RuntimeEvent) {
+        // Standby runtimes belong to no web app; the standby pool tracks them.
+        guard event.event != .standbyReady else {
+            return
+        }
+
         let state = registryStore.state(forAppID: event.appID) ?? RuntimeState(
             instanceID: event.instanceID,
             appID: event.appID,
@@ -532,6 +629,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             if activeAppID == event.appID {
                 activeAppID = nil
             }
+        case .standbyReady:
+            return
         }
 
         publishRuntimeStates()

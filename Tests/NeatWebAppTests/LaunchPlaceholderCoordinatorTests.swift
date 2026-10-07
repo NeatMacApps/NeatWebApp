@@ -134,7 +134,38 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
         XCTAssertGreaterThan(WebAppWindowMetrics.defaultFrameSize.height, 0)
     }
 
-    private func makeFixture() -> Fixture {
+    func testOpenAdoptsReadyStandbyInsteadOfLaunching() {
+        let standby = FakeStandbyPool()
+        let standbyID = UUID()
+        standby.readyInstanceID = standbyID
+        let fixture = makeFixture(standbyPool: standby)
+
+        fixture.coordinator.open(claude, preferredGeometry: nil)
+
+        XCTAssertEqual(fixture.launcher.launchCount, 0)
+        XCTAssertEqual(fixture.placeholder.shownAppIDs, [claude.id])
+        let bootstrap = fixture.registryStore.loadBootstrap(instanceID: standbyID)
+        XCTAssertEqual(bootstrap?.appID, claude.id)
+        XCTAssertEqual(bootstrap?.restoredWindowFrame, fixture.placeholder.shownFrames.first)
+    }
+
+    func testStandbyThatNeverStartsFallsBackToFreshLaunch() async {
+        let standby = FakeStandbyPool()
+        let standbyID = UUID()
+        standby.readyInstanceID = standbyID
+        let fixture = makeFixture(standbyPool: standby)
+
+        fixture.coordinator.open(claude, preferredGeometry: nil)
+
+        let launched = await waitUntil(timeout: 4) { fixture.launcher.launchCount == 1 }
+        XCTAssertTrue(launched)
+        XCTAssertEqual(standby.discardedInstanceIDs, [standbyID])
+        XCTAssertNotEqual(fixture.launcher.lastInstanceID, standbyID)
+        XCTAssertEqual(fixture.launcher.lastBootstrap?.restoredWindowFrame, fixture.placeholder.shownFrames.first)
+        XCTAssertNil(fixture.registryStore.loadBootstrap(instanceID: standbyID))
+    }
+
+    private func makeFixture(standbyPool: (any RuntimeStandbyProviding)? = nil) -> Fixture {
         let tempRoot = FileManager.default.temporaryDirectory
             .appending(path: "NeatWebAppPlaceholderTests-\(UUID().uuidString)", directoryHint: .isDirectory)
         let registryStore = RuntimeRegistryStore(rootDirectoryURL: tempRoot)
@@ -148,6 +179,7 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
             registryStore: registryStore,
             launcher: launcher,
             commandBus: commandBus,
+            standbyPool: standbyPool,
             placeholderPresenter: placeholder,
             preferencesStore: preferencesStore,
             dockReserveStore: dockReserveStore,
@@ -220,6 +252,25 @@ private final class FakeRuntimeLauncher: RuntimeLaunching {
     func currentRuntimeBuildIdentifier() throws -> String {
         "test-runtime"
     }
+}
+
+@MainActor
+private final class FakeStandbyPool: RuntimeStandbyProviding {
+    var readyInstanceID: UUID?
+    var discardedInstanceIDs: [UUID] = []
+
+    func takeReadyStandby() -> UUID? {
+        defer { readyInstanceID = nil }
+        return readyInstanceID
+    }
+
+    func discardAdoptedStandby(_ instanceID: UUID) {
+        discardedInstanceIDs.append(instanceID)
+    }
+
+    func prepare() {}
+    func releaseForMemoryPressure() {}
+    func terminate() {}
 }
 
 @MainActor

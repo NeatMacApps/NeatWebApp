@@ -43,6 +43,14 @@ extension AppModel {
 
     /// 应用即将被自动更新覆盖安装：先收掉所有 WebApp 运行时，
     /// 否则它们会继续跑在被替换掉的旧应用包上。
+    /// Warm the standby runtime after start-up settles so the first open of any web app skips the cold start.
+    func scheduleStandbyRuntimeWarmUp() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            self?.runtimeCoordinator.prepareStandbyRuntime()
+        }
+    }
+
     func prepareForApplicationUpdate() {
         runtimeCoordinator.terminateAll()
     }

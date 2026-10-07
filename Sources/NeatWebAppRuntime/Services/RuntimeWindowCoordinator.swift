@@ -15,7 +15,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private var windowController: WebAppWindowController?
     private var hasPreparedTermination = false
     private var dockReserveObserver: NSObjectProtocol?
-    private var hostLifecycleTask: Task<Void, Never>?
+    private let hostLifecycleMonitor = RuntimeHostLifecycleMonitor()
 
     init(
         bootstrap: RuntimeBootstrap,
@@ -85,8 +85,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             dockReserveStore.removeObserver(dockReserveObserver)
             self.dockReserveObserver = nil
         }
-        hostLifecycleTask?.cancel()
-        hostLifecycleTask = nil
+        hostLifecycleMonitor.stop()
         commandListener.stop()
         let windowFrame = windowController?.window?.frame ?? appModel.windowFrame
         let floatingIconFrame = appModel.floatingIconFrame
@@ -181,6 +180,8 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             windowController?.session.decreaseZoom()
         case .resetZoom:
             windowController?.session.resetZoom()
+        case .adoptBootstrap:
+            break
         }
     }
 
@@ -218,25 +219,10 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
 
     /// 宿主异常退出时的兜底：正常退出走宿主发来的结束命令；宿主没机会发（崩溃、被杀），
     /// 就靠启动时记下的宿主身份发现「它已经不在」，再自己收掉注册状态并退出。
-    /// 身份在启动瞬间解析成对象后不再按号码重查，所以号码被系统回收给新进程也不会误伤。
     private func startHostLifecycleMonitor() {
-        guard let hostProcessID,
-              hostProcessID != ProcessInfo.processInfo.processIdentifier,
-              let hostApplication = NSRunningApplication(processIdentifier: hostProcessID) else {
-            return
-        }
-
-        hostLifecycleTask?.cancel()
-        hostLifecycleTask = Task { [weak self, hostApplication] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled else { return }
-                guard hostApplication.isTerminated else { continue }
-
-                self?.prepareForTermination()
-                NSApplication.shared.terminate(nil)
-                return
-            }
+        hostLifecycleMonitor.start(hostProcessID: hostProcessID) { [weak self] in
+            self?.prepareForTermination()
+            NSApplication.shared.terminate(nil)
         }
     }
 

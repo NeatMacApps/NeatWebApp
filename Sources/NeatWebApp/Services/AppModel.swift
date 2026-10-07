@@ -79,6 +79,7 @@ final class AppModel {
 
     @ObservationIgnored
     lazy var runtimeCoordinator = WebAppRuntimeCoordinator(
+        standbyPool: RuntimeStandbyPool(launcher: RuntimeLauncher(), commandBus: RuntimeCommandBus()),
         dockReserveStore: sideDockReserveStore,
         onActiveAppIDChange: { [weak self] appID in
             self?.activeRuntimeAppID = appID
@@ -135,6 +136,7 @@ final class AppModel {
         runtimeCoordinator.refreshRegistry()
         preloadFavicons()
         startMemoryPressureMonitorIfNeeded()
+        scheduleStandbyRuntimeWarmUp()
 
         notchActivationMonitor.start { [weak self] mouseLocation, eventType in
             self?.handleMouseEvent(mouseLocation, eventType)

@@ -58,6 +58,16 @@ struct RuntimeBootstrapLoader {
         return value
     }
 
+    /// Instance ID of a warm standby launch (`--standby-id`); nil for a normal launch.
+    nonisolated static func standbyIdentifier(in arguments: [String]) -> UUID? {
+        guard let index = arguments.firstIndex(of: "--standby-id"),
+              arguments.indices.contains(index + 1) else {
+            return nil
+        }
+
+        return UUID(uuidString: arguments[index + 1])
+    }
+
     private func value(after flag: String, in arguments: [String]) -> String? {
         guard let index = arguments.firstIndex(of: flag),
               arguments.indices.contains(index + 1) else {

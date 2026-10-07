@@ -57,8 +57,10 @@ extension AppModel {
         }
         faviconLoadTasks.removeAll()
         purgeFaviconMemoryCache()
-        // isCritical 预留给将来更积极的可重建收缩；当前与 warning 同策，刻意不杀运行时。
-        _ = isCritical
+        // 仍刻意不杀任何网页应用的运行时；严重压力时只丢掉不属于任何网页应用、可重建的预热运行时。
+        if isCritical {
+            runtimeCoordinator.releaseStandbyRuntimeForMemoryPressure()
+        }
     }
 
     func preloadFavicons() {
