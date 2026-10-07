@@ -45,6 +45,14 @@ That derived geometry is then expanded into an activation region and a launcher-
 
 `refreshScreenState()` 一开始会无条件取消待定的悬停等待，结果是：应用启动瞬间 `didChangeScreenParametersNotification` 会再触发一次刷新，把刚排上的等待任务取消掉；此时指针若停在热区不动就再也不会有新事件，启动器永远等不到展开（表面现象是「热区完全没反应」）。硬件刘海改为带停留窗口之后也走同一条等待任务，这个坑不再只打虚拟热区。正确做法是只清理**已经消失的**热区对应的等待，顺带在热区消失时收掉挂在上面的启动器。
 
+## 展开后的点击收起与图标换位（2026-10-07 裁定）
+
+- **点抽屉里的黑色部分就收起**：图标以外的黑底（含图标间隙、顶部刘海那一截）单击即收起，走「主动收起」路径——指针离开刘海热区前不会被悬停重新弹出。图标自己的点开/拖动优先，不会被这层收起手势抢走。
+- **拖动换位必须跟手、不抽动**：
+  - 拖动位移必须在全局坐标里量。手势挂在带偏移的图标上，用本地坐标量时，图标一挪，量出的位移就跟着变，目标位置来回跳，表现为抽动。
+  - 拖动过程中不改应用顺序，只移动显示位置：被拖的图标直接等于指针位移、不加动画；被让开的图标用短弹簧动画滑一格；松手时一次性写回顺序，被拖图标从指针处滑回槽位。拖动中途就改顺序会让整行重新排版，被拖图标跟着跳。
+  - 宿主的鼠标监视在每个移动/拖动事件都会进主线程，里面禁止做文件读写等同步耗时操作；曾经残留的逐事件写日志会让拖动掉帧。
+
 ## Pointer Monitoring
 
 A local event monitor alone is not sufficient because the pointer may move while another app is active. The current implementation combines:

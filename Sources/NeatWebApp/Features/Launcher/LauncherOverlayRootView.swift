@@ -6,11 +6,14 @@ struct LauncherOverlayRootView: View {
     @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
     @State private var edgeFadeState = LauncherEdgeFadeState.none
-    /// 拖动时的应用顺序工作副本：拖动过程中实时换位，松手时整份写回持久层。
+    /// 应用顺序工作副本：拖动过程中不改，松手时换位并整份写回持久层。
     @State private var orderedApps: [WebAppDefinition] = []
     @State private var draggingAppID: String?
+    /// 被拖图标在松手滑回槽位期间仍压在其他图标之上。
+    @State private var liftedAppID: String?
     @State private var draggingStartIndex = 0
-    @State private var dragOffsetX: CGFloat = 0
+    @State private var dragTargetIndex = 0
+    @State private var dragTranslationX: CGFloat = 0
 
     let context: LauncherPresentationContext
     let onSelectApp: (WebAppDefinition) -> Void
@@ -72,6 +75,11 @@ struct LauncherOverlayRootView: View {
             }
         }
         .frame(width: layout.barSize.width, height: layout.barSize.height, alignment: .top)
+        // 点在图标以外的黑底上就收起；图标自己的手势优先，不会被这里抢走。
+        .contentShape(EdgeAttachedShape(edge: .top, cornerRadius: layout.backgroundCornerRadius))
+        .onTapGesture {
+            appModel.dismissLauncherVoluntarily()
+        }
         // Keep the launcher body flat against the page content.
         // A drop shadow here reads as an extra translucent strip under the bar.
     }
@@ -136,13 +144,18 @@ struct LauncherOverlayRootView: View {
     /// 分开写 `onTapGesture` + `DragGesture` 时，拖动手势会把点击吃掉，表现为点了没反应。
     @ViewBuilder
     private func iconButton(item: LauncherItem, layout: LauncherPresentationContext.Layout) -> some View {
+        let isDragged = draggingAppID == item.id
         let icon = launcherIcon(for: item, layout: layout)
             .contentShape(Rectangle())
             .help(item.helpText)
             .accessibilityLabel(item.helpText)
             .accessibilityAddTraits(.isButton)
-            .offset(x: dragOffsetX(for: item))
-            .zIndex(draggingAppID == item.id ? 1 : 0)
+            .scaleEffect(isDragged ? Self.liftScale : 1)
+            .animation(Self.liftAnimation, value: isDragged)
+            .offset(x: iconOffsetX(for: item))
+            // 被拖的图标直接等于指针位移，不能带动画，否则慢半拍；其余图标让位时滑一格。
+            .animation(isDragged ? nil : Self.shiftAnimation, value: dragTargetIndex)
+            .zIndex(isDragged || liftedAppID == item.id ? 1 : 0)
 
         switch item {
         case .webApp(let app):
@@ -156,7 +169,8 @@ struct LauncherOverlayRootView: View {
         for app: WebAppDefinition,
         item: LauncherItem
     ) -> some Gesture {
-        DragGesture(minimumDistance: 0)
+        // 必须用全局坐标：手势挂在带偏移的图标上，本地坐标会跟着图标移动，量出的位移来回跳。
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { value in
                 guard !Self.isClick(translation: value.translation) else {
                     return
@@ -189,55 +203,87 @@ struct LauncherOverlayRootView: View {
         hypot(translation.width, translation.height) < clickSlop
     }
 
-    private func dragOffsetX(for item: LauncherItem) -> CGFloat {
-        switch item {
-        case .webApp(let app) where app.id == draggingAppID:
-            return dragOffsetX
-        default:
+    private static let liftScale: CGFloat = 1.08
+    private static let liftAnimation = Animation.snappy(duration: 0.15)
+    private static let shiftAnimation = Animation.snappy(duration: 0.2)
+    private static let dropAnimation = Animation.snappy(duration: 0.22)
+
+    private var slotWidth: CGFloat {
+        context.layout.iconSize + context.layout.iconSpacing
+    }
+
+    /// 拖动中顺序不变，只靠偏移显示换位效果：被拖图标贴住指针，起点与目标之间的图标让出一格。
+    private func iconOffsetX(for item: LauncherItem) -> CGFloat {
+        guard let draggingAppID, case .webApp(let app) = item else {
             return 0
         }
+
+        if app.id == draggingAppID {
+            return dragTranslationX
+        }
+
+        guard let index = orderedApps.firstIndex(of: app) else {
+            return 0
+        }
+
+        return LauncherRowReorder.displacement(
+            index: index,
+            startIndex: draggingStartIndex,
+            targetIndex: dragTargetIndex,
+            slotWidth: slotWidth
+        )
     }
 
     private func handleDragChanged(for app: WebAppDefinition, value: DragGesture.Value) {
-        if draggingAppID != app.id {
-            draggingAppID = app.id
-            draggingStartIndex = orderedApps.firstIndex(of: app) ?? 0
-            dragOffsetX = 0
-        }
-
-        let slotWidth = context.layout.iconSize + context.layout.iconSpacing
-        guard slotWidth > 0, let currentIndex = orderedApps.firstIndex(of: app) else {
+        guard slotWidth > 0 else {
             return
         }
 
-        let targetIndex = LauncherRowReorder.targetIndex(
+        if draggingAppID != app.id {
+            let startIndex = orderedApps.firstIndex(of: app) ?? 0
+            draggingAppID = app.id
+            liftedAppID = app.id
+            draggingStartIndex = startIndex
+            dragTargetIndex = startIndex
+        }
+
+        dragTranslationX = value.translation.width
+        dragTargetIndex = LauncherRowReorder.targetIndex(
             startIndex: draggingStartIndex,
             translationX: value.translation.width,
             slotWidth: slotWidth,
             itemCount: orderedApps.count
         )
-
-        if targetIndex != currentIndex {
-            // 拖动中必须即时换位：带过渡动画时图标会慢半拍，表现出「不跟手」。
-            orderedApps.move(
-                fromOffsets: IndexSet(integer: currentIndex),
-                toOffset: targetIndex > currentIndex ? targetIndex + 1 : targetIndex
-            )
-        }
-
-        dragOffsetX = LauncherRowReorder.offset(
-            translationX: value.translation.width,
-            targetIndex: targetIndex,
-            startIndex: draggingStartIndex,
-            slotWidth: slotWidth
-        )
     }
 
+    /// 松手时一次性换位并在同一个动画里清掉偏移：让位的图标排版位置与偏移同步抵消，看起来不动；
+    /// 被拖图标从指针处滑进目标槽位。
     private func handleDragEnded() {
-        let finalOrder = orderedApps
-        draggingAppID = nil
-        dragOffsetX = 0
-        appModel.applyAppOrder(finalOrder)
+        guard let droppedAppID = draggingAppID else {
+            return
+        }
+
+        let startIndex = draggingStartIndex
+        let targetIndex = dragTargetIndex
+
+        withAnimation(Self.dropAnimation) {
+            if targetIndex != startIndex {
+                orderedApps.move(
+                    fromOffsets: IndexSet(integer: startIndex),
+                    toOffset: targetIndex > startIndex ? targetIndex + 1 : targetIndex
+                )
+            }
+            draggingAppID = nil
+            dragTranslationX = 0
+        } completion: {
+            if draggingAppID == nil, liftedAppID == droppedAppID {
+                liftedAppID = nil
+            }
+        }
+
+        if targetIndex != startIndex {
+            appModel.applyAppOrder(orderedApps)
+        }
     }
 
     @ViewBuilder

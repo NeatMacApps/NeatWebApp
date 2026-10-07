@@ -102,8 +102,25 @@ enum LauncherRowReorder {
         return min(max(startIndex + slotShift, 0), itemCount - 1)
     }
 
-    /// 拖动中的图标相对它当前所在槽位的贴手偏移：
-    /// 真实位移减去「换位造成的新槽位平移」，图标才跟得上光标而不跳变。
+    /// 拖动中其余图标的让位偏移：落在起点与目标之间的图标朝反方向挪一格，其余不动。
+    /// 拖动过程中顺序本身不变，只靠这个偏移显示「换位后」的样子，整行不会重新排版。
+    static func displacement(
+        index: Int,
+        startIndex: Int,
+        targetIndex: Int,
+        slotWidth: CGFloat
+    ) -> CGFloat {
+        if startIndex < index, index <= targetIndex {
+            return -slotWidth
+        }
+        if targetIndex <= index, index < startIndex {
+            return slotWidth
+        }
+        return 0
+    }
+
+    /// 被拖图标落到目标槽位后的贴手偏移：
+    /// 真实位移减去「换位造成的新槽位平移」，松手瞬间图标留在指针处、再滑回槽位。
     static func offset(
         translationX: CGFloat,
         targetIndex: Int,

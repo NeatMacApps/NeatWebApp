@@ -133,4 +133,24 @@ final class LauncherRowReorderTests: XCTestCase {
             accuracy: 0.001
         )
     }
+
+    func testDisplacementShiftsOnlyItemsBetweenStartAndTarget() {
+        // 从 1 拖到 3：2、3 向左让一格，0 与 4 不动。
+        let rightward = (0..<5).map {
+            LauncherRowReorder.displacement(index: $0, startIndex: 1, targetIndex: 3, slotWidth: 40)
+        }
+        XCTAssertEqual(rightward, [0, 0, -40, -40, 0])
+
+        // 从 3 拖到 1：1、2 向右让一格。
+        let leftward = (0..<5).map {
+            LauncherRowReorder.displacement(index: $0, startIndex: 3, targetIndex: 1, slotWidth: 40)
+        }
+        XCTAssertEqual(leftward, [0, 40, 40, 0, 0])
+
+        // 还没越过半格时谁都不动。
+        let unchanged = (0..<5).map {
+            LauncherRowReorder.displacement(index: $0, startIndex: 2, targetIndex: 2, slotWidth: 40)
+        }
+        XCTAssertEqual(unchanged, [0, 0, 0, 0, 0])
+    }
 }

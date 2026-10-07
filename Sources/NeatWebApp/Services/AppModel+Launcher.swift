@@ -72,22 +72,6 @@ extension AppModel {
         hideLauncher(afterDelay: .zero)
     }
 
-    /// 临时：事件日志，验证合成拖拽是否送达本应用。
-    private func debugMouseLog(_ message: String) {
-        let url = URL(fileURLWithPath: "/tmp/neatwebapp_mouse.log")
-        if !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
-        }
-        guard let handle = try? FileHandle(forWritingTo: url) else {
-            return
-        }
-        try? handle.seekToEnd()
-        if let data = "[\(Date().timeIntervalSince1970)] \(message)\n".data(using: .utf8) {
-            try? handle.write(contentsOf: data)
-        }
-        try? handle.close()
-    }
-
     func hideLauncher(immediately: Bool = false) {
         if immediately {
             hideLauncherTask?.cancel()
@@ -145,7 +129,6 @@ extension AppModel {
 
     func handleMouseEvent(_ mouseLocation: CGPoint, _ eventType: NSEvent.EventType) {
         let isClick = (eventType == .leftMouseDown || eventType == .rightMouseDown)
-        debugMouseLog("\(eventType.rawValue) @ (\(Int(mouseLocation.x)), \(Int(mouseLocation.y)))")
 
         let geometryForActivation = detectedNotchScreens.first(where: { $0.containsActivationPoint(mouseLocation) })
         let activationContains = geometryForActivation != nil
