@@ -198,6 +198,6 @@ done
 - [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前**必读**。不读会把已否决的延时/阈值加回去，或让窗口压住侧边 Dock。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围、规则持久化、还原入口，或新增／升级注入脚本前**必读**。不读会弄丢整批用户脚本重装，或把规则作用域写错。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器顶栏控件区（收起 / 置顶 / **收藏** / 刷新 / 网页标识 / 下载指示、让位带、渐变与拖动区）前**必读**。不读会把已推翻的液态玻璃顶栏再做一遍；收藏必须按网页应用隔离。
-- [docs/notch-activation-research.md](docs/notch-activation-research.md)：改、评审或排查刘海触发、屏幕几何、launcher 激活、**硬件 100ms / 虚拟 260ms 悬停**、路过误开，或无刘海屏虚拟热区前**必读**。不读会取消悬停等待导致虚拟热区失灵，或用截图 skill 误判覆盖层。
+- [docs/notch-activation-research.md](docs/notch-activation-research.md)：刘海与无刘海屏虚拟热区的几何识别、悬停唤出（**硬件 100ms / 虚拟 260ms**）与屏幕刷新误取消等待的坑；展开后的抽屉交互——点黑底按像素收起（宿主鼠标监听判定，图标只认可见圆形）、拖动换位跟手与贴边自动滚动；覆盖层的验证手法（区域截图、系统日志、合成鼠标会接管用户指针）。
 - [docs/webapp-runtime-isolation-refactor.md](docs/webapp-runtime-isolation-refactor.md)：改 WebApp 运行时隔离、窗口复用或站点数据边界前**必读**。不读会把多网页应用会话边界打穿。
 - [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、闪退、进程突然消失、启动器点开网页应用宿主没了、Spotlight 重复图标、侧边 Dock 乱跳、通行密钥不可用、**长页面把窗口卡死**等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是设计取舍而非异常时跳过本索引，改读对应 `docs/design/`。
