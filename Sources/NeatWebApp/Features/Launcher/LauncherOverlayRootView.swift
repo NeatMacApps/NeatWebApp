@@ -12,10 +12,17 @@ struct LauncherOverlayRootView: View {
     /// 被拖图标在松手滑回槽位期间仍压在其他图标之上。
     @State private var liftedAppID: String?
     @State private var draggingStartIndex = 0
-    @State private var dragTargetIndex = 0
-    @State private var dragTranslationX: CGFloat = 0
+    /// 指针自按下以来的横向位移（全局坐标），不含图标行滚动。
+    @State private var dragPointerTranslationX: CGFloat = 0
+    @State private var dragStartScrollOffsetX: CGFloat = 0
+    @State private var scrollPosition = ScrollPosition(edge: .leading)
+    @State private var scrollMetrics = LauncherScrollMetrics.zero
+    @State private var scrollViewportFrame: CGRect = .zero
+    @State private var autoScrollVelocity: CGFloat = 0
+    @State private var autoScrollTask: Task<Void, Never>?
 
     let context: LauncherPresentationContext
+    let iconHitRegions: LauncherIconHitRegions
     let onSelectApp: (WebAppDefinition) -> Void
 
     private var launcherItems: [LauncherItem] {
@@ -75,11 +82,6 @@ struct LauncherOverlayRootView: View {
             }
         }
         .frame(width: layout.barSize.width, height: layout.barSize.height, alignment: .top)
-        // 点在图标以外的黑底上就收起；图标自己的手势优先，不会被这里抢走。
-        .contentShape(EdgeAttachedShape(edge: .top, cornerRadius: layout.backgroundCornerRadius))
-        .onTapGesture {
-            appModel.dismissLauncherVoluntarily()
-        }
         // Keep the launcher body flat against the page content.
         // A drop shadow here reads as an extra translucent strip under the bar.
     }
@@ -105,7 +107,18 @@ struct LauncherOverlayRootView: View {
             }
             .contentMargins(.horizontal, layout.iconHorizontalPadding, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .scrollPosition($scrollPosition)
             .scrollClipDisabled()
+            .onScrollGeometryChange(for: LauncherScrollMetrics.self) { geometry in
+                LauncherScrollMetrics(geometry: geometry)
+            } action: { _, newValue in
+                scrollMetrics = newValue
+            }
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { newValue in
+                scrollViewportFrame = newValue
+            }
             .onScrollGeometryChange(for: LauncherEdgeFadeState.self) { geometry in
                 LauncherEdgeFadeState(
                     scrollGeometry: geometry,
@@ -146,7 +159,6 @@ struct LauncherOverlayRootView: View {
     private func iconButton(item: LauncherItem, layout: LauncherPresentationContext.Layout) -> some View {
         let isDragged = draggingAppID == item.id
         let icon = launcherIcon(for: item, layout: layout)
-            .contentShape(Rectangle())
             .help(item.helpText)
             .accessibilityLabel(item.helpText)
             .accessibilityAddTraits(.isButton)
@@ -154,7 +166,7 @@ struct LauncherOverlayRootView: View {
             .animation(Self.liftAnimation, value: isDragged)
             .offset(x: iconOffsetX(for: item))
             // 被拖的图标直接等于指针位移，不能带动画，否则慢半拍；其余图标让位时滑一格。
-            .animation(isDragged ? nil : Self.shiftAnimation, value: dragTargetIndex)
+            .animation(isDragged ? nil : Self.reorderAnimation, value: dragTargetIndex)
             .zIndex(isDragged || liftedAppID == item.id ? 1 : 0)
 
         switch item {
@@ -203,13 +215,34 @@ struct LauncherOverlayRootView: View {
         hypot(translation.width, translation.height) < clickSlop
     }
 
+    /// 图标可见圆形占槽位的比例；可点范围与它一致。
+    private static let iconVisibleScale: CGFloat = 0.85
     private static let liftScale: CGFloat = 1.08
+    private static let autoScrollMaxSpeed: CGFloat = 320
     private static let liftAnimation = Animation.snappy(duration: 0.15)
-    private static let shiftAnimation = Animation.snappy(duration: 0.2)
-    private static let dropAnimation = Animation.snappy(duration: 0.22)
+    /// 让位与松手落位共用同一条曲线：松手时排版位移与偏移归零同步抵消，曲线不同会晃一下。
+    private static let reorderAnimation = Animation.snappy(duration: 0.22)
 
     private var slotWidth: CGFloat {
         context.layout.iconSize + context.layout.iconSpacing
+    }
+
+    /// 被拖图标的贴手位移：指针位移加上拖动期间图标行自动滚过的距离。
+    private var dragTranslationX: CGFloat {
+        dragPointerTranslationX + scrollMetrics.offsetX - dragStartScrollOffsetX
+    }
+
+    private var dragTargetIndex: Int {
+        guard draggingAppID != nil else {
+            return draggingStartIndex
+        }
+
+        return LauncherRowReorder.targetIndex(
+            startIndex: draggingStartIndex,
+            translationX: dragTranslationX,
+            slotWidth: slotWidth,
+            itemCount: orderedApps.count
+        )
     }
 
     /// 拖动中顺序不变，只靠偏移显示换位效果：被拖图标贴住指针，起点与目标之间的图标让出一格。
@@ -240,20 +273,56 @@ struct LauncherOverlayRootView: View {
         }
 
         if draggingAppID != app.id {
-            let startIndex = orderedApps.firstIndex(of: app) ?? 0
             draggingAppID = app.id
             liftedAppID = app.id
-            draggingStartIndex = startIndex
-            dragTargetIndex = startIndex
+            draggingStartIndex = orderedApps.firstIndex(of: app) ?? 0
+            dragStartScrollOffsetX = scrollMetrics.offsetX
         }
 
-        dragTranslationX = value.translation.width
-        dragTargetIndex = LauncherRowReorder.targetIndex(
-            startIndex: draggingStartIndex,
-            translationX: value.translation.width,
-            slotWidth: slotWidth,
-            itemCount: orderedApps.count
-        )
+        dragPointerTranslationX = value.translation.width
+        updateAutoScroll(pointerX: value.location.x)
+    }
+
+    /// 图标行需要滚动时，拖到左右边缘区就连续滚动；离开边缘区或松手即停。
+    private func updateAutoScroll(pointerX: CGFloat) {
+        autoScrollVelocity = context.layout.shouldScroll
+            ? LauncherDragAutoScroll.velocity(
+                pointerX: pointerX,
+                viewportMinX: scrollViewportFrame.minX,
+                viewportMaxX: scrollViewportFrame.maxX,
+                edgeWidth: context.layout.iconSize,
+                maxSpeed: Self.autoScrollMaxSpeed
+            )
+            : 0
+
+        guard autoScrollVelocity != 0, autoScrollTask == nil else {
+            return
+        }
+
+        autoScrollTask = Task { @MainActor in
+            let clock = ContinuousClock()
+            var lastTick = clock.now
+            while !Task.isCancelled, draggingAppID != nil, autoScrollVelocity != 0 {
+                try? await Task.sleep(for: .milliseconds(16))
+                let now = clock.now
+                let elapsed = lastTick.duration(to: now)
+                lastTick = now
+                let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+                let nextOffsetX = scrollMetrics.clampedOffsetX(scrollMetrics.offsetX + autoScrollVelocity * seconds)
+                guard nextOffsetX != scrollMetrics.offsetX else {
+                    continue
+                }
+
+                scrollPosition.scrollTo(x: nextOffsetX)
+            }
+            autoScrollTask = nil
+        }
+    }
+
+    private func stopAutoScroll() {
+        autoScrollVelocity = 0
+        autoScrollTask?.cancel()
+        autoScrollTask = nil
     }
 
     /// 松手时一次性换位并在同一个动画里清掉偏移：让位的图标排版位置与偏移同步抵消，看起来不动；
@@ -265,8 +334,9 @@ struct LauncherOverlayRootView: View {
 
         let startIndex = draggingStartIndex
         let targetIndex = dragTargetIndex
+        stopAutoScroll()
 
-        withAnimation(Self.dropAnimation) {
+        withAnimation(Self.reorderAnimation) {
             if targetIndex != startIndex {
                 orderedApps.move(
                     fromOffsets: IndexSet(integer: startIndex),
@@ -274,7 +344,8 @@ struct LauncherOverlayRootView: View {
                 )
             }
             draggingAppID = nil
-            dragTranslationX = 0
+            dragPointerTranslationX = 0
+            dragStartScrollOffsetX = scrollMetrics.offsetX
         } completion: {
             if draggingAppID == nil, liftedAppID == droppedAppID {
                 liftedAppID = nil
@@ -292,19 +363,27 @@ struct LauncherOverlayRootView: View {
         case .webApp(let app):
             WebAppIconView(
                 app: app,
-                size: layout.iconSize * 0.85,
-                font: .system(size: layout.iconFontSize * 0.85, weight: .semibold),
+                size: layout.iconSize * Self.iconVisibleScale,
+                font: .system(size: layout.iconFontSize * Self.iconVisibleScale, weight: .semibold),
                 favicon: appModel.faviconImage(for: app),
                 loadFavicon: { appModel.ensureFaviconLoaded(for: app) }
             )
+            // 可点范围等于看得见的圆形；圆外的黑底属于抽屉，点了收起（判定在宿主的鼠标监听里）。
+            .contentShape(Circle())
+            .modifier(LauncherIconHitReporter(id: item.id, regions: iconHitRegions))
             .frame(width: layout.iconSize, height: layout.iconSize)
-            .contentShape(Rectangle())
         case .dashboard:
-            Image(systemName: "plus")
-                .font(.system(size: layout.iconFontSize, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
-                .frame(width: layout.iconSize, height: layout.iconSize)
-                .contentShape(Rectangle())
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.14))
+                Image(systemName: "plus")
+                    .font(.system(size: layout.iconFontSize * 0.8, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            .frame(width: layout.iconSize * Self.iconVisibleScale, height: layout.iconSize * Self.iconVisibleScale)
+            .contentShape(Circle())
+            .modifier(LauncherIconHitReporter(id: item.id, regions: iconHitRegions))
+            .frame(width: layout.iconSize, height: layout.iconSize)
         }
     }
 
@@ -347,6 +426,24 @@ struct LauncherOverlayRootView: View {
     }
 }
 
+/// 把图标可见圆形的实时位置（含滚动、拖动偏移）上报给按下判定。
+private struct LauncherIconHitReporter: ViewModifier {
+    let id: String
+    let regions: LauncherIconHitRegions
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                regions.update(id: id, frame: frame)
+            }
+            .onDisappear {
+                regions.update(id: id, frame: nil)
+            }
+    }
+}
+
 private enum LauncherItem: Identifiable {
     case webApp(WebAppDefinition)
     case dashboard
@@ -367,6 +464,33 @@ private enum LauncherItem: Identifiable {
         case .dashboard:
             return String(localized: "menubar.open_main_window")
         }
+    }
+}
+
+/// 图标行当前滚动位置与可滚范围（与 `ScrollPosition.scrollTo(x:)` 同一坐标）。
+struct LauncherScrollMetrics: Equatable, Sendable {
+    static let zero = LauncherScrollMetrics(offsetX: 0, minOffsetX: 0, maxOffsetX: 0)
+
+    let offsetX: CGFloat
+    let minOffsetX: CGFloat
+    let maxOffsetX: CGFloat
+
+    init(offsetX: CGFloat, minOffsetX: CGFloat, maxOffsetX: CGFloat) {
+        self.offsetX = offsetX
+        self.minOffsetX = minOffsetX
+        self.maxOffsetX = max(maxOffsetX, minOffsetX)
+    }
+
+    init(geometry: ScrollGeometry) {
+        self.init(
+            offsetX: geometry.contentOffset.x,
+            minOffsetX: -geometry.contentInsets.leading,
+            maxOffsetX: geometry.contentSize.width + geometry.contentInsets.trailing - geometry.containerSize.width
+        )
+    }
+
+    func clampedOffsetX(_ value: CGFloat) -> CGFloat {
+        min(max(value, minOffsetX), maxOffsetX)
     }
 }
 
@@ -426,6 +550,7 @@ struct LauncherEdgeFadeState: Equatable, Sendable {
             ),
             apps: WebAppDefinition.examples
         ),
+        iconHitRegions: LauncherIconHitRegions(),
         onSelectApp: { _ in }
     )
     .background(Color.gray.opacity(0.1))

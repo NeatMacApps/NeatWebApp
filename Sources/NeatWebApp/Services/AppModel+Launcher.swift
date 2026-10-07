@@ -142,6 +142,13 @@ extension AppModel {
         }
 
         if let frame = overlayController.frame, frame.contains(mouseLocation) {
+            // 抽屉里按下即判定：不在任何图标的可见圆形上就收起。放在这里而不是界面手势里，
+            // 是因为浮层没拿到焦点时，图标行的滚动区会把第一次点击吞掉用来取焦点。
+            if eventType == .leftMouseDown,
+               isLauncherVisible,
+               !overlayController.isOnLauncherIcon(mouseLocation) {
+                dismissLauncherVoluntarily()
+            }
             return
         }
 

@@ -153,4 +153,33 @@ final class LauncherRowReorderTests: XCTestCase {
         }
         XCTAssertEqual(unchanged, [0, 0, 0, 0, 0])
     }
+
+    func testAutoScrollOnlyInsideEdgeZones() {
+        func velocity(_ x: CGFloat) -> CGFloat {
+            LauncherDragAutoScroll.velocity(
+                pointerX: x,
+                viewportMinX: 100,
+                viewportMaxX: 300,
+                edgeWidth: 40,
+                maxSpeed: 200
+            )
+        }
+
+        XCTAssertEqual(velocity(200), 0)
+        XCTAssertEqual(velocity(140), 0)
+        XCTAssertEqual(velocity(120), -100, accuracy: 0.001)
+        XCTAssertEqual(velocity(280), 100, accuracy: 0.001)
+        // 拖出图标行之外按最快速度滚。
+        XCTAssertEqual(velocity(20), -200, accuracy: 0.001)
+        XCTAssertEqual(velocity(500), 200, accuracy: 0.001)
+    }
+
+    func testIconHitShapeIsVisibleCircleOnly() {
+        let frame = CGRect(x: 10, y: 20, width: 24, height: 24)
+        XCTAssertTrue(LauncherIconHitShape.circle(in: frame, contains: CGPoint(x: 22, y: 32)))
+        XCTAssertTrue(LauncherIconHitShape.circle(in: frame, contains: CGPoint(x: 33, y: 32)))
+        // 方框的四角在圆外，属于抽屉黑底。
+        XCTAssertFalse(LauncherIconHitShape.circle(in: frame, contains: CGPoint(x: 11, y: 21)))
+        XCTAssertFalse(LauncherIconHitShape.circle(in: frame, contains: CGPoint(x: 33, y: 43)))
+    }
 }

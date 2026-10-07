@@ -134,3 +134,45 @@ enum LauncherRowReorder {
         return translationX - CGFloat(targetIndex - startIndex) * slotWidth
     }
 }
+
+/// 图标的可点范围是它可见的圆形：取框内切圆，圆外的四角属于抽屉黑底。
+enum LauncherIconHitShape {
+    static func circle(in frame: CGRect, contains point: CGPoint) -> Bool {
+        let radius = min(frame.width, frame.height) / 2
+        guard radius > 0 else {
+            return false
+        }
+
+        let dx = point.x - frame.midX
+        let dy = point.y - frame.midY
+        return dx * dx + dy * dy <= radius * radius
+    }
+}
+
+/// 拖动换位时图标行贴边自动滚动的速度：指针进入左右边缘区才滚，越靠外越快，出了图标行按最快算。
+enum LauncherDragAutoScroll {
+    /// 返回每秒滚动的点数：负数朝前（左）滚，正数朝后（右）滚，0 表示不滚。
+    static func velocity(
+        pointerX: CGFloat,
+        viewportMinX: CGFloat,
+        viewportMaxX: CGFloat,
+        edgeWidth: CGFloat,
+        maxSpeed: CGFloat
+    ) -> CGFloat {
+        guard edgeWidth > 0, viewportMaxX - viewportMinX > edgeWidth * 2 else {
+            return 0
+        }
+
+        let leadingDepth = (viewportMinX + edgeWidth - pointerX) / edgeWidth
+        if leadingDepth > 0 {
+            return -maxSpeed * min(leadingDepth, 1)
+        }
+
+        let trailingDepth = (pointerX - (viewportMaxX - edgeWidth)) / edgeWidth
+        if trailingDepth > 0 {
+            return maxSpeed * min(trailingDepth, 1)
+        }
+
+        return 0
+    }
+}
