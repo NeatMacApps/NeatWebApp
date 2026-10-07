@@ -76,6 +76,7 @@ This lets the launcher react both before and after the overlay becomes visible.
 launcher / 侧边 Dock 都是 `NSPanel` 覆盖层，验证时有两个反直觉的点：
 
 - `winshot.py`（截图 skill）只列窗口层级为 0 的普通窗口，**截不到这类覆盖层**；要确认它是否真的出现，用 `CGWindowListCopyWindowInfo` 直接看进程的窗口列表（launcher 在层级 25，可顺带核对位置与尺寸是否等于预期的刘海几何）。
+- 用 `cliclick` 一类工具合成移动、拖动、点击可以走通真实路径，但会接管用户正在用的指针；用户在用这台电脑时不要跑，交给用户手测并说明要测哪几处。用户同时动鼠标还会产生干扰事件（指针离开抽屉触发正常收起），看日志时要区分。
 - `CGWarpMouseCursorPosition` 只挪指针、不产生鼠标事件，所以挪过去不会触发唤出；用 `CGEvent.post` 合成移动事件又受辅助功能授权限制。可行做法是：**先把指针停到目标热区，再重启应用**——事件监视器启动时会主动评估一次当前指针位置，从而走完整条唤出链路。
 
 <!-- 该文档整理/压缩于 2026-09-05 -->
