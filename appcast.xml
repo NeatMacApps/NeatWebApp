@@ -6,6 +6,22 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.21</title>
+            <pubDate>Thu, 08 Oct 2026 17:37:42 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3039</sparkle:version>
+            <sparkle:shortVersionString>0.3.21</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.21
+
+- 置顶窗口跟随鼠标自动聚焦：图钉置顶后，鼠标进入窗口即抢回焦点并聚焦网页，并排多应用切换输入更快；拖拽、启动盖未揭、有弹窗或按住鼠标时不抢。
+- 刷新按钮改为重载当前页面，不再跳回首页。
+- 新开网页应用更快：后台常备一个预热好的窗口进程，点开还没运行的网页应用时直接接手，省掉约 1.5 秒冷启动（实测从点击到网页请求发出由约 2 秒降到 0.4–0.5 秒）。
+- 刘海启动器抽屉更好用：点黑底空白处收起，图标拖动换位跟手不跳动，拖到边缘自动滚动。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.21/NeatWebApp-0.3.21.zip" length="5846212" type="application/octet-stream" sparkle:edSignature="Sizrt20R69tkJGjNlARJhGq/1V036My76WqBUGsq3uGJQPuBLKC9iYKh92jjK1EyDexeAa29XZUiZKAw/LzWCw=="/>
+        </item>
+        <item>
             <title>0.3.20</title>
             <pubDate>Wed, 23 Sep 2026 10:56:44 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -37,6 +53,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: gPqCms/oNYHlJcXh1TtgF5KBAQdBKRwiq8gPn48QCUXGrO+RADxdskoT3sfAWXnZSl0YletwFzCP7GIr4zw6CA==
-length: 2458
+edSignature: KO+HMG9tNTBdPGhAqXl4kroBYvXLmHEO/xrmK4kCCYyG4DCgLoACa5L6ra3MFkrwZikxschh9ZusVjf/9RKCDw==
+length: 3871
 -->
