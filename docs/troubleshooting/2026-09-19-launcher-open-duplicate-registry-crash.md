@@ -12,7 +12,7 @@ Observed twice on 2026-09-19 (13:47 and 15:18), build `0.3.15` (3033).
 
 Runtime state files are stored **per instance ID**. The host maps them by **app ID** when refreshing the in-memory registry.
 
-Under restart / migrate races (or when a lock directory was missing while a live state still existed), two live state files can share the same `appID`. `Dictionary(uniqueKeysWithValues:)` traps on duplicate keys and kills the host.
+Under restart / migrate races (or when a lock directory was missing while a live state still existed), two live state files can share the same `appID`. `Dictionary(uniqueKeysWithValues:)` requires unique keys and traps on duplicates — general rule: [Duplicate keys in reconstructed dictionaries](~/Codes/_standards/swift.md#duplicate-keys-in-reconstructed-dictionaries); here it killed the host.
 
 Contributing gaps:
 
@@ -23,7 +23,7 @@ Contributing gaps:
 
 ## Fix
 
-- Build the registry with `uniquingKeysWith`, keeping the newest row (`loadAllStates` is newest-first).
+- Build the registry with `uniquingKeysWith`, keeping the newest row (`loadAllStates` is newest-first) — newest-wins is this registry's chosen conflict policy ([Duplicate keys in reconstructed dictionaries](~/Codes/_standards/swift.md#duplicate-keys-in-reconstructed-dictionaries)).
 - In `cleanupStaleStates`, after removing dead processes, keep one live row per `appID` and drop older duplicates (terminate orphan runtime PIDs when safe).
 - Always consult live registry state in `acquire`, and treat lock-directory create races as “not acquired”.
 - After shutdown wait times out, always remove that instance’s state and bootstrap before relaunch.
