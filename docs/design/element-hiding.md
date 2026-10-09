@@ -73,13 +73,12 @@
 ## 实现约束
 
 - **注入时机必须是文档开头**。晚一步用户就会先看见要隐藏的东西闪一下再消失。
-- WebKit 只允许整批清空用户脚本、不能单独摘掉某一条，所以隐藏规则一变就得把整套脚本重装一遍。
-  装配顺序集中在 `BrowserUserScripts.install`，新增注入脚本时加到那里，不要散在各处。
+- The shared [user-script and message-handler API contract](~/Codes/_standards/workspace-docs/swift-docs/webkit-integration.md#user-scripts-and-message-handlers) owns the general WebKit behavior. This product rebuilds its complete script collection when hiding rules change.
+  Assembly order stays centralized in `BrowserUserScripts.install`; add new injected scripts there so rebuilding preserves them.
 - 隐藏规则一变要做三件事，缺一不可：存盘、把已经打开的页面立刻改过来、把后续页面的注入脚本也换掉。
 - 选择器里出现花括号说明它已经不是选择器了，必须在存盘和拼样式两处都拦掉，否则会把后面的规则整片带坏。
-- 持久化字段 `hiddenElements` **必须是可选的**。老版本存下来的偏好里没有这个字段，写成非可选会让整份
-  偏好解码失败，用户的缩放、置顶、窗口位置跟着一起丢。对应断言在
-  `Tests/NeatWebAppRuntimeTests/BrowserElementHidingTests.swift`。
+- The persisted `hiddenElements` field **must stay optional**. Old archives lack this key (new-app-reads-old-data direction; general optional/default/migration/versioned contract: [Compatibility with older persisted preferences](~/Codes/_standards/workspace-docs/swift-docs/apple-app-preferences.md#compatibility-with-older-persisted-preferences)). Asserted in
+  `Tests/NeatWebAppRuntimeTests/BrowserElementHidingTests.swift`.
 - 自己的界面元素（高亮框、提示条、样式表）统一打 `data-neat-webapp-ui` 标记，挑选时跳过，
   否则用户会选中高亮框本身。
 - 页面内唯一的承诺只在挑选当时、当页成立，不要把它当成全站安全的依据；宽规则靠上面的回报告警兜底，

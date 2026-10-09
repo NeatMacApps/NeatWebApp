@@ -151,8 +151,8 @@ done
 - 无刘海屏幕（外接显示器、Mac mini / Studio、旧款 MacBook）由虚拟刘海兜底：顶部中央合成一块与硬件刘海同构的热区，指针停留约 260ms 才展开，热区内的点击让给菜单栏。**硬件刘海也不是一碰就开**：指针移入后等 100ms，仍在区内才弹出启动器，避免路过误开。改虚拟刘海几何、悬停判定、开关或诊断文案前先读 [刘海触发说明](docs/notch-activation-research.md)，里面记了「屏幕刷新无差别取消悬停等待会让虚拟热区彻底失灵」这个坑，以及覆盖层无法用截图 skill 验证时的替代手法。
 - 修改浏览器行为时，同时检查 `Sources/NeatWebApp/Features/Browser/BrowserSession.swift`、`Sources/NeatWebApp/Features/Browser/AppKitBridge/BrowserWebView.swift`、`Sources/NeatWebApp/Services/WebAppWindowController.swift`。
 - 浏览器窗口顶部是无边框的「让位带」，不是标题栏：不画横条与分割线，图标裸放，网页内容从带子下方开始。左上角是收起、置顶、收藏当前页与这个网页应用自己的收藏列表。改这块前先读 [浏览器顶栏无界样式](docs/design/browser-top-chrome.md)，里面记了液态玻璃胶囊、悬停淡入等已被推翻的方案和推翻理由。
-- 注入网页的用户脚本（页面取色、通行密钥提示、元素隐藏）统一在 `BrowserUserScripts.install` 里装配。WebKit 只能整批清空用户脚本、不能单独摘掉一条，新增注入脚本必须加进这个入口，否则隐藏规则变更时重装会把它弄丢。**禁止**再注入「长列表卸屏 / 屏外跳过绘制 / 整树重绑」一类脚本；用户 2026-09-19 已否决。改长页面卡顿前先读 [长页面把窗口卡死](docs/troubleshooting/2026-09-18-long-page-webview-jank.md)。
-- 修改网站数据、缩放、置顶、窗口恢复、已隐藏元素、**按网页应用隔离的收藏**时，要连同偏好持久化一起验证；偏好里新增字段一律写成可选，老版本存档缺字段会让整份偏好解码失败。
+- Assemble injected page-color, passkey-hint and element-hiding scripts in `BrowserUserScripts.install`. Add new scripts there so hiding-rule rebuilds preserve them; the general API behavior is owned by the shared [user-script and message-handler contract](../../_standards/workspace-docs/swift-docs/webkit-integration.md#user-scripts-and-message-handlers). The 2026-09-19 prohibition on injected long-list off-screen unloading, skipped off-screen rendering and whole-tree rebinding remains in force. Read the [long-page freeze investigation](docs/troubleshooting/2026-09-18-long-page-webview-jank.md) before changing that behavior.
+- Verify preference persistence when changing website data, zoom, pinning, window restoration, hidden elements or bookmarks isolated by web app. New fields in this product's preferences remain optional; the general compatibility rationale is in [older persisted preferences](../../_standards/workspace-docs/swift-docs/apple-app-preferences.md#compatibility-with-older-persisted-preferences).
 
 ## 与当前代码保持一致的实现提示
 - launcher 的顶层状态由 `AppModel` 驱动。
