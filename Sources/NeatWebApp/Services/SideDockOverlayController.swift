@@ -27,7 +27,6 @@ final class SideDockOverlayController {
     private var verticalPosition = SideDockPlacementResolver.defaultVerticalPosition
     private var floatingPosition: CGPoint?
     private var preferredDisplayID: CGDirectDisplayID?
-    private var isCompact = false
     private var isDragging = false
     private var dragCompletionTask: Task<Void, Never>?
     private var hideGeneration = 0
@@ -104,8 +103,7 @@ final class SideDockOverlayController {
         self.overlayState = overlayState
         let rootView = SideDockOverlayRootView(
             state: overlayState,
-            onSelectApp: { [weak self] app in self?.select(app) },
-            onToggleCompact: { [weak self] in self?.toggleCompact() }
+            onSelectApp: { [weak self] app in self?.select(app) }
         )
         .environment(appModel)
         let hostingView = SideDockHostingView(rootView: AnyView(rootView))
@@ -119,12 +117,6 @@ final class SideDockOverlayController {
     private func select(_ app: WebAppDefinition) {
         guard !isDragging, Date() >= suppressSelectionUntil else { return }
         appModel?.expandCollapsedWebApp(app)
-    }
-
-    private func toggleCompact() {
-        guard !isDragging, Date() >= suppressSelectionUntil else { return }
-        isCompact.toggle()
-        present(animated: true)
     }
 
     private func beginNativeDragging() {
@@ -188,8 +180,7 @@ final class SideDockOverlayController {
             screenFrame: screen.frame,
             visibleFrame: screen.visibleFrame,
             verticalPosition: verticalPosition,
-            floatingPosition: floatingPosition,
-            isCompact: isCompact
+            floatingPosition: floatingPosition
         )
     }
 

@@ -20,6 +20,8 @@ Owner decision (2026-10-11): keep exactly three persistent controls on the left:
 
 Installed-app acceptance of the earlier SwiftUI `Menu` showed horizontal dots and text-only rows despite the label's rotation and `Label` content. Do not reuse that rendering path for this requirement. The installed system has no `ellipsis.vertical` SF Symbol; render the existing `ellipsis` symbol with a 90-degree transform into the native button's template image.
 
+On macOS 27 and later, AppKit's automatic menu image visibility typically hides action images even when `NSMenuItem.image` is set. Every action must set [`preferredImageVisibility`](https://developer.apple.com/documentation/appkit/nsmenuitem/preferredimagevisibility) to `.visible` under a macOS 27 availability check. Earlier systems retain the normal explicit-image behavior. The requirement is a visible icon beside each label; accessibility descriptions and tooltips do not satisfy it. Acceptance must inspect the opened menu on the installed system.
+
 Move Bookmarks, element hiding, reload, website identity switching and download status/actions into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary.
 
 A download notice is indicated by a small dot on More Actions, without adding a fifth top-bar control. The menu retains download progress/completion/failure, revealing the saved file in Finder, and dismissing a finished notice. Dismissal only clears UI state; it does not delete the file. Running downloads cannot be dismissed.

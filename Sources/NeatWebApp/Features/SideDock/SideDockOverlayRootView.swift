@@ -5,13 +5,12 @@ struct SideDockOverlayRootView: View {
     @Environment(AppModel.self) private var appModel
     var state: SideDockOverlayState
     let onSelectApp: (WebAppDefinition) -> Void
-    let onToggleCompact: () -> Void
 
     private var context: SideDockPresentationContext { state.context }
 
     var body: some View {
         let shape = Capsule()
-        dockContent
+        iconRow
             .padding(SideDockPresentationContext.Layout.padding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // Clear glass needs a visible-shape hit surface for the native window drag.
@@ -24,41 +23,6 @@ struct SideDockOverlayRootView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(String(localized: "sidedock.collapsed_hint"))
             .containerBackground(.clear, for: .window)
-    }
-
-    private var dockContent: some View {
-        Group {
-            if context.isCompact {
-                compactButton
-            } else if context.edge.isSide {
-                VStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
-                    compactButton
-                    iconRow
-                }
-            } else {
-                HStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
-                    compactButton
-                    iconRow
-                }
-            }
-        }
-    }
-
-    private var compactButton: some View {
-        Button(action: onToggleCompact) {
-            Image(systemName: context.isCompact
-                  ? "arrow.up.left.and.arrow.down.right" : "minus")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: SideDockPresentationContext.Layout.iconSlotSize,
-                       height: SideDockPresentationContext.Layout.iconSlotSize)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .allowsWindowActivationEvents()
-        .focusEffectDisabled()
-        .help(Text(context.isCompact ? "sidedock.expand" : "sidedock.collapse"))
-        .accessibilityLabel(Text(context.isCompact ? "sidedock.expand" : "sidedock.collapse"))
     }
 
     private var iconRow: some View {

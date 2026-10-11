@@ -10,8 +10,9 @@ The activity Dock is a single floating capsule with the existing clear Liquid Gl
 The whole capsule, including app icons, can be dragged freely in both axes and across displays.
 AppKit's public `NSWindow.performDrag(with:)` owns window dragging; a short click still opens
 an app, with the existing eight-point tolerance for pointer jitter. Dragging never quits an app.
-Each app's native context menu provides an explicit Quit action instead. An on-panel collapse
-button reduces the Dock to a movable circular restore button without ending any runtime.
+Each app's native context menu provides an explicit Quit action instead. The owner explicitly rejected added collapse/expand controls. The Dock contains the original
+app icons only: no compact state, restore button, or added folding interaction. This explicit
+product decision supersedes the general on-panel collapse recommendation for this surface.
 
 The panel remains nonactivating and available across Spaces. It stays above ordinary browser
 windows using the existing panel level. Browser windows use the full system `visibleFrame`;
@@ -30,7 +31,8 @@ handling. Verified API availability: Xcode 27.2 SDK provides `performWindowDragW
 SwiftUI `Capsule` and `glassEffect(_:in:)`. Official behavior:
 [window dragging](https://developer.apple.com/documentation/appkit/nswindow/performdrag(with:))
 and [native glass](https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:)).
-Runtime and visual acceptance is pending until the changed app is installed and exercised.
+Diagonal native dragging from an app icon and two-axis preference writes were verified on the
+installed app. Acceptance of the icon-only correction is pending installation.
 
 The historical attachment, corner wrapping, inward-to-quit and browser edge-reservation
 rules below describe the previous design and are superseded by this decision.
@@ -221,6 +223,6 @@ Dock 避让会主动改变可用区域，而 `NSWindow.constrainFrameRect` 仍�
 11. **刘海点已开的应用**：窗口已收进侧边栏或在别的窗口后面时，从顶部刘海再点一次应唤到前面，不能秒关或没反应。
 12. **刚打开不秒关**：新开一个 WebApp，窗口应留在前面，不能闪一下就收进侧边栏。
 13. **单击即开**：别的应用仍在前台时，单击顶部刘海图标和侧边栏图标各一次，都应打开对应网页应用；连点不是必经路径。
-14. **悬浮与收纳**：网页窗口保留完整可用桌面，悬浮栏保持可操作；移动栏不挤动网页窗口。栏上收纳按钮变为圆形恢复按钮，恢复后图标仍可单击打开；图标右键结束应用有效。
+14. **悬浮栏**：网页窗口保留完整可用桌面，悬浮栏保持可操作；移动栏不挤动网页窗口。只显示应用图标，不增加展开、收缩控件；图标右键结束应用有效。
 
 <!-- 该文档整理/压缩于 2026-09-05 -->

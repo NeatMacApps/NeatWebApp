@@ -61,6 +61,10 @@
 
 ## 发版
 
+Release archive and export diagnostics are retained in `build/release-archive.log` and
+`build/release-export.log`; inspect complete warnings/errors before claiming release coverage.
+
+
 ```bash
 scripts/publish-release.sh              # 完整发版
 scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 GitHub

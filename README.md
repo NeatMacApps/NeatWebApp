@@ -57,13 +57,13 @@ NeatWebApp lives in the menu bar — it has no Dock icon. Hover the notch (or th
 1. Open the dashboard from the launcher's **+** button and add a site: name plus URL.
 2. Hover the notch to open the launcher, click the site to open it in its own window.
 3. Each site keeps its own cookies, local storage, zoom level and bookmarks, separate from your browser and from other sites.
-4. Drag a window mostly off-screen and it tucks into the side dock; click its icon there to bring it back.
+4. Drag a window mostly off-screen and it tucks into the activity Dock; click its icon there to bring it back.
 
 ## Features
 
 - Notch launcher: hover to reveal, click to open, plus a top-center hot zone on notch-less displays
 - Isolated browser windows: per-site cookies, storage, zoom and bookmarks via separate data stores
-- Side dock for tucked-away windows, draggable along screen edges
+- Floating clear-glass activity Dock: drag freely, remember its position, and right-click an icon to quit the app
 - Per-site element hiding, download saving with reveal in Finder, file upload and camera/microphone prompts
 - Menu-bar presence with automatic Sparkle updates, no Dock icon
 

@@ -786,40 +786,6 @@
         }
       }
     },
-    "sidedock.collapse": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Collapse Dock"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起 Dock"
-          }
-        }
-      }
-    },
-    "sidedock.expand": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expand Dock"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "展开 Dock"
-          }
-        }
-      }
-    },
     "sidedock.quit_app": {
       "extractionState": "manual",
       "localizations": {

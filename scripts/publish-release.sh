@@ -264,7 +264,7 @@ xcodegen generate >/dev/null
 rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}"
 xcodebuild -project NeatWebApp.xcodeproj -scheme NeatWebApp -configuration Release \
   -destination 'platform=macOS' -derivedDataPath "${DERIVED_DATA}" \
-  -archivePath "${ARCHIVE_PATH}" -allowProvisioningUpdates archive >/dev/null \
+  -archivePath "${ARCHIVE_PATH}" -allowProvisioningUpdates archive >"${BUILD_DIR}/release-archive.log" 2>&1 \
   || die "Release 归档失败"
 
 log_step "按 Developer ID 导出（这一步才会重新签名 Sparkle 的嵌套辅助程序）"
@@ -289,7 +289,7 @@ cat > "${export_options}" <<EOF
 EOF
 xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" \
   -exportOptionsPlist "${export_options}" -exportPath "${EXPORT_DIR}" \
-  -allowProvisioningUpdates >/dev/null \
+  -allowProvisioningUpdates >"${BUILD_DIR}/release-export.log" 2>&1 \
   || die "按 Developer ID 导出失败"
 [[ -d "${APP_PATH}" ]] || die "导出产物不存在：${APP_PATH}"
 [[ -d "${EMBEDDED_RUNTIME_PATH}" ]] || die "内嵌运行时不存在：${EMBEDDED_RUNTIME_PATH}"

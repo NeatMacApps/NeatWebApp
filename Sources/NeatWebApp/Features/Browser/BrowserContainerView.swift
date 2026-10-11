@@ -175,6 +175,9 @@ private struct BrowserNativeActionsMenu: NSViewRepresentable {
                 item.isEnabled = isEnabled
                 item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
                 item.image?.size = NSSize(width: 16, height: 16)
+                if #available(macOS 27.0, *) {
+                    item.preferredImageVisibility = .visible
+                }
                 menu.addItem(item)
             }
         }

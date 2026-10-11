@@ -46,7 +46,6 @@ struct SideDockPresentationContext: Equatable {
     let visibleFrame: CGRect
     let verticalPosition: CGFloat
     var floatingPosition: CGPoint? = nil
-    var isCompact = false
 
     var layout: Layout {
         let availableLength = edge.isSide ? visibleFrame.height : visibleFrame.width
@@ -54,13 +53,13 @@ struct SideDockPresentationContext: Equatable {
             availableLength - SideDockPlacementResolver.edgeMargin * 2,
             Layout.thickness
         )
-        let slotCount = isCompact ? 1 : apps.count + 1
+        let slotCount = apps.count
         let naturalLength = Layout.padding * 2
             + CGFloat(slotCount) * Layout.iconSlotSize
             + CGFloat(max(slotCount - 1, 0)) * Layout.iconSpacing
         return Layout(
             edge: edge,
-            length: min(naturalLength, maximumLength),
+            length: min(max(naturalLength, Layout.thickness), maximumLength),
             shouldScroll: naturalLength > maximumLength
         )
     }

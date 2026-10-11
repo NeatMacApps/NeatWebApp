@@ -71,11 +71,10 @@ final class SideDockPlacementTests: XCTestCase {
                        CGPoint(x: 0.5, y: 0.5))
     }
 
-    func testCompactDockIsCircleAndMatchesCapsuleEndPadding() {
-        var context = SideDockPresentationContext(
+    func testMinimumDockSizeMatchesCapsuleEndPadding() {
+        let context = SideDockPresentationContext(
             apps: [], edge: .right, screenFrame: desktop, visibleFrame: desktop, verticalPosition: 0.72
         )
-        context.isCompact = true
         XCTAssertEqual(context.layout.panelSize, CGSize(width: 47, height: 47))
         XCTAssertFalse(context.layout.shouldScroll)
         XCTAssertEqual(SideDockPresentationContext.Layout.iconSlotSize / 2
