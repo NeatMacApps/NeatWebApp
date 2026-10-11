@@ -16,12 +16,23 @@ or added folding interaction. The grip sits first (left in a horizontal Dock, to
 vertical Dock), remains outside scrolling app content, and starts native window dragging
 from mouse-down through the same public `performDrag(with:)` API. App icons retain their
 eight-point threshold. The grip occupies fourteen points along a horizontal row, or twenty
-points at the top of a vertical column, rather than a full app-icon slot. Use semantic primary
-foreground with a subtle contrasting edge for readability over both light and dark backdrops.
-Inspect an actual desktop-region capture over each backdrop: an isolated glass-window image
-does not establish contrast against the real underlying content.
-It uses two native SF Symbol `ellipsis` images rotated into columns through
-SwiftUI `Image(systemName:)`; no custom drag engine is introduced. This follows the shared
+points at the top of a vertical column, rather than a full app-icon slot.
+
+The previous rotated-ellipsis grip and semantic-primary/blurred-shadow treatment failed
+actual light and dark desktop captures; the earlier isolated-window image did not establish
+readability. Its visual acceptance is withdrawn. The correction reuses the six-circle geometry
+from [Lucide Grip Vertical](https://github.com/lucide-icons/lucide/blob/main/icons/grip-vertical.svg).
+The actual [shadcn ResizableHandle implementation](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/resizable.tsx)
+was inspected: it places that persistent grip in the separator's drag target independently
+of pane content. Reuse the recognizable geometry and separation of grip from scrolling content;
+do not copy its web separator engine, focus rings or bordered container into this native panel.
+The vector asset uses an opaque dark core and sharp white perimeter, replacing the failed
+blurred halo; compact dimensions remain unchanged. This is product-specific icon content,
+not a replacement for a standard native control. Window movement still uses the existing
+public AppKit drag API. Actual desktop contrast and grip-origin dragging remain pending
+until the corrected installed artifact passes the same acceptance path.
+
+This follows the shared
 [drag discoverability requirement](~/.config/agentsync/docs/UI_DESIGN_GUIDE.md#drag-discoverability). This explicit
 product decision supersedes the general on-panel collapse recommendation for this surface.
 

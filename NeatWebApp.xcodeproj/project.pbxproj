@@ -44,6 +44,7 @@
 		4493182F44AAD82381CE5F32 /* BrowserChromeMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */; };
 		47614C209C570D5A5504EC6A /* BrowserPasskeySupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC03737ED14842B918B3908A /* BrowserPasskeySupport.swift */; };
 		47A598ACC19577AD9FC0F184 /* WebAppFaviconMemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E28942D2F0EEBAC320D914 /* WebAppFaviconMemoryCache.swift */; };
+		4D8AE8BC2D0DC061419D5565 /* Lucide-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */; };
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */; };
 		50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
@@ -259,6 +260,7 @@
 		A914E86F1ECA2915BA025350 /* RuntimeRegistryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeRegistryStore.swift; sourceTree = "<group>"; };
 		A95538A43E44E067FB865857 /* 0.3.15.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.15.md; sourceTree = "<group>"; };
 		AC891DBB5C3E7A9AF43B963D /* BrowserDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadManager.swift; sourceTree = "<group>"; };
+		AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Lucide-LICENSE.txt"; sourceTree = "<group>"; };
 		B2F17F52846B3347E6D0CEC6 /* PanelCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelCard.swift; sourceTree = "<group>"; };
 		BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserContainerView.swift; sourceTree = "<group>"; };
 		BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBookmarkTests.swift; sourceTree = "<group>"; };
@@ -488,6 +490,7 @@
 			isa = PBXGroup;
 			children = (
 				26C080DE9BFB192B813F8AF3 /* Localizable.xcstrings */,
+				AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -816,6 +819,7 @@
 				053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */,
 				54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */,
 				A7243172079700FAA6172130 /* Localizable.xcstrings in Resources */,
+				4D8AE8BC2D0DC061419D5565 /* Lucide-LICENSE.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

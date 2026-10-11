@@ -42,33 +42,27 @@ struct SideDockOverlayRootView: View {
     }
 
     private var dragGrip: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<2) { _ in
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 14, weight: .semibold))
-                    .rotationEffect(.degrees(90))
-                    .frame(width: 4, height: 18)
+        Image("DockDragGrip")
+            .renderingMode(.original)
+            .resizable()
+            .frame(width: 12, height: 20)
+            .frame(width: context.edge.isSide
+                   ? SideDockPresentationContext.Layout.iconSlotSize
+                   : SideDockPresentationContext.Layout.horizontalGripLength,
+                   height: context.edge.isSide
+                   ? SideDockPresentationContext.Layout.verticalGripLength
+                   : SideDockPresentationContext.Layout.iconSlotSize)
+            .contentShape(Rectangle())
+            .help(String(localized: "sidedock.drag"))
+            .accessibilityHidden(true)
+            .onHover { isHovering in
+                guard !state.isDragging else { return }
+                if isHovering {
+                    NSCursor.openHand.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
             }
-        }
-        .foregroundStyle(.primary)
-        .shadow(color: Color(nsColor: .textBackgroundColor).opacity(0.9), radius: 0.7)
-        .frame(width: context.edge.isSide
-               ? SideDockPresentationContext.Layout.iconSlotSize
-               : SideDockPresentationContext.Layout.horizontalGripLength,
-               height: context.edge.isSide
-               ? SideDockPresentationContext.Layout.verticalGripLength
-               : SideDockPresentationContext.Layout.iconSlotSize)
-        .contentShape(Rectangle())
-        .help(String(localized: "sidedock.drag"))
-        .accessibilityHidden(true)
-        .onHover { isHovering in
-            guard !state.isDragging else { return }
-            if isHovering {
-                NSCursor.openHand.set()
-            } else {
-                NSCursor.arrow.set()
-            }
-        }
     }
 
     private var iconRow: some View {

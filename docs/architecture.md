@@ -175,7 +175,8 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
   use a vertical layout; the bottom preset uses a horizontal layout. Presets set the initial
   placement, while subsequent dragging is free in both axes and between displays.
 - The existing native `NSPanel` forwards a mouse-down to `NSWindow.performDrag(with:)`
-  after eight points of motion. Window Server owns tracking, Space switching and movement;
+  immediately on the grip, or after eight points of motion on app icons. Window Server owns
+  tracking, Space switching and movement;
   short clicks still open apps. A completed drag suppresses the trailing click. Dragging
   never quits a runtime; the app icon's native context menu exposes Quit instead.
 - The panel contains app icons and a persistent two-column dotted drag grip, with no
