@@ -29,3 +29,7 @@ Package.resolved
 .pickup-pastes/
 .build-menubar-fix/
 scripts/publish-local.env
+
+# Local code graph and compiler profiling output
+.codebase-memory/
+*.profraw

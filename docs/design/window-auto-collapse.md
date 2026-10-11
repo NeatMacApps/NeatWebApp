@@ -32,7 +32,12 @@ SwiftUI `Capsule` and `glassEffect(_:in:)`. Official behavior:
 [window dragging](https://developer.apple.com/documentation/appkit/nswindow/performdrag(with:))
 and [native glass](https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:)).
 Diagonal native dragging from an app icon and two-axis preference writes were verified on the
-installed app. Acceptance of the icon-only correction is pending installation.
+installed app. The icon-only correction was cold-installed from commit `2e17536` and
+its actual panel screenshot was inspected: three app icons, no added controls. Saved
+two-axis placement survived the replacement and restart. The corrected Debug build,
+all 165 host/runtime tests, and static analysis passed. Physical acceptance used one
+display on macOS 27; cross-display recovery is covered by geometry tests, not a
+physical multi-display run.
 
 The historical attachment, corner wrapping, inward-to-quit and browser edge-reservation
 rules below describe the previous design and are superseded by this decision.

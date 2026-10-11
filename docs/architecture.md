@@ -52,6 +52,14 @@ The actor-isolated favicon-store test fixture uses XCTest's asynchronous setup/t
 
 The host's AppIntents metadata tool emits `Metadata extraction skipped, no AppIntents.framework dependency found` under Xcode 27.2. Neither application declares App Intents, so there is no metadata to extract and no affected user action. Keep the tool diagnostic visible; reassess it when adding an App Intent rather than adding a dependency or disabling extraction just to remove the warning.
 
+The macOS 27 test runner also emitted WebContent shutdown diagnostics after all 165 tests
+passed: missing private preference files, sandbox-denied pasteboard/Launch Services/audio
+connections, missing tracking-query data, and a RunningBoard assertion for an already-ended
+WebContent PID. These originate in WebKit processes, not compiler/static-analysis warnings.
+The installed Dock path did not exercise these APIs. No private entitlement or log suppression
+was added. Their exact SDK cause is unconfirmed; investigate with a focused WebKit harness if
+pasteboard, audio, or process lifecycle failures occur in the installed app.
+
 Product rulings, overturned approaches, and acceptance for the covering lid: [launch-cover.md](design/launch-cover.md).
 
 1. `AppModel` starts, loads the app catalog, restores cached favicons, refreshes screen state, and refreshes the runtime registry.
