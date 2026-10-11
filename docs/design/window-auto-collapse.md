@@ -27,8 +27,9 @@ was inspected: it places that persistent grip in the separator's drag target ind
 of pane content. Reuse the recognizable geometry and separation of grip from scrolling content;
 do not copy its web separator engine, focus rings or bordered container into this native panel.
 The first vector treatment used dark cores with thick white rings; the owner rejected its
-button-like appearance. The corrected asset uses small solid light dots with a thin dark
-perimeter, avoiding both hollow rings and blurred halos; compact dimensions remain unchanged. This is product-specific icon content,
+button-like appearance. A light core with a dark edge still appeared hollow on a light desktop during inspection.
+The corrected asset uses small solid neutral-gray dots, with no rings, perimeter or blurred
+halo; compact dimensions remain unchanged. This is product-specific icon content,
 not a replacement for a standard native control. Window movement still uses the existing
 public AppKit drag API. Actual desktop contrast and grip-origin dragging remain pending
 until the corrected installed artifact passes the same acceptance path.
