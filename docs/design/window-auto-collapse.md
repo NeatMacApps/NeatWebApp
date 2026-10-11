@@ -31,8 +31,15 @@ button-like appearance. A light core with a dark edge still appeared hollow on a
 The corrected asset uses small solid neutral-gray dots, with no rings, perimeter or blurred
 halo; compact dimensions remain unchanged. This is product-specific icon content,
 not a replacement for a standard native control. Window movement still uses the existing
-public AppKit drag API. Actual desktop contrast and grip-origin dragging remain pending
-until the corrected installed artifact passes the same acceptance path.
+public AppKit drag API. Acceptance of the solid-dot artifact (commit `3aaa183`): inspected actual-scale desktop-context
+captures over light and dark native backdrop windows and normal desktop content. The six dots
+are solid in both captures, with no rings or blurred halos; see [light](../images/activity-dock-light.png)
+and [dark](../images/activity-dock-dark.png). A drag initiated in the compact grip moved the
+installed panel from screen coordinates (1251, 601) to (1111, 521), then released with no
+mouse button held. After host restart and reopening/collapsing Gemini through the native launcher
+and Command-W path, the one-icon Dock returned at (1143, 521): the width changed from 106 to
+68 points, while normalized placement remained x=0.8415007657, y=0.4578587699. Verification used
+a single macOS 27 display; multi-display movement and macOS 15 fallback remain physically untested.
 
 This follows the shared
 [drag discoverability requirement](~/.config/agentsync/docs/UI_DESIGN_GUIDE.md#drag-discoverability). This explicit
@@ -252,6 +259,6 @@ Dock 避让会主动改变可用区域，而 `NSWindow.constrainFrameRect` 仍�
 11. **刘海点已开的应用**：窗口已收进侧边栏或在别的窗口后面时，从顶部刘海再点一次应唤到前面，不能秒关或没反应。
 12. **刚打开不秒关**：新开一个 WebApp，窗口应留在前面，不能闪一下就收进侧边栏。
 13. **单击即开**：别的应用仍在前台时，单击顶部刘海图标和侧边栏图标各一次，都应打开对应网页应用；连点不是必经路径。
-14. **悬浮栏**：网页窗口保留完整可用桌面，悬浮栏保持可操作；移动栏不挤动网页窗口。只显示应用图标，不增加展开、收缩控件；图标右键结束应用有效。
+14. **悬浮栏**：网页窗口保留完整可用桌面，悬浮栏保持可操作；移动栏不挤动网页窗口。只显示应用图标与紧凑双列点阵手柄，不增加展开、收缩控件；图标右键结束应用有效。
 
 <!-- 该文档整理/压缩于 2026-09-05 -->
