@@ -13,7 +13,13 @@ an app, with the existing eight-point tolerance for pointer jitter. Dragging nev
 Each app's native context menu provides an explicit Quit action instead. The owner explicitly rejected added collapse/expand controls. The Dock contains the original
 app icons and a persistent two-column dotted drag grip: no compact state, restore button,
 or added folding interaction. The grip sits first (left in a horizontal Dock, top in a
-vertical Dock), remains outside scrolling app content, and starts the existing native drag.
+vertical Dock), remains outside scrolling app content, and starts native window dragging
+from mouse-down through the same public `performDrag(with:)` API. App icons retain their
+eight-point threshold. The grip occupies fourteen points along a horizontal row, or twenty
+points at the top of a vertical column, rather than a full app-icon slot. Use semantic primary
+foreground with a subtle contrasting edge for readability over both light and dark backdrops.
+Inspect an actual desktop-region capture over each backdrop: an isolated glass-window image
+does not establish contrast against the real underlying content.
 It uses two native SF Symbol `ellipsis` images rotated into columns through
 SwiftUI `Image(systemName:)`; no custom drag engine is introduced. This follows the shared
 [drag discoverability requirement](~/.config/agentsync/docs/UI_DESIGN_GUIDE.md#drag-discoverability). This explicit

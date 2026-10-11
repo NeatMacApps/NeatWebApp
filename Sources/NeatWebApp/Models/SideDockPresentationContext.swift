@@ -26,6 +26,8 @@ struct SideDockPresentationContext: Equatable {
         static let iconSlotSize: CGFloat = 33
         static let iconSize: CGFloat = 28
         static let iconSpacing: CGFloat = 6
+        static let horizontalGripLength: CGFloat = 14
+        static let verticalGripLength: CGFloat = 20
         // The end slot and capsule share a center: 33 / 2 + 7 = 47 / 2.
         static let padding: CGFloat = (thickness - iconSlotSize) / 2
 
@@ -37,6 +39,14 @@ struct SideDockPresentationContext: Equatable {
             edge.isSide
                 ? CGSize(width: Self.thickness, height: length)
                 : CGSize(width: length, height: Self.thickness)
+        }
+
+        var dragGripFrame: CGRect {
+            edge.isSide
+                ? CGRect(x: Self.padding, y: length - Self.padding - Self.verticalGripLength,
+                         width: Self.iconSlotSize, height: Self.verticalGripLength)
+                : CGRect(x: Self.padding, y: Self.padding,
+                         width: Self.horizontalGripLength, height: Self.iconSlotSize)
         }
     }
 
@@ -53,10 +63,11 @@ struct SideDockPresentationContext: Equatable {
             availableLength - SideDockPlacementResolver.edgeMargin * 2,
             Layout.thickness
         )
-        let slotCount = apps.count + 1 // Keep the drag grip visible outside scrolling content.
+        let gripLength = edge.isSide ? Layout.verticalGripLength : Layout.horizontalGripLength
         let naturalLength = Layout.padding * 2
-            + CGFloat(slotCount) * Layout.iconSlotSize
-            + CGFloat(max(slotCount - 1, 0)) * Layout.iconSpacing
+            + gripLength
+            + CGFloat(apps.count) * Layout.iconSlotSize
+            + CGFloat(apps.count) * Layout.iconSpacing
         return Layout(
             edge: edge,
             length: min(max(naturalLength, Layout.thickness), maximumLength),

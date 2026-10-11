@@ -50,9 +50,14 @@ struct SideDockOverlayRootView: View {
                     .frame(width: 4, height: 18)
             }
         }
-        .foregroundStyle(.white.opacity(0.85))
-        .frame(width: SideDockPresentationContext.Layout.iconSlotSize,
-               height: SideDockPresentationContext.Layout.iconSlotSize)
+        .foregroundStyle(.primary)
+        .shadow(color: Color(nsColor: .textBackgroundColor).opacity(0.9), radius: 0.7)
+        .frame(width: context.edge.isSide
+               ? SideDockPresentationContext.Layout.iconSlotSize
+               : SideDockPresentationContext.Layout.horizontalGripLength,
+               height: context.edge.isSide
+               ? SideDockPresentationContext.Layout.verticalGripLength
+               : SideDockPresentationContext.Layout.iconSlotSize)
         .contentShape(Rectangle())
         .help(String(localized: "sidedock.drag"))
         .accessibilityHidden(true)

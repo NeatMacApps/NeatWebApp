@@ -80,6 +80,7 @@ final class SideDockOverlayController {
         let panel = panel ?? makePanel()
         self.panel = panel
         panel.alphaValue = 1
+        panel.dragGripFrame = context.layout.dragGripFrame
         installRootView(in: panel, context: context)
         let nextFrame = context.panelFrame.integral
         if animated, panel.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
@@ -276,12 +277,20 @@ private final class SideDockHostingView: NSHostingView<AnyView> {
 
 private final class SideDockPanel: NSPanel {
     var onBeginDragging: (() -> Void)?
+    var dragGripFrame: CGRect = .zero
     var isNativeDragging = false
     private var mouseDownEvent: NSEvent?
 
     override func sendEvent(_ event: NSEvent) {
         switch event.type {
         case .leftMouseDown:
+            if dragGripFrame.contains(event.locationInWindow) {
+                mouseDownEvent = nil
+                isNativeDragging = true
+                onBeginDragging?()
+                performDrag(with: event)
+                return
+            }
             mouseDownEvent = event
         case .leftMouseDragged:
             if let start = mouseDownEvent,
