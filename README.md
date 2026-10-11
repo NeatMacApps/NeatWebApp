@@ -63,7 +63,7 @@ NeatWebApp lives in the menu bar — it has no Dock icon. Hover the notch (or th
 
 - Notch launcher: hover to reveal, click to open, plus a top-center hot zone on notch-less displays
 - Isolated browser windows: per-site cookies, storage, zoom and bookmarks via separate data stores
-- Floating clear-glass activity Dock: drag freely, remember its position, and right-click an icon to quit the app
+- Floating clear-glass activity Dock: visible dotted drag grip, free dragging, remembered position, and right-click an icon to quit the app
 - Per-site element hiding, download saving with reveal in Finder, file upload and camera/microphone prompts
 - Menu-bar presence with automatic Sparkle updates, no Dock icon
 

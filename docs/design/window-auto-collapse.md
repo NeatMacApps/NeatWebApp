@@ -11,7 +11,12 @@ The whole capsule, including app icons, can be dragged freely in both axes and a
 AppKit's public `NSWindow.performDrag(with:)` owns window dragging; a short click still opens
 an app, with the existing eight-point tolerance for pointer jitter. Dragging never quits an app.
 Each app's native context menu provides an explicit Quit action instead. The owner explicitly rejected added collapse/expand controls. The Dock contains the original
-app icons only: no compact state, restore button, or added folding interaction. This explicit
+app icons and a persistent two-column dotted drag grip: no compact state, restore button,
+or added folding interaction. The grip sits first (left in a horizontal Dock, top in a
+vertical Dock), remains outside scrolling app content, and starts the existing native drag.
+It uses two native SF Symbol `ellipsis` images rotated into columns through
+SwiftUI `Image(systemName:)`; no custom drag engine is introduced. This follows the shared
+[drag discoverability requirement](~/.config/agentsync/docs/UI_DESIGN_GUIDE.md#drag-discoverability). This explicit
 product decision supersedes the general on-panel collapse recommendation for this surface.
 
 The panel remains nonactivating and available across Spaces. It stays above ordinary browser

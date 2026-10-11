@@ -802,6 +802,23 @@
           }
         }
       }
+    },
+    "sidedock.drag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖动 Dock"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

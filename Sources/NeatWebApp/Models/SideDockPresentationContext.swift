@@ -53,7 +53,7 @@ struct SideDockPresentationContext: Equatable {
             availableLength - SideDockPlacementResolver.edgeMargin * 2,
             Layout.thickness
         )
-        let slotCount = apps.count
+        let slotCount = apps.count + 1 // Keep the drag grip visible outside scrolling content.
         let naturalLength = Layout.padding * 2
             + CGFloat(slotCount) * Layout.iconSlotSize
             + CGFloat(max(slotCount - 1, 0)) * Layout.iconSpacing

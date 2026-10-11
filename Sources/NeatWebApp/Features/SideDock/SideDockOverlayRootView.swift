@@ -10,7 +10,7 @@ struct SideDockOverlayRootView: View {
 
     var body: some View {
         let shape = Capsule()
-        iconRow
+        dockContent
             .padding(SideDockPresentationContext.Layout.padding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // Clear glass needs a visible-shape hit surface for the native window drag.
@@ -23,6 +23,47 @@ struct SideDockOverlayRootView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(String(localized: "sidedock.collapsed_hint"))
             .containerBackground(.clear, for: .window)
+    }
+
+    private var dockContent: some View {
+        Group {
+            if context.edge.isSide {
+                VStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
+                    dragGrip
+                    iconRow
+                }
+            } else {
+                HStack(spacing: SideDockPresentationContext.Layout.iconSpacing) {
+                    dragGrip
+                    iconRow
+                }
+            }
+        }
+    }
+
+    private var dragGrip: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<2) { _ in
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .semibold))
+                    .rotationEffect(.degrees(90))
+                    .frame(width: 4, height: 18)
+            }
+        }
+        .foregroundStyle(.white.opacity(0.85))
+        .frame(width: SideDockPresentationContext.Layout.iconSlotSize,
+               height: SideDockPresentationContext.Layout.iconSlotSize)
+        .contentShape(Rectangle())
+        .help(String(localized: "sidedock.drag"))
+        .accessibilityHidden(true)
+        .onHover { isHovering in
+            guard !state.isDragging else { return }
+            if isHovering {
+                NSCursor.openHand.set()
+            } else {
+                NSCursor.arrow.set()
+            }
+        }
     }
 
     private var iconRow: some View {

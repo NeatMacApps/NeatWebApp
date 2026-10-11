@@ -178,7 +178,8 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
   after eight points of motion. Window Server owns tracking, Space switching and movement;
   short clicks still open apps. A completed drag suppresses the trailing click. Dragging
   never quits a runtime; the app icon's native context menu exposes Quit instead.
-- The panel contains only app icons, with no collapse/expand controls or compact state.
+- The panel contains app icons and a persistent two-column dotted drag grip, with no
+  collapse/expand controls or compact state. The grip remains outside the icon scroll view.
   It stays nonactivating and uses its existing level and all-Spaces behavior.
 - Release clamps the panel to `NSScreen.visibleFrame` with twelve points of clearance,
   then saves normalized x/y coordinates and the display. Display fallback is the current
