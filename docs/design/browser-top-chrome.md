@@ -24,6 +24,8 @@ On macOS 27 and later, AppKit's automatic menu image visibility typically hides 
 
 Move Bookmarks, element hiding, reload, website identity switching and download status/actions into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary.
 
+Owner correction (2026-10-11): each menu row uses a short action label, with no more than two English words. The labels are `Bookmarks`, `Hide Element` / `Cancel Selection`, `Reload`, and `Mobile Site` / `Desktop Site`. Simplified Chinese uses `收藏夹`, `隐藏元素` / `取消选取`, `刷新`, and `移动版` / `桌面版`. Do not put behavior explanations such as "Return to Configured Address and Reload" in menu rows. Download labels obey the same limit, including `Dismiss Download` and a count followed by `Downloads`.
+
 A download notice is indicated by a small dot on More Actions, without adding a fifth top-bar control. The menu retains download progress/completion/failure, revealing the saved file in Finder, and dismissing a finished notice. Dismissal only clears UI state; it does not delete the file. Running downloads cannot be dismissed.
 
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。

@@ -86,7 +86,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "收藏列表"
+            "value": "收藏夹"
           }
         }
       }
@@ -152,13 +152,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Return to Configured Address and Reload"
+            "value": "Reload"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "回到配置地址并刷新"
+            "value": "刷新"
           }
         }
       }
@@ -188,13 +188,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use Desktop Website Identity"
+            "value": "Desktop Site"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "切换为桌面网页标识"
+            "value": "桌面版"
           }
         }
       }
@@ -206,13 +206,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use Mobile Website Identity"
+            "value": "Mobile Site"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "切换为手机网页标识"
+            "value": "移动版"
           }
         }
       }
@@ -242,13 +242,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dismiss Download Notice"
+            "value": "Dismiss Download"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关闭下载提示"
+            "value": "关闭提示"
           }
         }
       }
@@ -332,7 +332,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld Downloads in Progress"
+            "value": "%lld Downloads"
           }
         },
         "zh-Hans": {
@@ -404,13 +404,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide an Element on This Page"
+            "value": "Hide Element"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "隐藏网页上的元素"
+            "value": "隐藏元素"
           }
         }
       }
@@ -440,13 +440,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exit Element Selection"
+            "value": "Cancel Selection"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "退出网页元素挑选"
+            "value": "取消选取"
           }
         }
       }
