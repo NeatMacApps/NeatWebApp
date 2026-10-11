@@ -7,21 +7,21 @@ import XCTest
 final class WebAppFaviconStoreTests: XCTestCase {
     private var temporaryDirectoryURL: URL!
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
+    override func setUp() async throws {
+        try await super.setUp()
 
         temporaryDirectoryURL = FileManager.default.temporaryDirectory
             .appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: temporaryDirectoryURL, withIntermediateDirectories: true)
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
         if let temporaryDirectoryURL {
             try? FileManager.default.removeItem(at: temporaryDirectoryURL)
         }
 
         temporaryDirectoryURL = nil
-        try super.tearDownWithError()
+        try await super.tearDown()
     }
 
     func testLoadsPreviouslySavedFavicon() {

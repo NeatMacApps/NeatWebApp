@@ -44,6 +44,14 @@ Shared code contains:
 
 ## Launch Flow
 
+### Xcode 27 diagnostic corrections
+
+Window launch-isolation mutations run on the main actor. Side Dock animation completion returns to the main actor before touching its panel. Updating a runtime definition reports bootstrap persistence failures through host diagnostics or the runtime system log; the active definition still applies and the runtime command still proceeds.
+
+The actor-isolated favicon-store test fixture uses XCTest's asynchronous setup/teardown overrides so its temporary-directory state stays on the main actor. The full-test command in `AGENTS.md` continues to cover this fixture. Apple specifies this isolation route in [Set Up and Tear Down State in Your Tests](https://developer.apple.com/documentation/xctest/set-up-and-tear-down-state-in-your-tests).
+
+The host's AppIntents metadata tool emits `Metadata extraction skipped, no AppIntents.framework dependency found` under Xcode 27.2. Neither application declares App Intents, so there is no metadata to extract and no affected user action. Keep the tool diagnostic visible; reassess it when adding an App Intent rather than adding a dependency or disabling extraction just to remove the warning.
+
 Product rulings, overturned approaches, and acceptance for the covering lid: [launch-cover.md](design/launch-cover.md).
 
 1. `AppModel` starts, loads the app catalog, restores cached favicons, refreshes screen state, and refreshes the runtime registry.

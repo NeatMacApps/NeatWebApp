@@ -57,7 +57,7 @@ private struct BrowserChromeBand: View {
                         accessibilityLabel: localized(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin"),
                         action: session.togglePinned
                     )
-                    .help(Text(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin"))
+                    .help(Text(LocalizedStringKey(session.isPinned ? "browser.chrome.unpin" : "browser.chrome.pin")))
 
                     BrowserChromeButton(
                         systemImage: session.isCurrentPageBookmarked ? "star.fill" : "star",
@@ -66,35 +66,14 @@ private struct BrowserChromeBand: View {
                         accessibilityLabel: localized(session.isCurrentPageBookmarked ? "browser.chrome.bookmark.remove" : "browser.chrome.bookmark.add"),
                         action: session.toggleCurrentPageBookmark
                     )
-                    .help(Text(session.isCurrentPageBookmarked ? "browser.chrome.bookmark.remove" : "browser.chrome.bookmark.add"))
+                    .help(Text(LocalizedStringKey(session.isCurrentPageBookmarked ? "browser.chrome.bookmark.remove" : "browser.chrome.bookmark.add")))
                     .disabled(!session.canBookmarkCurrentPage)
 
-                    BrowserBookmarkListControl(session: session, theme: theme)
                 }
 
                 Spacer(minLength: 0)
 
-                HStack(spacing: BrowserChromeLayout.buttonSpacing) {
-                    BrowserDownloadIndicator(session: session, theme: theme)
-
-                    BrowserElementHidingControl(session: session, theme: theme)
-
-                    BrowserChromeButton(
-                        systemImage: "arrow.clockwise",
-                        theme: theme,
-                        accessibilityLabel: localized("browser.chrome.reload"),
-                        action: session.reload
-                    )
-                    .help(Text("browser.chrome.reload"))
-
-                    BrowserChromeButton(
-                        systemImage: session.isMobileUA ? "laptopcomputer" : "iphone",
-                        theme: theme,
-                        accessibilityLabel: localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"),
-                        action: session.toggleUA
-                    )
-                    .help(Text(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"))
-                }
+                BrowserMoreActionsControl(session: session, theme: theme)
             }
             .padding(.horizontal, BrowserChromeLayout.windowMargin)
         }
@@ -102,63 +81,110 @@ private struct BrowserChromeBand: View {
     }
 }
 
-private struct BrowserDownloadIndicator: View {
+private struct BrowserMoreActionsControl: View {
     let session: BrowserSession
     let theme: BrowserChromeTheme
-    @FocusState private var isFocused: Bool
+
+    private enum Panel: String, Identifiable {
+        case bookmarks
+        case elementHiding
+
+        var id: String { rawValue }
+    }
+
+    @State private var presentedPanel: Panel?
+
+    var body: some View {
+        Menu {
+            Button {
+                presentedPanel = .bookmarks
+            } label: {
+                Label("browser.chrome.bookmark.list", systemImage: "bookmark")
+            }
+
+            Button(action: toggleElementHiding) {
+                Label(
+                    LocalizedStringKey(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"),
+                    systemImage: "wand.and.sparkles"
+                )
+            }
+
+            Divider()
+
+            Button(action: session.reload) {
+                Label("browser.chrome.reload", systemImage: "arrow.clockwise")
+            }
+
+            Button(action: session.toggleUA) {
+                Label(
+                    LocalizedStringKey(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"),
+                    systemImage: session.isMobileUA ? "laptopcomputer" : "iphone"
+                )
+            }
+
+            BrowserDownloadMenuItems(session: session)
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: BrowserChromeLayout.iconFontSize, weight: .semibold))
+                .rotationEffect(.degrees(90))
+                .foregroundStyle(theme.foregroundColor.color.opacity(0.82))
+                .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
+                .overlay(alignment: .topTrailing) {
+                    if !session.downloadItems.isEmpty || session.isPickingElement {
+                        Circle()
+                            .fill(theme.foregroundColor.color)
+                            .frame(width: 4, height: 4)
+                    }
+                }
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .focusEffectDisabled()
+        .help(Text("browser.chrome.more"))
+        .accessibilityLabel(localized("browser.chrome.more"))
+        .popover(item: $presentedPanel, arrowEdge: .bottom) { panel in
+            switch panel {
+            case .bookmarks:
+                BrowserBookmarkListPanel(session: session) { presentedPanel = nil }
+            case .elementHiding:
+                BrowserElementHidingPanel(session: session) { presentedPanel = nil }
+            }
+        }
+    }
+
+    private func toggleElementHiding() {
+        if session.isPickingElement {
+            session.cancelElementPicking()
+            return
+        }
+
+        session.elementHidingNotice = nil
+        presentedPanel = .elementHiding
+    }
+}
+
+private struct BrowserDownloadMenuItems: View {
+    let session: BrowserSession
 
     var body: some View {
         if let latestDownload = session.downloadItems.first {
-            HStack(spacing: 0) {
-                Button(action: session.revealLatestDownload) {
-                    HStack(spacing: 4) {
-                        Image(systemName: iconName(for: latestDownload.phase))
-                            .font(.system(size: 10, weight: .semibold))
+            Divider()
 
-                        Text(title(for: latestDownload))
-                            .font(.system(size: 10, weight: .semibold))
-                            .lineLimit(1)
-                    }
-                    .foregroundStyle(theme.foregroundColor.color.opacity(0.88))
-                    .padding(.leading, 7)
-                    .padding(.trailing, isDismissible(latestDownload) ? 6 : 7)
-                    .frame(height: BrowserChromeLayout.buttonSize)
-                }
-                .buttonStyle(.plain)
-                .focusEffectDisabled()
-                .focused($isFocused)
-                .disabled(latestDownload.destinationURL == nil)
-                .help(helpText(for: latestDownload))
-                .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
-                .accessibilityHint(helpText(for: latestDownload))
-
-                if isDismissible(latestDownload) {
-                    Rectangle()
-                        .fill(theme.foregroundColor.color.opacity(0.2))
-                        .frame(width: 1, height: 12)
-
-                    Button {
-                        session.clearDownload(id: latestDownload.id)
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(theme.foregroundColor.color.opacity(0.72))
-                            .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
-                    }
-                    .buttonStyle(.plain)
-                    .focusEffectDisabled()
-                    .help(Text("browser.download.dismiss"))
-                    .accessibilityLabel(localized("browser.download.dismiss"))
-                }
+            Button(action: session.revealLatestDownload) {
+                Label(title(for: latestDownload), systemImage: iconName(for: latestDownload.phase))
             }
-            .background(
-                Capsule(style: .continuous)
-                    .fill(theme.highlightedFillColor.color)
-            )
-            .overlay {
-                Capsule(style: .continuous)
-                    .stroke(theme.foregroundColor.color.opacity(isFocused ? 0.8 : 0), lineWidth: 2)
-                    .padding(-2)
+            .disabled(latestDownload.destinationURL == nil)
+            .help(helpText(for: latestDownload))
+            .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
+            .accessibilityHint(helpText(for: latestDownload))
+
+            if isDismissible(latestDownload) {
+                Button {
+                    session.clearDownload(id: latestDownload.id)
+                } label: {
+                    Label("browser.download.dismiss", systemImage: "xmark")
+                }
             }
         }
     }
@@ -209,29 +235,6 @@ private struct BrowserDownloadIndicator: View {
 }
 
 /// 收藏列表：只展示当前这个网页应用里收藏过的页面。
-private struct BrowserBookmarkListControl: View {
-    let session: BrowserSession
-    let theme: BrowserChromeTheme
-
-    @State private var isPanelPresented = false
-
-    var body: some View {
-        BrowserChromeButton(
-            systemImage: "list.bullet.rectangle",
-            theme: theme,
-            isHighlighted: isPanelPresented,
-            accessibilityLabel: localized("browser.chrome.bookmark.list"),
-            action: { isPanelPresented = true }
-        )
-        .help(Text("browser.chrome.bookmark.list"))
-        .popover(isPresented: $isPanelPresented, arrowEdge: .bottom) {
-            BrowserBookmarkListPanel(session: session) {
-                isPanelPresented = false
-            }
-        }
-    }
-}
-
 private struct BrowserBookmarkListPanel: View {
     let session: BrowserSession
     let dismiss: () -> Void
@@ -296,40 +299,6 @@ private struct BrowserBookmarkListPanel: View {
 }
 
 /// 魔法棒：进入"点一下就隐藏"的挑选模式，以及还原这个网页应用已经隐藏掉的元素。
-private struct BrowserElementHidingControl: View {
-    let session: BrowserSession
-    let theme: BrowserChromeTheme
-
-    @State private var isPanelPresented = false
-
-    var body: some View {
-        BrowserChromeButton(
-            systemImage: "wand.and.sparkles",
-            theme: theme,
-            isHighlighted: session.isPickingElement,
-            accessibilityLabel: localized(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"),
-            action: toggle
-        )
-        .help(Text(session.isPickingElement ? "browser.element_hiding.exit.help" : "browser.element_hiding.enter"))
-        .popover(isPresented: $isPanelPresented, arrowEdge: .bottom) {
-            BrowserElementHidingPanel(session: session) {
-                isPanelPresented = false
-            }
-        }
-    }
-
-    private func toggle() {
-        // 已经在挑选中时，再点一次就是"算了"，不必先弹面板。
-        if session.isPickingElement {
-            session.cancelElementPicking()
-            return
-        }
-
-        session.elementHidingNotice = nil
-        isPanelPresented = true
-    }
-}
-
 private struct BrowserElementHidingPanel: View {
     let session: BrowserSession
     let dismiss: () -> Void
@@ -434,7 +403,6 @@ private struct BrowserChromeButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
-    @FocusState private var isFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     var body: some View {
@@ -451,15 +419,9 @@ private struct BrowserChromeButton: View {
                                 : .clear
                         )
                 }
-                .overlay {
-                    Circle()
-                        .stroke(theme.foregroundColor.color.opacity(isFocused ? 0.8 : 0), lineWidth: 2)
-                        .padding(-2)
-                }
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
-        .focused($isFocused)
         .contentShape(Circle())
         .onHover { isHovered = $0 }
         .animation(accessibilityReduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)

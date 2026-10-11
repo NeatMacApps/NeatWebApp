@@ -70,8 +70,10 @@ final class SideDockOverlayController {
             animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             panel.animator().alphaValue = 0
         } completionHandler: { [weak panel] in
-            panel?.orderOut(nil)
-            panel?.alphaValue = 1
+            Task { @MainActor in
+                panel?.orderOut(nil)
+                panel?.alphaValue = 1
+            }
         }
     }
 

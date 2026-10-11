@@ -94,7 +94,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         if placeholderAppIDs.contains(definition.id),
            registry[definition.id] == nil || registry[definition.id]?.phase == .launching {
             placeholderPresenter.orderPlaceholderFront(appID: definition.id)
-            if let state = registry[definition.id] {
+            if registry[definition.id] != nil {
                 focus(appID: definition.id)
             }
             return
@@ -229,7 +229,11 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                 createdAt: bootstrap.createdAt,
                 hostVersion: bootstrap.hostVersion
             )
-            try? registryStore.saveBootstrap(updatedBootstrap)
+            do {
+                _ = try registryStore.saveBootstrap(updatedBootstrap)
+            } catch {
+                onDiagnosticMessage("Failed to save the updated runtime bootstrap: \(error.localizedDescription)")
+            }
         }
 
         sendCommand(.reloadDefinition, state: state, definition: definition)

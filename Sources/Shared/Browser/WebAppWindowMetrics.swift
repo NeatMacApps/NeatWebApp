@@ -28,6 +28,7 @@ enum WebAppWindowMetrics {
     }
 
     /// 禁止系统按「上次的窗口」或标签页组去改框：否则盖子和真窗会各走各的尺寸。
+    @MainActor
     static func applyLaunchIsolation(to window: NSWindow) {
         window.isRestorable = false
         window.tabbingMode = .disallowed

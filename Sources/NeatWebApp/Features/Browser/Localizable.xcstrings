@@ -1056,6 +1056,24 @@
           }
         }
       }
+    },
+    "browser.chrome.more": {
+      "comment": "Opens the native menu containing secondary browser actions.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Actions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多操作"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

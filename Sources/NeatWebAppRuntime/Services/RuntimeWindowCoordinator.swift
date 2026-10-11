@@ -203,7 +203,11 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             createdAt: bootstrap.createdAt,
             hostVersion: bootstrap.hostVersion
         )
-        try? registryStore.saveBootstrap(bootstrap)
+        do {
+            _ = try registryStore.saveBootstrap(bootstrap)
+        } catch {
+            NSLog("Failed to save the updated runtime bootstrap: %@", error.localizedDescription)
+        }
         appModel.applyDefinition(definition)
         windowController?.applyDefinition(definition)
     }

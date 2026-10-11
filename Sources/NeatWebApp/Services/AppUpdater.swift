@@ -10,7 +10,7 @@ import SwiftUI
 /// 启动的独立进程，更新会把整个应用包整体换掉，留着它们会继续跑在旧代码上。
 @MainActor
 final class AppUpdater: NSObject, ObservableObject,
-    @preconcurrency SPUUpdaterDelegate,
+    SPUUpdaterDelegate,
     @preconcurrency SPUStandardUserDriverDelegate {
     /// 后台已发现、但还没让用户处理的版本号；没有待处理更新时为 nil。
     @Published private(set) var availableVersion: String?

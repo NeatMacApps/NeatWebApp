@@ -8,15 +8,19 @@
 
 - 整条只铺网页自己的背景色（由页面 `theme-color` / 背景色推断），**不画底色横条、不画分割线**，所以看不出是一条独立的栏。
 - 带内叠一层从上到下由浅入透明的**渐变**，给图标托底；页面是纯色时渐变几乎不可见，页面顶部是深色或大图时才显出层次。
-- 图标**裸放**在带上，左上角是收起、置顶、收藏当前页与收藏列表，右上角是下载指示、隐藏元素、刷新与网页标识切换。没有胶囊底板、没有描边、没有圆圈。
+- 图标**裸放**在带上；常驻入口按下文的渐进式菜单规则排列。没有胶囊底板、没有描边、没有圆圈。
 - 网页内容从让位带**下方**开始，网页自己的顶部导航永远不会被盖住。
 - 让位带没有任何网页内容，整条都是窗口拖动区域，双击等同系统的窗口放大／还原。
 
 图标前景色按页面明暗自动翻转（深色页面用近白色，浅色页面用近黑色），与渐变起始色一起构成对比度防御，不依赖任何系统材质。
 
-收藏当前页和收藏列表都在左上角。每个网页应用只看见自己的收藏，互不串。不要做成整浏览器共享的书签栏。
+## Progressive actions menu
 
-收藏当前页使用星形图标，收藏列表使用列表图标，两个动作必须在视觉上可区分。下载完成或失败后，顶栏保留状态提示；用户可打开已保存文件所在的 Finder 位置，也可单独关闭提示。关闭提示只移除界面状态，不删除下载文件；正在下载时不提供关闭操作。（2026-09-21 已进入实现并通过单元测试，真机下载验收待补。）
+Owner decision (2026-10-11): keep exactly three persistent controls on the left: close/collapse to the side Dock, pin, and bookmark the current page. Keep one vertical three-dot Kebab Menu control on the right (`ellipsis` rotated 90 degrees). Clicking it directly opens the native SwiftUI `Menu` with an icon and label for every action. Its borderless style and hidden menu indicator preserve the existing bare-icon top band. The installed Xcode 27.2 macOS SDK provides these APIs; see Apple's [Menu](https://developer.apple.com/documentation/swiftui/menu) and [borderlessButton](https://developer.apple.com/documentation/swiftui/menustyle/borderlessbutton).
+
+Move Bookmarks, element hiding, reload, website identity switching and download status/actions into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary.
+
+A download notice is indicated by a small dot on More Actions, without adding a fifth top-bar control. The menu retains download progress/completion/failure, revealing the saved file in Finder, and dismissing a finished notice. Dismissal only clears UI state; it does not delete the file. Running downloads cannot be dismissed.
 
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
 
@@ -62,6 +66,8 @@
 - 顶栏配色全部从页面色推导，改 `BrowserChromeTheme` 时要保证：渐变起始色叠到页面色上之后，深色页面更暗、浅色页面更亮。对应断言在 `Tests/NeatWebAppRuntimeTests/BrowserChromeThemeTests.swift`。半透明颜色不能直接比较亮度——`relativeLuminance` 会把它合成到兜底深色背景上，必须先 `resolved(over:)` 到页面色再比。
 
 ## 验收
+
+Verify the collapsed band has three controls on the left and only More Actions on the right. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long menu labels must remain readable.
 
 改顶栏后至少要在**浅色页面和深色页面**各截一次图，确认：网页自身顶部导航完整可见、看不出横条与分割线、图标对比度足够、阴影没有断口。
 
