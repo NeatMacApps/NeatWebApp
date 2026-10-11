@@ -31,29 +31,24 @@ extension AppModel {
     }
 
     func setSideDockEdge(_ edge: SideDockEdge) {
-        guard sideDockEdge != edge else {
-            return
-        }
-
         sideDockEdge = edge
+        sideDockFloatingPosition = nil
         saveAppPreferences()
         syncSideDockOverlay()
     }
 
     func updateSideDockPlacement(
-        edge: SideDockEdge,
-        verticalPosition: CGFloat,
+        floatingPosition: CGPoint,
         displayID: CGDirectDisplayID?
     ) {
-        sideDockEdge = edge
-        sideDockVerticalPosition = min(max(verticalPosition, 0), 1)
+        sideDockFloatingPosition = floatingPosition
         sideDockDisplayID = displayID
         saveAppPreferences()
         syncSideDockOverlay()
     }
 
     func loadAppPreferences() {
-        let fallbackScreen = NSScreen.main ?? NSScreen.screens.first
+        let fallbackScreen = NSScreen.screens.first
         let defaultEdge = fallbackScreen.map {
             SideDockPlacementResolver.recommendedDefaultEdge(
                 screenFrame: $0.frame,
@@ -63,6 +58,7 @@ extension AppModel {
         let preferences = appPreferencesStore.load(defaultEdge: defaultEdge)
         sideDockEdge = preferences.sideDockEdge
         sideDockVerticalPosition = preferences.sideDockVerticalPosition
+        sideDockFloatingPosition = preferences.sideDockFloatingPosition
         sideDockDisplayID = preferences.sideDockDisplayID
         isVirtualNotchEnabled = preferences.isVirtualNotchEnabled
     }
@@ -73,7 +69,8 @@ extension AppModel {
                 sideDockEdge: sideDockEdge,
                 sideDockVerticalPosition: sideDockVerticalPosition,
                 sideDockDisplayID: sideDockDisplayID,
-                isVirtualNotchEnabled: isVirtualNotchEnabled
+                isVirtualNotchEnabled: isVirtualNotchEnabled,
+                sideDockFloatingPosition: sideDockFloatingPosition
             )
         )
     }
@@ -83,6 +80,7 @@ extension AppModel {
             apps: collapsedWebApps,
             edge: sideDockEdge,
             verticalPosition: sideDockVerticalPosition,
+            floatingPosition: sideDockFloatingPosition,
             preferredDisplayID: sideDockDisplayID,
             appModel: self
         )
@@ -90,16 +88,8 @@ extension AppModel {
     }
 
     func publishSideDockReserve() {
-        let reserve: SideDockScreenReserve?
-        if collapsedWebApps.isEmpty {
-            reserve = nil
-        } else {
-            reserve = SideDockScreenReserve(
-                edge: sideDockEdge.screenReserveEdge,
-                displayID: sideDockOverlayController.currentDisplayID ?? sideDockDisplayID,
-                thickness: SideDockPresentationContext.Layout.thickness
-            )
-        }
+        // Floating panels do not reserve a desktop edge. Clear older persisted reserves.
+        let reserve: SideDockScreenReserve? = nil
 
         guard reserve != sideDockReserveStore.load() else {
             return

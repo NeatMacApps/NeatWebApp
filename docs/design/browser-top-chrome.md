@@ -16,7 +16,9 @@
 
 ## Progressive actions menu
 
-Owner decision (2026-10-11): keep exactly three persistent controls on the left: close/collapse to the side Dock, pin, and bookmark the current page. Keep one vertical three-dot Kebab Menu control on the right (`ellipsis` rotated 90 degrees). Clicking it directly opens the native SwiftUI `Menu` with an icon and label for every action. Its borderless style and hidden menu indicator preserve the existing bare-icon top band. The installed Xcode 27.2 macOS SDK provides these APIs; see Apple's [Menu](https://developer.apple.com/documentation/swiftui/menu) and [borderlessButton](https://developer.apple.com/documentation/swiftui/menustyle/borderlessbutton).
+Owner decision (2026-10-11): keep exactly three persistent controls on the left: close/collapse to the side Dock, pin, and bookmark the current page. Keep one vertical three-dot Kebab Menu control on the right. Clicking it directly opens the native AppKit `NSMenu`; set `NSMenuItem.image` explicitly so every action displays an icon followed by its label. Use a borderless `NSPopUpButton` in pull-down mode with no arrow. The installed Xcode 27.2 macOS SDK provides these APIs; see Apple's [NSPopUpButton](https://developer.apple.com/documentation/appkit/nspopupbutton) and [NSMenuItem.image](https://developer.apple.com/documentation/appkit/nsmenuitem/image).
+
+Installed-app acceptance of the earlier SwiftUI `Menu` showed horizontal dots and text-only rows despite the label's rotation and `Label` content. Do not reuse that rendering path for this requirement. The installed system has no `ellipsis.vertical` SF Symbol; render the existing `ellipsis` symbol with a 90-degree transform into the native button's template image.
 
 Move Bookmarks, element hiding, reload, website identity switching and download status/actions into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary.
 

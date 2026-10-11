@@ -4,6 +4,37 @@
 
 ## 当前规则
 
+### 2026-10-11: Floating activity Dock (supersedes edge attachment)
+
+The activity Dock is a single floating capsule with the existing clear Liquid Glass material.
+The whole capsule, including app icons, can be dragged freely in both axes and across displays.
+AppKit's public `NSWindow.performDrag(with:)` owns window dragging; a short click still opens
+an app, with the existing eight-point tolerance for pointer jitter. Dragging never quits an app.
+Each app's native context menu provides an explicit Quit action instead. An on-panel collapse
+button reduces the Dock to a movable circular restore button without ending any runtime.
+
+The panel remains nonactivating and available across Spaces. It stays above ordinary browser
+windows using the existing panel level. Browser windows use the full system `visibleFrame`;
+the old full-edge reservation is cleared because a freely placed floating panel does not own
+an edge. Do not move browser windows when the floating Dock is moved or resized.
+
+On release, clamp the panel into the selected display's `visibleFrame` with a twelve-point
+inset so it stays clear of the menu bar and system Dock. Persist both normalized coordinates
+and the display only after release. If the display disappears or resolution changes, recover
+the panel inside an available display. Existing left/right/bottom presets remain as initial
+placement and orientation choices; manually selecting one resets the floating position to
+that preset. Existing edge-only saved positions remain valid migration inputs.
+
+Implementation reference: the existing `SideDockOverlayController` panel and first-click
+handling. Verified API availability: Xcode 27.2 SDK provides `performWindowDragWithEvent:`,
+SwiftUI `Capsule` and `glassEffect(_:in:)`. Official behavior:
+[window dragging](https://developer.apple.com/documentation/appkit/nswindow/performdrag(with:))
+and [native glass](https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:)).
+Runtime and visual acceptance is pending until the changed app is installed and exercised.
+
+The historical attachment, corner wrapping, inward-to-quit and browser edge-reservation
+rules below describe the previous design and are superseded by this decision.
+
 ### 【提案】2026-09-20：允许用户主动把窗口部分拖出屏幕（2026-09-21 已进入实现，未验收）
 
 用户已确认希望网页窗口能够部分越过屏幕边界，以保留布局调整的直接控制感。2026-09-21
@@ -31,7 +62,7 @@
 
 顶部让位带双击只遵循 macOS 的系统窗口放大／还原行为，不是收起入口。不要再给它叠加双击收进侧边刘海；用户仍可使用带上明确的收起按钮。
 
-顶部让位带只保留一个 `×`，其语义是收进侧边刘海，不是结束运行；原来的圆形收起按钮已删除。`Command W` 与 `×` 保持一致。真正结束 WebApp 只能从侧边刘海把对应图标朝屏幕中心拖过关闭门槛后松手，普通上下拖动仍只移动整块刘海。
+顶部让位带只保留一个 `×`，其语义是收进侧边刘海，不是结束运行；原来的圆形收起按钮已删除。`Command W` 与 `×` 保持一致。真正结束 WebApp 通过活动 Dock 图标的右键菜单；拖动只移动整栏，不结束应用。
 
 ## 决策记录
 
@@ -185,11 +216,11 @@ Dock 避让会主动改变可用区域，而 `NSWindow.constrainFrameRect` 仍�
 6. **收起后焦点归属**：确认没有把焦点从用户正在用的应用抢走。
 7. **置顶窗口**：确认全程不会被自动收起。
 8. **系统程序坞同侧**：系统程序坞在右侧时，把侧边 Dock 也切到右侧，确认它停在程序坞内侧且不影响程序坞唤出。
-9. **拖动与多屏**：沿边缘拖动、拖过拐角换边（左/右 ↔ 底），并跨屏，重启后确认仍在正确屏幕、贴边和相对位置。上边不应被贴上。
+9. **拖动与多屏**：横向、纵向、斜向移动悬浮栏，并跨屏；重启后确认屏幕和二维位置保留，松手后整栏仍在系统可用区域内。
 10. **焦点表现**：启动、鼠标点击和键盘导航时都不出现系统蓝色焦点框；键盘聚焦条目时仍能看到克制的自定义焦点态。
 11. **刘海点已开的应用**：窗口已收进侧边栏或在别的窗口后面时，从顶部刘海再点一次应唤到前面，不能秒关或没反应。
 12. **刚打开不秒关**：新开一个 WebApp，窗口应留在前面，不能闪一下就收进侧边栏。
 13. **单击即开**：别的应用仍在前台时，单击顶部刘海图标和侧边栏图标各一次，都应打开对应网页应用；连点不是必经路径。
-14. **窗口不挡侧边 Dock**：侧边栏里已有收纳图标时，把一个网页窗口拖到或放大到同一侧贴边，窗口应停在 Dock 内侧，不能压住刘海。再收起另一个网页应用让 Dock 出现时，已经贴边的窗口也应立刻让开。没有收纳图标时，窗口仍可铺满系统可用桌面。
+14. **悬浮与收纳**：网页窗口保留完整可用桌面，悬浮栏保持可操作；移动栏不挤动网页窗口。栏上收纳按钮变为圆形恢复按钮，恢复后图标仍可单击打开；图标右键结束应用有效。
 
 <!-- 该文档整理/压缩于 2026-09-05 -->

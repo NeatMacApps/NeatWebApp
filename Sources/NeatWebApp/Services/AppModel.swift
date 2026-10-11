@@ -34,6 +34,7 @@ final class AppModel {
     var isMenuBarIconVisible = true
     var sideDockEdge: SideDockEdge = .right
     var sideDockVerticalPosition = SideDockPlacementResolver.defaultVerticalPosition
+    var sideDockFloatingPosition: CGPoint?
     var sideDockDisplayID: CGDirectDisplayID?
     var isVirtualNotchEnabled = AppPreferencesStore.defaultVirtualNotchEnabled
     var collapsedWebApps: [WebAppDefinition] = []

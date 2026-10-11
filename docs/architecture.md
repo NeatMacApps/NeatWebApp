@@ -18,7 +18,7 @@ The host app owns:
 - the main window, which also hosts every app-level setting (there is no separate Settings window)
 - the menu bar entry and commands
 - launcher presentation and notch activation monitoring
-- the side notch Dock, its left/right setting, and edge position persistence
+- the floating activity Dock, its initial placement presets, and two-axis position persistence
 - the custom web app catalog（包括已配置 URL 的编辑）
 - favicon caching
 - runtime discovery, launch, takeover, and command dispatch
@@ -161,24 +161,35 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 - `LauncherOverlayController` presents a non-activating panel for the launcher UI.
 - Launcher edge fades are driven by actual scroll headroom so the visual affordance always matches the remaining hidden content.
 
-## Side Notch Dock
+## Activity Dock
 
-- Collapsed WebApps are collected into one host-owned vertical Dock instead of creating independent floating circles in each runtime.
-- The collapsed WebApps live directly inside a compact, pure-black side notch. It stays one stable piece attached to the edge; there is no hover drawer, second-stage expansion, or dedicated drag handle. Its black fill, restrained white stroke, and corner language match the top-notch launcher.
-- Dragging anywhere on the notch, including directly over an icon, moves it along the attached edge and can transfer it between displays. Dragging past a usable corner wraps to the adjacent edge (left/right ↔ bottom; the top edge is not used). A short click still opens the WebApp, while a completed drag suppresses the click. Position along the current edge is stored as a normalized value so it remains valid when resolution or available screen area changes.
-- Settings offers explicit left, right, and bottom placement. On first use, the default side avoids the larger system-reserved inset; once chosen, the user's setting is authoritative. Dragging around a corner updates that same setting.
-- Placement is computed from `NSScreen.visibleFrame`, not the physical display edge. A right-side Dock therefore sits immediately inside a right-side system Dock instead of covering it or stealing its reveal boundary. Screen geometry is refreshed after display configuration changes and must not be cached indefinitely.
-- Web app windows must not cover this host-owned Dock. While the Dock is visible, window placement, resize, zoom, and the launch cover all use `visibleFrame` minus the Dock's full edge strip on that display. The Dock is inside `visibleFrame`, so treating the system desktop as the window's max frame would slide the window under the glass Dock. Rationale in [window-auto-collapse.md](design/window-auto-collapse.md).
-- Only the visible black panel receives pointer events. No transparent full-height window is allowed along the edge because that would block other edge interactions.
-- System focus rings are disabled on the Dock and Settings controls. Keyboard users receive the app's own restrained white focus treatment instead.
+- Collapsed WebApps share one host-owned floating clear-glass capsule. Left/right presets
+  use a vertical layout; the bottom preset uses a horizontal layout. Presets set the initial
+  placement, while subsequent dragging is free in both axes and between displays.
+- The existing native `NSPanel` forwards a mouse-down to `NSWindow.performDrag(with:)`
+  after eight points of motion. Window Server owns tracking, Space switching and movement;
+  short clicks still open apps. A completed drag suppresses the trailing click. Dragging
+  never quits a runtime; the app icon's native context menu exposes Quit instead.
+- The panel has a collapse button and a circular restore state. Both states can be moved.
+  The panel stays nonactivating and uses its existing level and all-Spaces behavior.
+- Release clamps the panel to `NSScreen.visibleFrame` with twelve points of clearance,
+  then saves normalized x/y coordinates and the display. Display fallback is the current
+  panel screen or the first display, never `NSScreen.main`. Display changes resolve fresh
+  geometry and recover the saved position inside a usable screen.
+- Browser windows and the launch cover use the full system `visibleFrame`. The host
+  clears the legacy edge reserve, so moving or growing the floating Dock cannot resize
+  unrelated browser windows. The former attachment and inward-to-quit rules are
+  superseded by [the floating Dock decision](design/window-auto-collapse.md).
+- Glass, fallback fill and pointer hit geometry share the native `Capsule` shape.
+  System focus rings are disabled. The Dock never takes keyboard focus.
 
 ## Persistence
 
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
 - 正在跑的网页应用被改名或改首页时，宿主通过 `reloadDefinition` 把新定义推给对应运行时，并改写磁盘上的 bootstrap；只改名不打断当前页，首页变了才重新打开首页。健康重启必须读到更新后的 bootstrap，不能回到旧首页。
 - `WebAppPreferencesStore` persists zoom, pinned state, saved window placement, hidden-element rules, and **per-web-app bookmarks**. Each web app's bookmark list is stored under that app's own preference record and never mixed with another app. 宿主与多个运行时共用同一份 `web-apps.json`：保存时在文件协调锁里重读，只替换当前网页应用这一条，禁止整份覆盖把别的应用刚写入的缩放/收藏/窗口框盖掉。
-- `AppPreferencesStore` persists the side Dock edge, normalized vertical position, and target display.
-- Side-dock occupancy for window avoidance is a shared Application Support file both host and runtime read (`side-dock-reserve.json`). The host writes it whenever the Dock appears, moves, or hides.
+- `AppPreferencesStore` persists Dock presets, optional normalized floating x/y coordinates, and target display. Missing floating keys use the prior edge-only position without overwriting it during loading.
+- The legacy shared `side-dock-reserve.json` is cleared by the host so older saved edge reservations no longer constrain browser windows. The compatibility reader remains available to older runtimes.
 - `WebAppFaviconStore` persists site icons and is shared by the host and runtime targets.
 - `RuntimeRegistryStore` tracks active runtime bootstrap/state files and cleans stale entries.
 - 站点 Cookie / 本地存储按网页应用隔离：运行时使用 `WKWebsiteDataStore(forIdentifier:)`，标识由应用 ID 稳定派生，不是共享的 `default()`。

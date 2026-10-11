@@ -141,10 +141,8 @@ done
 - **主窗口只放用户要操作的东西**：不摆产品介绍、路线图、诊断读数、屏幕几何等开发者信息；设置项的补充说明一律走悬停提示，界面上只留一句话标题。唯一例外是必须解释否则用户会误判的状态（如开机自启被系统挂起）。刷新几何、调试覆盖层这类开发用动作只保留快捷键，不进界面。
 - App 图标与菜单栏图标共享“三层卡片落入带凹口托盘”的品牌语义：菜单栏版本必须保留三层卡片、托盘凹口和必要负空间，禁止把彩色 App 图标直接灰度化、阈值化或整块填黑。模板图的通用规格与验收步骤见 [Apple 应用图标与品牌资产基线](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)。
 - 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`AppModel+Launcher.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
-- 修改侧边 Dock 行为时，同时检查宿主状态、侧边 Dock 窗口协调、布局模型、设置持久化和对应测试；Dock 必须贴在当前屏幕的可用边界，不能覆盖系统程序坞或抢占其触发边缘。网页应用窗口也不得挡住这块侧边刘海（不是系统程序坞）：Dock 正在显示时，该屏窗口的可用区域是 `visibleFrame` 再扣掉 Dock 所在边的整条厚度。改、评审或排查「窗口压住侧边 Dock / 玻璃里透出网页」前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md) 里 2026-09-01 的裁定。
-- 侧边 Dock 上下不留死边距：可以一路拖到贴住可用区域的上下边缘（边距常量在放置解析器里统一管理，不要在别处再写死数值）。贴的是 `visibleFrame`，底部有系统程序坞时自然停在它内侧。
-- 侧边 Dock 拖到可用区域拐角后继续拖，会绕到相邻边（左/右 ↔ 底），上边不贴。只在已经顶到尽头且还在拐角附近时才换边，中间朝屏幕内侧拖仍是关闭手势。
-- 侧边 Dock 选屏**禁止使用 `NSScreen.main`**（它是键盘焦点所在屏，不是主显示器，会导致 Dock 跟着焦点在多显示器之间乱跳）；兜底一律用 Dock 当前所在屏或屏幕列表第一块。Dock 图标不画焦点描边。详见 [侧边 Dock 跨显示器跳动排查记录](docs/troubleshooting/2026-08-01-side-dock-jumps-between-displays.md)。
+- Activity Dock behavior is owned by [window-auto-collapse.md](docs/design/window-auto-collapse.md), including its 2026-10-11 floating-capsule decision. Check host state, panel coordination, placement, preferences and tests together. It uses native AppKit window dragging in both axes; dragging never quits apps. The native icon context menu owns Quit, and an on-panel button collapses/restores the Dock. Browser windows retain the full system `visibleFrame`; clear the superseded edge reserve.
+- Dock display fallback uses its current display or the first screen, never `NSScreen.main` (which follows keyboard focus). Persist normalized two-axis placement only after release and recover within the usable screen after display changes. Dock icons have no focus outline.
 - launcher 图标行两侧的 fade / 阴影反馈必须与真实可滚动方向一致：某一侧还有被裁切内容时保留该侧过渡，某一侧已经滑到尽头时关闭该侧过渡，避免给出错误提示。
 - launcher 图标必须保持固定紧凑间距；1、2、3、4 个图标以及更多图标的默认排布都不要按剩余宽度做均分拉伸，禁止出现为了“铺满”而把中间间隔拉得很大的排布。
 - 修改刘海识别逻辑时，同时检查 `Sources/NeatWebApp/Models/ScreenNotchGeometry.swift` 和相关测试。
@@ -195,7 +193,7 @@ done
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
 - [docs/design/warm-standby-runtime.md](docs/design/warm-standby-runtime.md)：新开尚未运行的网页应用为何比浏览器慢、怎么提速——实测冷启动分段与站点服务器等待、已排除的浏览器身份 / 注入脚本 / 数据隔离、宿主常备一个预热运行时的接手流程、内存严重压力时释放与接手失败的回退启动。
-- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、左右侧设置、系统程序坞避让、**网页窗口挡住本应用侧边 Dock**，或顶部刘海 / 侧边栏图标单击打不开前**必读**。不读会把已否决的延时/阈值加回去，或让窗口压住侧边 Dock。
+- [docs/design/window-auto-collapse.md](docs/design/window-auto-collapse.md)：改、评审或排查「窗口自动收进侧边 Dock」的触发条件、延时、跨桌面表现、收起后焦点归属、悬浮栏自由拖动、二维位置记忆、收纳恢复、系统程序坞避让，或顶部刘海 / 侧边栏图标单击打不开前**必读**。不读会把已否决的延时/阈值加回去，或让窗口压住侧边 Dock。
 - [docs/design/element-hiding.md](docs/design/element-hiding.md)：改、评审或排查「手动隐藏网页元素」（魔法棒）的挑选交互、选中范围、规则持久化、还原入口，或新增／升级注入脚本前**必读**。不读会弄丢整批用户脚本重装，或把规则作用域写错。
 - [docs/design/browser-top-chrome.md](docs/design/browser-top-chrome.md)：改、评审或排查浏览器顶栏控件区（收起 / 置顶 / **收藏** / 刷新 / 网页标识 / 下载指示、让位带、渐变与拖动区）前**必读**。不读会把已推翻的液态玻璃顶栏再做一遍；收藏必须按网页应用隔离。
 - [docs/notch-activation-research.md](docs/notch-activation-research.md)：刘海与无刘海屏虚拟热区的几何识别、悬停唤出（**硬件 100ms / 虚拟 260ms**）与屏幕刷新误取消等待的坑；展开后的抽屉交互——点黑底按像素收起（宿主鼠标监听判定，图标只认可见圆形）、拖动换位跟手与贴边自动滚动；覆盖层的验证手法（区域截图、系统日志、合成鼠标会接管用户指针）。

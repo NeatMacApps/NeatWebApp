@@ -7,6 +7,7 @@ import SwiftUI
 @Observable
 final class SideDockOverlayState {
     var context: SideDockPresentationContext
+    var isDragging = false
 
     init(context: SideDockPresentationContext) {
         self.context = context
@@ -24,61 +25,51 @@ final class SideDockOverlayController {
     private var apps: [WebAppDefinition] = []
     private var edge: SideDockEdge = .right
     private var verticalPosition = SideDockPlacementResolver.defaultVerticalPosition
+    private var floatingPosition: CGPoint?
     private var preferredDisplayID: CGDirectDisplayID?
+    private var isCompact = false
     private var isDragging = false
-    private var didWrapDuringDrag = false
-    private var dragOffsetFromPanelCenter: CGFloat?
-    private var draggedApp: WebAppDefinition?
-    private var latestInwardDistance: CGFloat = 0
-    private var latestAlongEdgeTravel: CGFloat = 0
+    private var dragCompletionTask: Task<Void, Never>?
+    private var hideGeneration = 0
     private var suppressSelectionUntil = Date.distantPast
 
     func update(
         apps: [WebAppDefinition],
         edge: SideDockEdge,
         verticalPosition: CGFloat,
+        floatingPosition: CGPoint?,
         preferredDisplayID: CGDirectDisplayID?,
         appModel: AppModel
     ) {
         self.apps = apps
         self.appModel = appModel
-        if !isDragging {
-            self.edge = edge
-            self.verticalPosition = verticalPosition
-            // 偏好里还没有记录过屏幕时保留本次会话已解析出的那块，
-            // 否则每次刷新都会退回兜底逻辑重新挑屏幕，Dock 又会开始漂。
-            self.preferredDisplayID = preferredDisplayID ?? self.preferredDisplayID
-        }
-
+        guard !isDragging else { return }
+        self.edge = edge
+        self.verticalPosition = verticalPosition
+        self.floatingPosition = floatingPosition
+        self.preferredDisplayID = preferredDisplayID ?? self.preferredDisplayID
         guard !apps.isEmpty else {
             hide()
             return
         }
-
-        present(animated: panel?.isVisible == true && !isDragging)
+        present(animated: panel?.isVisible == true)
     }
 
     func hide() {
-        overlayState = nil
-        dockHostingView = nil
-        guard let panel, panel.isVisible else {
-            return
-        }
-
+        hideGeneration += 1
+        let generation = hideGeneration
+        guard let panel, panel.isVisible else { return }
         NSAnimationContext.runAnimationGroup { animation in
             animation.duration = Self.transitionDuration
-            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             panel.animator().alphaValue = 0
-        } completionHandler: { [weak panel] in
+        } completionHandler: { [weak self, weak panel] in
             Task { @MainActor in
+                // A newer show must not be hidden by an older fade completion.
+                guard let self, self.hideGeneration == generation else { return }
                 panel?.orderOut(nil)
                 panel?.alphaValue = 1
             }
         }
-    }
-
-    var currentDisplayID: CGDirectDisplayID? {
-        preferredDisplayID
     }
 
     private func present(animated: Bool) {
@@ -86,14 +77,13 @@ final class SideDockOverlayController {
             hide()
             return
         }
-
+        hideGeneration += 1
         let panel = panel ?? makePanel()
         self.panel = panel
         panel.alphaValue = 1
         installRootView(in: panel, context: context)
         let nextFrame = context.panelFrame.integral
-
-        if animated, panel.isVisible {
+        if animated, panel.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             NSAnimationContext.runAnimationGroup { animation in
                 animation.duration = Self.transitionDuration
                 animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
@@ -102,7 +92,6 @@ final class SideDockOverlayController {
         } else {
             panel.setFrame(nextFrame, display: true)
         }
-
         panel.orderFrontRegardless()
     }
 
@@ -111,27 +100,16 @@ final class SideDockOverlayController {
             overlayState.context = context
             return
         }
-
         let overlayState = SideDockOverlayState(context: context)
         self.overlayState = overlayState
-        let currentBounds = panel.contentView?.bounds
-            ?? CGRect(origin: .zero, size: panel.frame.size)
         let rootView = SideDockOverlayRootView(
             state: overlayState,
-            onSelectApp: { [weak self] app in
-                self?.select(app)
-            },
-            onDragChange: { [weak self] update in
-                self?.drag(update)
-            },
-            onDragEnd: { [weak self] in
-                self?.finishDragging()
-            }
+            onSelectApp: { [weak self] app in self?.select(app) },
+            onToggleCompact: { [weak self] in self?.toggleCompact() }
         )
         .environment(appModel)
-
         let hostingView = SideDockHostingView(rootView: AnyView(rootView))
-        hostingView.frame = currentBounds
+        hostingView.frame = CGRect(origin: .zero, size: context.layout.panelSize)
         hostingView.autoresizingMask = [.width, .height]
         hostingView.clearHostingBackground()
         dockHostingView = hostingView
@@ -139,174 +117,85 @@ final class SideDockOverlayController {
     }
 
     private func select(_ app: WebAppDefinition) {
-        guard Date() >= suppressSelectionUntil else {
-            return
-        }
-
+        guard !isDragging, Date() >= suppressSelectionUntil else { return }
         appModel?.expandCollapsedWebApp(app)
     }
 
-    private func drag(_ update: SideDockDragUpdate) {
-        guard let panel else {
-            return
-        }
+    private func toggleCompact() {
+        guard !isDragging, Date() >= suppressSelectionUntil else { return }
+        isCompact.toggle()
+        present(animated: true)
+    }
 
-        if !isDragging {
-            isDragging = true
-            didWrapDuringDrag = false
-            dockHostingView?.isDragging = true
-            let panelCenter = edge.isSide ? panel.frame.midY : panel.frame.midX
-            let mouseCoordinate = edge.isSide ? update.mouseLocation.y : update.mouseLocation.x
-            dragOffsetFromPanelCenter = mouseCoordinate - panelCenter
-            draggedApp = update.app
-        }
-
-        latestInwardDistance = update.inwardDistance
-        latestAlongEdgeTravel = update.alongEdgeTravel
-
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(update.mouseLocation) })
-            ?? panel.screen
-            ?? NSScreen.screens.first else {
-            return
-        }
-
-        preferredDisplayID = screen.displayID
-        let offset = dragOffsetFromPanelCenter ?? 0
-        if let wrap = SideDockDragResolver.wrapTarget(
-            currentEdge: edge,
-            currentPosition: verticalPosition,
-            mouseLocation: update.mouseLocation,
-            dragOffsetFromCenter: offset,
-            visibleFrame: screen.visibleFrame,
-            panelSize: panel.frame.size
-        ) {
-            applyWrappedPlacement(wrap, mouseLocation: update.mouseLocation, panel: panel)
-            return
-        }
-
-        guard !SideDockDragResolver.isClosingGesture(
-            startedOnApp: draggedApp != nil,
-            inwardDistance: update.inwardDistance,
-            alongEdgeTravel: update.alongEdgeTravel
-        ) else {
-            return
-        }
-        if edge.isSide {
-            verticalPosition = SideDockPlacementResolver.normalizedVerticalPosition(
-                panelMidY: update.mouseLocation.y - offset,
-                visibleFrame: screen.visibleFrame,
-                panelHeight: panel.frame.height
-            )
-        } else {
-            verticalPosition = SideDockPlacementResolver.normalizedPosition(
-                edge: edge,
-                panelMidX: update.mouseLocation.x - offset,
-                visibleFrame: screen.visibleFrame,
-                panelWidth: panel.frame.width
-            )
-        }
-
-        if let context = presentationContext() {
-            overlayState?.context = context
-            panel.setFrame(context.panelFrame.integral, display: true)
+    private func beginNativeDragging() {
+        isDragging = true
+        overlayState?.isDragging = true
+        dockHostingView?.isDragging = true
+        dragCompletionTask?.cancel()
+        // AppKit hands tracking to Window Server, which may consume the mouse-up event.
+        dragCompletionTask = Task { @MainActor [weak self] in
+            while NSEvent.pressedMouseButtons & 1 != 0 {
+                do { try await Task.sleep(for: .milliseconds(20)) }
+                catch { return }
+            }
+            self?.finishNativeDragging()
         }
     }
 
-    private func applyWrappedPlacement(
-        _ wrap: SideDockDragResolver.WrapTarget,
-        mouseLocation: CGPoint,
-        panel: SideDockPanel
-    ) {
-        edge = wrap.edge
-        verticalPosition = wrap.position
-        didWrapDuringDrag = true
-        guard let context = presentationContext() else {
-            return
-        }
-
-        overlayState?.context = context
-        let frame = context.panelFrame
-        panel.setFrame(frame.integral, display: true)
-        dragOffsetFromPanelCenter = wrap.edge.isSide
-            ? mouseLocation.y - frame.midY
-            : mouseLocation.x - frame.midX
-    }
-
-    private func finishDragging() {
-        guard isDragging else {
-            return
-        }
-
-        let appToClose = draggedApp
-        let shouldClose = !didWrapDuringDrag && SideDockDragResolver.shouldClose(
-            startedOnApp: appToClose != nil,
-            inwardDistance: latestInwardDistance,
-            alongEdgeTravel: latestAlongEdgeTravel
-        )
+    private func finishNativeDragging() {
+        guard isDragging, let panel else { return }
         isDragging = false
-        didWrapDuringDrag = false
+        panel.isNativeDragging = false
+        overlayState?.isDragging = false
         dockHostingView?.isDragging = false
-        dragOffsetFromPanelCenter = nil
-        draggedApp = nil
-        latestInwardDistance = 0
-        latestAlongEdgeTravel = 0
-        // 只有真正开始拖过才会走到这里；松手那一下还会落到图标上，短时间忽略点开。
         suppressSelectionUntil = Date().addingTimeInterval(0.2)
-
-        if shouldClose, let appToClose {
-            appModel?.closeCollapsedWebApp(appToClose)
-            return
-        }
-
-        appModel?.updateSideDockPlacement(
-            edge: edge,
-            verticalPosition: verticalPosition,
-            displayID: preferredDisplayID
+        // Resolve by the actual dragged panel, never by keyboard focus.
+        let screen = NSScreen.screens.max { lhs, rhs in
+            intersectionArea(panel.frame, lhs.visibleFrame) < intersectionArea(panel.frame, rhs.visibleFrame)
+        } ?? panel.screen
+        guard let screen else { return }
+        preferredDisplayID = screen.displayID
+        floatingPosition = SideDockPlacementResolver.normalizedPosition(
+            panelFrame: panel.frame, visibleFrame: screen.visibleFrame
         )
+        if let floatingPosition {
+            appModel?.updateSideDockPlacement(
+                floatingPosition: floatingPosition, displayID: preferredDisplayID
+            )
+        }
     }
 
-    /// 侧边 Dock 必须钉死在一块屏幕上。
-    /// **绝对不能用 `NSScreen.main` 兜底**：它指的是当前键盘焦点所在的屏幕，不是主显示器；
-    /// 用它兜底会导致用户在另一块屏上点一下窗口，Dock 下次刷新就整块跳过去。
+    private func intersectionArea(_ frame: CGRect, _ visibleFrame: CGRect) -> CGFloat {
+        let intersection = frame.intersection(visibleFrame)
+        return intersection.isNull ? 0 : intersection.width * intersection.height
+    }
+
     private func resolvedScreen() -> NSScreen? {
         if let preferredDisplayID,
            let screen = NSScreen.screens.first(where: { $0.displayID == preferredDisplayID }) {
             return screen
         }
-
-        // 从没记住过屏幕，或者原来那块已经拔掉了：优先留在当前已经显示的那块，
-        // 否则落到主显示器（菜单栏所在、屏幕列表第一块），并记下来避免下次再漂。
-        guard let fallbackScreen = panel?.screen ?? NSScreen.screens.first else {
-            return nil
-        }
-
-        preferredDisplayID = fallbackScreen.displayID
-        return fallbackScreen
+        guard let screen = panel?.screen ?? NSScreen.screens.first else { return nil }
+        preferredDisplayID = screen.displayID
+        return screen
     }
 
     private func presentationContext() -> SideDockPresentationContext? {
-        guard let screen = resolvedScreen() else {
-            return nil
-        }
-
+        guard let screen = resolvedScreen() else { return nil }
         return SideDockPresentationContext(
             apps: apps,
             edge: edge,
             screenFrame: screen.frame,
             visibleFrame: screen.visibleFrame,
-            verticalPosition: verticalPosition
+            verticalPosition: verticalPosition,
+            floatingPosition: floatingPosition,
+            isCompact: isCompact
         )
     }
 
     private func makePanel() -> SideDockPanel {
         let panel = SideDockPanel(
-            contentRect: CGRect(
-                origin: .zero,
-                size: CGSize(
-                    width: SideDockPresentationContext.Layout.thickness,
-                    height: SideDockPresentationContext.Layout.thickness
-                )
-            ),
+            contentRect: CGRect(origin: .zero, size: CGSize(width: 47, height: 47)),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -320,6 +209,7 @@ final class SideDockOverlayController {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = false
+        panel.onBeginDragging = { [weak self] in self?.beginNativeDragging() }
         return panel
     }
 }
@@ -394,8 +284,35 @@ private final class SideDockHostingView: NSHostingView<AnyView> {
 }
 
 private final class SideDockPanel: NSPanel {
+    var onBeginDragging: (() -> Void)?
+    var isNativeDragging = false
+    private var mouseDownEvent: NSEvent?
+
+    override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown:
+            mouseDownEvent = event
+        case .leftMouseDragged:
+            if let start = mouseDownEvent,
+               hypot(event.locationInWindow.x - start.locationInWindow.x,
+                     event.locationInWindow.y - start.locationInWindow.y) >= 8 {
+                mouseDownEvent = nil
+                isNativeDragging = true
+                onBeginDragging?()
+                performDrag(with: start)
+                return
+            }
+        case .leftMouseUp:
+            mouseDownEvent = nil
+            if isNativeDragging { return }
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
+
     override var canBecomeKey: Bool {
-        true
+        false
     }
 
     override var canBecomeMain: Bool {

@@ -95,54 +95,16 @@ private struct BrowserMoreActionsControl: View {
     @State private var presentedPanel: Panel?
 
     var body: some View {
-        Menu {
-            Button {
-                presentedPanel = .bookmarks
-            } label: {
-                Label("browser.chrome.bookmark.list", systemImage: "bookmark")
-            }
-
-            Button(action: toggleElementHiding) {
-                Label(
-                    LocalizedStringKey(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"),
-                    systemImage: "wand.and.sparkles"
-                )
-            }
-
-            Divider()
-
-            Button(action: session.reload) {
-                Label("browser.chrome.reload", systemImage: "arrow.clockwise")
-            }
-
-            Button(action: session.toggleUA) {
-                Label(
-                    LocalizedStringKey(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"),
-                    systemImage: session.isMobileUA ? "laptopcomputer" : "iphone"
-                )
-            }
-
-            BrowserDownloadMenuItems(session: session)
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: BrowserChromeLayout.iconFontSize, weight: .semibold))
-                .rotationEffect(.degrees(90))
-                .foregroundStyle(theme.foregroundColor.color.opacity(0.82))
-                .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
-                .overlay(alignment: .topTrailing) {
-                    if !session.downloadItems.isEmpty || session.isPickingElement {
-                        Circle()
-                            .fill(theme.foregroundColor.color)
-                            .frame(width: 4, height: 4)
-                    }
+        BrowserNativeActionsMenu(theme: theme, entries: entries)
+            .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
+            .overlay(alignment: .topTrailing) {
+                if !session.downloadItems.isEmpty || session.isPickingElement {
+                    Circle()
+                        .fill(theme.foregroundColor.color)
+                        .frame(width: 4, height: 4)
+                        .allowsHitTesting(false)
                 }
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .focusEffectDisabled()
-        .help(Text("browser.chrome.more"))
-        .accessibilityLabel(localized("browser.chrome.more"))
+            }
         .popover(item: $presentedPanel, arrowEdge: .bottom) { panel in
             switch panel {
             case .bookmarks:
@@ -151,6 +113,16 @@ private struct BrowserMoreActionsControl: View {
                 BrowserElementHidingPanel(session: session) { presentedPanel = nil }
             }
         }
+    }
+
+    private var entries: [BrowserMenuEntry] {
+        [
+            .action(localized("browser.chrome.bookmark.list"), "bookmark", true, { presentedPanel = .bookmarks }),
+            .action(localized(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"), "wand.and.sparkles", true, toggleElementHiding),
+            .separator,
+            .action(localized("browser.chrome.reload"), "arrow.clockwise", true, session.reload),
+            .action(localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"), session.isMobileUA ? "laptopcomputer" : "iphone", true, session.toggleUA)
+        ] + BrowserDownloadMenuItems(session: session).entries
     }
 
     private func toggleElementHiding() {
@@ -164,29 +136,108 @@ private struct BrowserMoreActionsControl: View {
     }
 }
 
-private struct BrowserDownloadMenuItems: View {
-    let session: BrowserSession
+private enum BrowserMenuEntry {
+    case separator
+    case action(String, String, Bool, @MainActor () -> Void)
+}
 
-    var body: some View {
-        if let latestDownload = session.downloadItems.first {
-            Divider()
+@MainActor
+private struct BrowserNativeActionsMenu: NSViewRepresentable {
+    let theme: BrowserChromeTheme
+    let entries: [BrowserMenuEntry]
 
-            Button(action: session.revealLatestDownload) {
-                Label(title(for: latestDownload), systemImage: iconName(for: latestDownload.phase))
-            }
-            .disabled(latestDownload.destinationURL == nil)
-            .help(helpText(for: latestDownload))
-            .accessibilityLabel(String(format: localized("browser.download.accessibility.label"), title(for: latestDownload)))
-            .accessibilityHint(helpText(for: latestDownload))
+    func makeNSView(context: Context) -> NSPopUpButton {
+        let button = NSPopUpButton(frame: .zero, pullsDown: true)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.focusRingType = .none
+        button.preferredEdge = .maxY
+        (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
+        return button
+    }
 
-            if isDismissible(latestDownload) {
-                Button {
-                    session.clearDownload(id: latestDownload.id)
-                } label: {
-                    Label("browser.download.dismiss", systemImage: "xmark")
-                }
+    func updateNSView(_ button: NSPopUpButton, context: Context) {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let titleItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        titleItem.image = kebabImage()
+        menu.addItem(titleItem)
+
+        for entry in entries {
+            switch entry {
+            case .separator:
+                menu.addItem(.separator())
+            case let .action(title, symbol, isEnabled, action):
+                let handler = ActionHandler(action: action)
+                let item = NSMenuItem(title: title, action: #selector(ActionHandler.performAction), keyEquivalent: "")
+                item.target = handler
+                item.representedObject = handler
+                item.isEnabled = isEnabled
+                item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                item.image?.size = NSSize(width: 16, height: 16)
+                menu.addItem(item)
             }
         }
+
+        button.menu = menu
+        button.contentTintColor = theme.foregroundColor.nsColor.withAlphaComponent(0.82)
+        button.toolTip = localized("browser.chrome.more")
+        button.setAccessibilityLabel(localized("browser.chrome.more"))
+    }
+
+    private func kebabImage() -> NSImage? {
+        guard let symbol = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: BrowserChromeLayout.iconFontSize, weight: .semibold)) else {
+            return nil
+        }
+        let size = NSSize(width: 16, height: 16)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let transform = NSAffineTransform()
+            transform.translateX(by: rect.midX, yBy: rect.midY)
+            transform.rotate(byDegrees: 90)
+            transform.translateX(by: -rect.midX, yBy: -rect.midY)
+            transform.concat()
+            let symbolRect = NSRect(
+                x: (rect.width - symbol.size.width) / 2,
+                y: (rect.height - symbol.size.height) / 2,
+                width: symbol.size.width,
+                height: symbol.size.height
+            )
+            symbol.draw(in: symbolRect)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    @MainActor
+    private final class ActionHandler: NSObject {
+        let action: @MainActor () -> Void
+
+        init(action: @escaping @MainActor () -> Void) {
+            self.action = action
+        }
+
+        @objc func performAction() {
+            action()
+        }
+    }
+}
+
+@MainActor
+private struct BrowserDownloadMenuItems {
+    let session: BrowserSession
+
+    var entries: [BrowserMenuEntry] {
+        guard let latestDownload = session.downloadItems.first else { return [] }
+        var entries: [BrowserMenuEntry] = [
+            .separator,
+            .action(title(for: latestDownload), iconName(for: latestDownload.phase), latestDownload.destinationURL != nil, session.revealLatestDownload)
+        ]
+        if isDismissible(latestDownload) {
+            entries.append(.action(localized("browser.download.dismiss"), "xmark", true, { session.clearDownload(id: latestDownload.id) }))
+        }
+        return entries
     }
 
     private func isDismissible(_ item: BrowserDownloadItem) -> Bool {

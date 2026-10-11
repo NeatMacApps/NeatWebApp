@@ -109,13 +109,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Side Dock Position"
+            "value": "Dock Starting Position"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "侧边刘海位置"
+            "value": "Dock 初始位置"
           }
         }
       }
@@ -770,17 +770,69 @@
       }
     },
     "sidedock.collapsed_hint": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Collapsed Web Apps. Drag to Reposition"
+            "value": "Activity Dock"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已收起的网页应用，可拖动调整位置"
+            "value": "活动 Dock"
+          }
+        }
+      }
+    },
+    "sidedock.collapse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起 Dock"
+          }
+        }
+      }
+    },
+    "sidedock.expand": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展开 Dock"
+          }
+        }
+      }
+    },
+    "sidedock.quit_app": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit App"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束应用"
           }
         }
       }
