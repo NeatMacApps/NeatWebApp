@@ -6,6 +6,27 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.24</title>
+            <pubDate>Mon, 12 Oct 2026 11:53:27 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3042</sparkle:version>
+            <sparkle:shortVersionString>0.3.24</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatWebApp 0.3.24
+
+- Improved floating Dock readability with larger app icons and a clear dotted drag grip.
+- Prevented overlapping pinned browser windows from repeatedly stealing focus from each other.
+- Restored public updates and strengthened release upload retries, recovery and full-download verification.
+
+## 简体中文
+
+- 放大悬浮 Dock 的应用图标，保留清晰的点阵拖动手柄。
+- 修复交叠的置顶浏览器窗口反复抢焦点、闪烁的问题。
+- 恢复公开更新，强化发布上传重试、失败续跑和完整下载验证。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.24/NeatWebApp-0.3.24.zip" length="5835569" type="application/octet-stream" sparkle:edSignature="Qzy78BXzWqOToBRnerPm2fAbh6ADQ9Dvlj4X33JKW2TjLUWvFQdz5/z6/PXCPRN5R2VXbmo8IkgMOYZIWWIQAw=="/>
+        </item>
+        <item>
             <title>0.3.23</title>
             <pubDate>Sun, 11 Oct 2026 13:37:30 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -74,6 +95,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: FRZtbZHe0ks7kGANtGE7XnZkWBTUuTDXudf66Cpov8+52fft084/tR2S5HNW7kmBmK0RqUPpRv+H1Dh6In4LDg==
-length: 5348
+edSignature: N1LNPGXsO58GDarrILQdqqtoAC58ZnbHGJkKPwODBbWpyPuRUUh9J+ObmKEhDcWhm81QGOmQVBlIi9gwdUhZAQ==
+length: 6676
 -->
