@@ -584,7 +584,8 @@ if [[ "${appcast_ok}" -ne 1 ]]; then
   xmllint --noout "${work_dir}/published-appcast.xml" || die "线上 appcast 不是合法 XML"
   grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml" \
     || die "线上 appcast 没有当前内部构建号 ${build_number}"
-  echo "CDN 仍滞后，已用 GitHub Contents API 核对 appcast 构建号 ${build_number}"
+  echo "Origin has build ${build_number}, but the client feed CDN is still stale"
+  die "Publication incomplete: resume final verification after the actual client feed refreshes; do not rebuild"
 fi
 "${sparkle_bin_dir}/sign_update" --account "${SPARKLE_ACCOUNT}" --verify "${work_dir}/published-appcast.xml" >/dev/null \
   || die "线上 appcast 完整性校验失败：公开更新清单未签名或传输后被改写"

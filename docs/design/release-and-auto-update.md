@@ -41,7 +41,7 @@
 
 ## Publication completion and recovery
 
-A release is complete only when its DMG and ZIP are uploaded and anonymously downloadable with matching SHA-256 values, the signed public appcast advertises its build and references that ZIP, Homebrew points to that DMG/hash, and the final signed application is installed and its affected behavior is verified. Report each outcome separately. A local version, tag, empty Release page or started background runner does not satisfy this gate.
+A release is complete only when its DMG and ZIP are uploaded and anonymously downloadable with matching SHA-256 values, the signed public appcast advertises its build and references that ZIP, Homebrew points to that DMG/hash, and the final signed application is installed and its affected behavior is verified. Report each outcome separately. A local version, tag, empty Release page or started background runner does not satisfy this gate. The exact `SUFeedURL` must return the intended signed build; a newer GitHub Contents API result establishes origin publication only and cannot clear a stale client CDN. Recheck the actual feed without rebuilding or rolling back.
 
 The 0.3.23/3041 publication stopped after creating its GitHub Release: DMG upload returned HTTP 408 (upload body inactivity timeout), the runner recorded `failed`, both attachments were absent and the appcast remained 0.3.21/3039. This is a server-publication failure; clients cannot discover a build missing from the feed. Recover the original notarized assets rather than rebuilding or resubmitting them. Recreate the signed appcast from the retained ZIP if its temporary draft was lost. Never hand-edit signed XML.
 
