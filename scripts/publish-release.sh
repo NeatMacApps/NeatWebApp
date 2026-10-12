@@ -335,7 +335,26 @@ else
   codesign --verify --deep --strict "${retained_app}" || die "Retained ZIP signature invalid"
   [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${retained_app}/Contents/Info.plist")" == "${build_number}" ]] || die "Retained ZIP build mismatch"
   [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${retained_app}/Contents/Info.plist")" == "${version}" ]] || die "Retained ZIP version mismatch"
-  diff -rq "${retained_app}" "${APP_PATH}" >/dev/null || die "Retained ZIP differs from exported application"
+  # Compare bundle bytes and symlink targets without following framework directory links.
+  python3 - "${retained_app}" "${APP_PATH}" <<'PY_BUNDLE' || die "Retained ZIP differs from exported application"
+import hashlib, os, pathlib, sys
+def manifest(root):
+    root = pathlib.Path(root)
+    entries = {}
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        for name in dirs + files:
+            path = pathlib.Path(directory) / name
+            key = str(path.relative_to(root))
+            if path.is_symlink():
+                entries[key] = ("link", os.readlink(path))
+            elif path.is_file():
+                entries[key] = ("file", hashlib.sha256(path.read_bytes()).hexdigest())
+            else:
+                entries[key] = ("directory",)
+    return entries
+if manifest(sys.argv[1]) != manifest(sys.argv[2]):
+    raise SystemExit("Bundle content or symlink mismatch")
+PY_BUNDLE
 fi
 
 # ---------- 4. 生成 Sparkle 更新包与清单 ----------
