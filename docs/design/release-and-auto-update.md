@@ -49,6 +49,14 @@ The publisher supports `--resume-publication`: it validates retained app/DMG tic
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
+## Current verification scope (0.3.24 / 3042)
+
+The official 0.3.21 bundle's Sparkle updater, using `checkForUpdateInformation`, found 0.3.24/3042 at its unchanged `SUFeedURL`. Anonymous DMG and ZIP downloads matched the original notarized artifacts byte for byte; the DMG ticket, signed appcast, Cask version/hash, and installed Developer ID application were checked. The installed application launched from `/Applications` and matched the exported bundle's files and symlink targets.
+
+The CDN's gzip response reached 3042 while an uncompressed request still returned 3041. Use `curl --compressed` for client-feed verification and verify the old client's actual Sparkle result; an origin API read alone is insufficient. Official probe API: [SPUUpdater.checkForUpdateInformation](https://sparkle-project.org/documentation/api-reference/Classes/SPUUpdater.html).
+
+Debug build, 81 host tests, 91 runtime tests and static analysis passed. Universal Release archive/export diagnostics contain only the already assessed AppIntents metadata warning in [architecture.md](../architecture.md#xcode-27-diagnostic-corrections). The console was locked: context captures failed and a full-screen capture was black, so Dock appearance and hover-focus interaction were not visually accepted in this delivery. `spctl` reported `override=security disabled`; independent signature and stapled-ticket checks passed, but this machine did not establish normal Gatekeeper enforcement. Update discovery was verified; automated application replacement through Sparkle was not repeated.
+
 ## v0.3.2 发布与升级验证（2026-08-10）
 
 `v0.3.2`（内部构建号 `3020`）已完成签名、公证、装订、两仓发布。公开更新仓的 appcast、zip 与 dmg 均已用匿名请求验证可访问。

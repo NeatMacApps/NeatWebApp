@@ -244,7 +244,7 @@ sparkle_public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' Sources/
 
 # 防回退：排队错序或重复执行都可能把线上清单写回更低的构建号，用户端表现为「升级变降级」。
 if [[ "${local_only}" == false ]] \
-  && curl -fsSL "${FEED_URL}" -o "${work_dir}/current-appcast.xml" 2>/dev/null; then
+  && curl --compressed -fsSL "${FEED_URL}" -o "${work_dir}/current-appcast.xml" 2>/dev/null; then
   # 构建号在 appcast 里既可能是元素也可能是 enclosure 上的属性，两种写法都要认，
   # 只认一种的话检查会静默失效，防回退等于没做
   current_published_build="$(xmllint --xpath \
@@ -567,7 +567,7 @@ log_step "匿名下载与更新清单终检"
 # raw.githubusercontent.com/main 常有 CDN 延迟，推送后立刻读可能仍是旧清单；重试并在末次回退到 GitHub Contents API。
 appcast_ok=0
 for attempt in 1 2 3 4 5 6 7 8; do
-  if curl -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
+  if curl --compressed -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
     && xmllint --noout "${work_dir}/published-appcast.xml" \
     && grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml"; then
     appcast_ok=1
