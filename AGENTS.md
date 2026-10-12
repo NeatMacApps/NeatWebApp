@@ -47,9 +47,9 @@ Remote：`app-macos` → GitHub `NeatMacApps/NeatWebApp`（公开，https://gith
 - `Sources/NeatWebApp/Services`：应用状态、overlay/window 协调、事件监控、偏好持久化。
 - `Sources/NeatWebApp/Features/Launcher`：刘海 launcher 相关 UI。
 - `Sources/NeatWebApp/Features/SideDock`：侧边刘海 Dock、整块拖动与收纳图标 UI。
-- `Sources/NeatWebApp/Features/Settings`：设置区块，内嵌在主窗口里，不是独立窗口。
+- `Sources/NeatWebApp/Features/Settings`：主窗口的「通用」设置页签。
 - `Sources/NeatWebApp/Features/Browser`：浏览器会话、窗口内容、WebKit bridge。
-- `Sources/NeatWebApp/Features/Dashboard`：主窗口（网页应用列表 + 设置区块）。
+- `Sources/NeatWebApp/Features/Dashboard`：主窗口（`Settings` scene 承载的页签容器 + 网页应用页签）。
 - `Tests/NeatWebAppTests`：宿主侧单元测试（屏幕几何、持久化、catalog、侧边 Dock 贴边与拐角换边）。
 - `Tests/NeatWebAppRuntimeTests`：运行时侧单元测试（浏览器 chrome、收藏隔离、下载与外链策略、历史位置兼容、窗口自动收起判定、可见面积计算、**侧边 Dock 避让**）。
 
@@ -138,8 +138,8 @@ done
 
 ### SwiftUI / AppKit / WebKit 约定
 - 修改应用入口或命令菜单时，同时检查 `Sources/NeatWebApp/App/NeatWebAppApp.swift` 与 `Sources/NeatWebApp/App/AppCommands.swift`。
-- **不做独立的设置窗口**：全部应用级设置都放在主窗口里（`Features/Settings` 只提供内嵌区块）。菜单栏、启动器加号、⌘, 三个入口都打开同一个主窗口，窗口标识统一取 `AppWindowID.main`，不要新增第二个窗口标识或恢复 `Settings` scene。
-  - **基线 B4 的产品豁免（已登记）**：虽然本应用有三项以上可调设置，但它是“网页应用目录 + 启动器 + 运行时窗口”一体化管理工具，所有设置都直接影响同一主界面的内容和行为；另开设置窗口会把同一条工作流拆散，且会和菜单栏、启动器加号、⌘, 三个既有入口产生重复路径。因此本应用不使用独立 `Settings` scene，统一以主窗口内嵌设置区替代。这个豁免**不**免除 ⌘, 可达、键盘焦点、VoiceOver、持久化与中英本地化要求。
+- **Single management window, hosted by the `Settings` scene (owner decision 2026-10-12).** The web app catalog and all app-level settings live in one window, built as a SwiftUI `Settings` scene so its panes get native icon + label toolbar tabs (a regular `Window` renders text-only tabs). Do not add a second window or window ID. The menu bar, the launcher's Add item and ⌘, all open this window through `openSettings`, then activate the app. Pane layout and contents are owned by [dashboard-settings.md](../docs/design/dashboard-settings.md).
+  - **B4 note:** this single window satisfies B4's standard Settings window and also carries the catalog, because every setting directly affects the same catalog/launcher/runtime workflow. ⌘, reachability, keyboard focus, VoiceOver, persistence and English/Chinese localization still apply.
 - **主窗口只放用户要操作的东西**：不摆产品介绍、路线图、诊断读数、屏幕几何等开发者信息；设置项的补充说明一律走悬停提示，界面上只留一句话标题。唯一例外是必须解释否则用户会误判的状态（如开机自启被系统挂起）。刷新几何、调试覆盖层这类开发用动作只保留快捷键，不进界面。
 - App 图标与菜单栏图标共享“三层卡片落入带凹口托盘”的品牌语义：菜单栏版本必须保留三层卡片、托盘凹口和必要负空间，禁止把彩色 App 图标直接灰度化、阈值化或整块填黑。模板图的通用规格与验收步骤见 [Apple 应用图标与品牌资产基线](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)。
 - 修改 launcher 行为时，同时检查 `Sources/NeatWebApp/Services/AppModel.swift`、`AppModel+Launcher.swift`、`Sources/NeatWebApp/Services/LauncherOverlayController.swift`、`Sources/NeatWebApp/Services/NotchActivationMonitor.swift`。
@@ -167,7 +167,7 @@ done
 - 窗口自动收进侧边 Dock 的触发条件是「看不见的面积达到 80%」，立刻收起，没有闲置超时。用户刚从刘海或侧边栏点开/唤出时有短暂保护，避免窗口列表还没跟上就误收。改这块前先读 [窗口自动收起设计说明](docs/design/window-auto-collapse.md)。
 - 置顶窗口行为通过 `NSWindow.Level.floating` 实现，并由偏好持久化保存。
 - 应用内自动更新由 `Sources/NeatWebApp/Services/AppUpdater.swift` 持有，只装在宿主上；更新覆盖安装前会调用 `AppModel.prepareForApplicationUpdate()` 收掉全部运行时进程，漏网的靠既有的运行时版本迁移逻辑在下次启动时重启。改运行时生命周期、`WebAppRuntimeCoordinating` 协议或菜单栏菜单时，一并确认这条链路没断。**「能否检查更新」必须挂在这个更新器上、整个生命周期只订阅一次**；禁止在检查更新按钮初始化时新建观察对象，否则菜单会被系统反复合成、主线程打满。排障见 `~/.config/agentsync/docs/troubleshooting/2026-09-01-swiftui-menubar-main-thread-spin.md`。
-- 开机自启由公共行为包的登录项单元封装，主窗口的设置区与菜单栏各有一个入口。**只有系统真正会在登录时拉起才算启用**：待批准不能显示成已开启，也不能靠注销再登记救回来，只能由用户去系统设置里重新打开。界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
+- 开机自启由公共行为包的登录项单元封装，主窗口「通用」页签与菜单栏各有一个入口。**只有系统真正会在登录时拉起才算启用**：待批准不能显示成已开启，也不能靠注销再登记救回来，只能由用户去系统设置里重新打开。界面必须如实解释并给出跳系统设置的入口。正常机器上首次开启不需要任何放行，不要把放行写成常规步骤。
 - 触碰这些逻辑时，要连同构建、测试、替换 `/Applications/NeatWebApp.app`、再启动验证一起执行。
 
 ### 当前基线缺口：中英本地化（A3，必须补齐）

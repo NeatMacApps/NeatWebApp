@@ -86,23 +86,6 @@
         }
       }
     },
-    "settings.section.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置"
-          }
-        }
-      }
-    },
     "settings.side_dock.edge.title": {
       "extractionState": "manual",
       "localizations": {
@@ -154,23 +137,6 @@
         }
       }
     },
-    "settings.reveal_launcher": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Launcher"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "启动器"
-          }
-        }
-      }
-    },
     "settings.reveal_launcher.action": {
       "extractionState": "manual",
       "localizations": {
@@ -184,23 +150,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "唤出启动器"
-          }
-        }
-      }
-    },
-    "settings.check_for_updates.row": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updates"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
           }
         }
       }
@@ -235,23 +184,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "安装 NeatWebApp %@ 更新…"
-          }
-        }
-      }
-    },
-    "settings.quit.row": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quit"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "退出"
           }
         }
       }
@@ -317,22 +249,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "隐藏菜单栏图标"
-          }
-        }
-      }
-    },
-    "menubar.settings": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置…"
           }
         }
       }
@@ -493,22 +409,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑…"
-          }
-        }
-      }
-    },
-    "dashboard.row_hint": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Press Return to Open the Web App"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "按下回车打开网页应用"
           }
         }
       }
@@ -816,6 +716,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "拖动 Dock"
+          }
+        }
+      }
+    },
+    "settings.pane.general": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
+          }
+        }
+      }
+    },
+    "settings.version_format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本 %@"
+          }
+        }
+      }
+    },
+    "settings.section.launcher_dock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launcher & Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动器与 Dock"
+          }
+        }
+      }
+    },
+    "settings.quit.short": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
           }
         }
       }

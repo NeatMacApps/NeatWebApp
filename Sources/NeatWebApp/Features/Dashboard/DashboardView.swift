@@ -2,29 +2,79 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 主窗口：网页应用管理与应用设置合在同一个窗口里，没有独立的设置窗口。
+/// Main window: web app management and app settings share one window as native tab panes.
+/// There is no separate Settings scene; menu bar, launcher Add and ⌘, all open this window.
 struct DashboardView: View {
+    @AppStorage(DashboardPane.storageKey) private var selectedPane: DashboardPane = .webApps
+
+    var body: some View {
+        TabView(selection: $selectedPane) {
+            Tab("dashboard.section_title", systemImage: "square.grid.2x2", value: DashboardPane.webApps) {
+                WebAppsPane()
+            }
+
+            Tab("settings.pane.general", systemImage: "gearshape", value: DashboardPane.general) {
+                GeneralSettingsPane()
+            }
+        }
+        .frame(width: DashboardLayout.width)
+        // The window (content-size resizability) follows the current pane's height.
+        .fixedSize(horizontal: false, vertical: true)
+        .focusEffectDisabled()
+    }
+}
+
+/// Panes of the main window. The raw value is persisted so the window reopens on the last pane.
+enum DashboardPane: String {
+    case webApps
+    case general
+
+    static let storageKey = "dashboard.selectedPane"
+}
+
+private enum DashboardLayout {
+    static let width: CGFloat = 520
+    /// Beyond this height the web app list scrolls inside its pane instead of growing the window.
+    static let webAppsMaxHeight: CGFloat = 560
+}
+
+/// "Web Apps" pane: the user's catalog. The list is the only region allowed to scroll,
+/// and only once it outgrows the maximum pane height.
+private struct WebAppsPane: View {
     @Environment(AppModel.self) private var appModel
 
     @State private var editorTarget: WebAppEditorTarget?
     @State private var appToDelete: WebAppDefinition?
+    @State private var hoveredAppID: String?
     @State private var draggedApp: WebAppDefinition?
     @State private var dropTargetID: String?
-    @State private var hoveredAppID: String?
-    @FocusState private var focusedAppID: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                appsSection
-                SettingsSectionView()
+        Form {
+            Section {
+                // Reordering uses drag and drop rather than `onMove`, which grouped forms do not support.
+                // The move is applied and persisted once on drop; cancelled drags change nothing.
+                ForEach(appModel.apps) { app in
+                    appRow(for: app)
+                }
+            } footer: {
+                // Both actions belong to the launcher's content, so they sit on the list itself.
+                HStack {
+                    Button("settings.reveal_launcher.action") {
+                        appModel.revealLauncherManually()
+                    }
+
+                    Spacer()
+
+                    Button {
+                        editorTarget = .new
+                    } label: {
+                        Label("dashboard.add_accessibility", systemImage: "plus")
+                    }
+                }
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
-        .frame(width: 520, height: 720)
-        .focusEffectDisabled()
+        .settingsPaneStyle(maxHeight: DashboardLayout.webAppsMaxHeight)
         .sheet(item: $editorTarget) { target in
             WebAppEditorSheet(appModel: appModel, target: target)
         }
@@ -47,51 +97,15 @@ struct DashboardView: View {
         }
     }
 
-    private var appsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text(String(localized: "dashboard.section_title"))
-                    .panelSectionTitle()
-
-                Spacer()
-
-                Button {
-                    editorTarget = .new
-                } label: {
-                    Label(String(localized: "dashboard.add"), systemImage: "plus")
-                }
-                .controlSize(.small)
-                .focusEffectDisabled()
-                .accessibilityLabel(String(localized: "dashboard.add_accessibility"))
-            }
-
-            VStack(spacing: 0) {
-                ForEach(appModel.apps) { app in
-                    if app.id != appModel.apps.first?.id {
-                        Divider()
-                            .padding(.leading, 50)
-                    }
-
-                    appRow(for: app)
-                }
-            }
-            .panelCard()
-        }
-    }
-
     private func appRow(for app: WebAppDefinition) -> some View {
-        let isHovered = hoveredAppID == app.id
-        let isFocused = focusedAppID == app.id
+        let host = app.homeURL.host ?? app.homeURL.absoluteString
+        let showsActions = hoveredAppID == app.id && draggedApp == nil
         let isDropTarget = dropTargetID == app.id && draggedApp?.id != app.id
 
-        return HStack(spacing: 12) {
-            // 拖动把手：整行都能拖，但只有这个手柄在视觉上承诺可拖动。
-            // 把手不抢打开/更多按钮的点击，也不触发双击打开。
+        return HStack(spacing: 10) {
+            // Visible drag grip: the whole row drags, the grip makes that discoverable.
             Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(.tertiary)
-                .frame(width: 16, height: 46)
-                .contentShape(Rectangle())
                 .help(String(localized: "dashboard.drag_help"))
                 .accessibilityLabel(String(format: String(localized: "dashboard.drag_accessibility_format"), app.name))
 
@@ -105,77 +119,48 @@ struct DashboardView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(app.name)
-                    .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
 
-                Text(app.homeURL.host ?? app.homeURL.absoluteString)
-                    .font(.system(size: 11))
+                Text(host)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             Spacer(minLength: 12)
 
-            // 操作按钮只在指针移到该行时出现，静态列表保持干净。
-            HStack(spacing: 4) {
+            // Row actions appear on hover so the resting list stays quiet; the context menu
+            // and double-click offer the same actions at any time.
+            HStack(spacing: 6) {
                 Button(String(localized: "dashboard.open")) {
                     appModel.openWebApp(app)
                 }
-                .controlSize(.small)
-                .focusEffectDisabled()
 
                 Menu {
-                    Button(String(localized: "dashboard.edit")) {
-                        editorTarget = .existing(app)
-                    }
-
-                    Divider()
-
-                    Button(String(localized: "dashboard.delete"), role: .destructive) {
-                        appToDelete = app
-                    }
+                    rowMenuItems(for: app)
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
-                .frame(width: 18)
-                .focusEffectDisabled()
+                .fixedSize()
             }
-            .opacity(isHovered || isFocused ? 1 : 0)
-            .allowsHitTesting(isHovered || isFocused)
+            .opacity(showsActions ? 1 : 0)
+            .allowsHitTesting(showsActions)
         }
-        .padding(.horizontal, 14)
-        .padding(.leading, 2)
-        .frame(height: 46)
         .contentShape(Rectangle())
-        .background((isHovered || isFocused) ? Color.primary.opacity(0.05) : Color.clear)
-        // 拖到这一行时只画一条插入线：不改行高、不跳动，原顺序松手前不动。
+        // While dragging, a single insertion line marks the destination without moving rows.
         .overlay(alignment: .top) {
             if isDropTarget {
                 Rectangle()
                     .fill(Color.accentColor)
                     .frame(height: 2)
-                    .padding(.leading, 30)
-                    .padding(.trailing, 8)
+                    .offset(y: -7)
             }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.primary.opacity(isFocused ? 0.7 : 0), lineWidth: 2)
-        }
-        .focusable()
-        .focused($focusedAppID, equals: app.id)
-        .focusEffectDisabled()
-        .onKeyPress(.return) {
-            appModel.openWebApp(app)
-            return .handled
-        }
-        .accessibilityLabel(String(format: String(localized: "dashboard.row_accessibility_format"), app.name, app.homeURL.host ?? app.homeURL.absoluteString))
-        .accessibilityHint(String(localized: "dashboard.row_hint"))
-        .accessibilityAction {
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(format: String(localized: "dashboard.row_accessibility_format"), app.name, host))
+        .accessibilityAction(named: Text("dashboard.open")) {
             appModel.openWebApp(app)
         }
         .onHover { isInside in
@@ -192,6 +177,20 @@ struct DashboardView: View {
             draggedApp = app
             dropTargetID = nil
             return NSItemProvider(object: app.id as NSString)
+        } preview: {
+            // Only the icon and name travel with the pointer, not the whole row and its actions.
+            Label {
+                Text(app.name)
+            } icon: {
+                WebAppIconView(
+                    app: app,
+                    size: 24,
+                    font: .system(size: 12, weight: .semibold),
+                    favicon: appModel.faviconImage(for: app),
+                    loadFavicon: {}
+                )
+            }
+            .padding(6)
         }
         .onDrop(
             of: [.text],
@@ -208,15 +207,20 @@ struct DashboardView: View {
                 appModel.openWebApp(app)
             }
 
-            Button(String(localized: "dashboard.edit")) {
-                editorTarget = .existing(app)
-            }
+            rowMenuItems(for: app)
+        }
+    }
 
-            Divider()
+    @ViewBuilder
+    private func rowMenuItems(for app: WebAppDefinition) -> some View {
+        Button(String(localized: "dashboard.edit")) {
+            editorTarget = .existing(app)
+        }
 
-            Button(String(localized: "dashboard.delete"), role: .destructive) {
-                appToDelete = app
-            }
+        Divider()
+
+        Button(String(localized: "dashboard.delete"), role: .destructive) {
+            appToDelete = app
         }
     }
 }
@@ -301,52 +305,41 @@ private struct WebAppEditorSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(isEditing ? String(localized: "dashboard.editor_title_edit") : String(localized: "dashboard.add_accessibility"))
-                .font(.system(size: 15, weight: .semibold))
+        VStack(spacing: 0) {
+            Form {
+                Section {
+                    TextField(String(localized: "dashboard.field_url"), text: $urlString, prompt: Text(verbatim: "example.com"))
+                        .focused($focusedField, equals: .url)
+                        .onChange(of: urlString) { _, newValue in
+                            guard !hasEditedName else {
+                                return
+                            }
 
-            textField(String(localized: "dashboard.field_url"), prompt: "example.com", text: $urlString, field: .url)
-                .onChange(of: urlString) { _, newValue in
-                    guard !hasEditedName else {
-                        return
-                    }
-
-                    name = Self.suggestedName(from: newValue)
-                }
-
-            textField(String(localized: "dashboard.field_name"), prompt: String(localized: "dashboard.field_name_prompt"), text: $name, field: .name)
-                .onChange(of: name) { _, _ in
-                    if focusedField == .name {
-                        hasEditedName = true
-                    }
-                }
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "dashboard.accent_title"))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 8) {
-                    ForEach(Self.accentColors, id: \.name) { item in
-                        Button {
-                            accentColorName = item.name
-                        } label: {
-                            Circle()
-                                .fill(item.color)
-                                .frame(width: 20, height: 20)
-                                .overlay {
-                                    if accentColorName == item.name {
-                                        Circle()
-                                            .stroke(.white, lineWidth: 2)
-                                            .frame(width: 14, height: 14)
-                                    }
-                                }
+                            name = Self.suggestedName(from: newValue)
                         }
-                        .buttonStyle(.plain)
-                        .help(item.label)
+
+                    TextField(String(localized: "dashboard.field_name"), text: $name, prompt: Text("dashboard.field_name_prompt"))
+                        .focused($focusedField, equals: .name)
+                        .onChange(of: name) { _, _ in
+                            if focusedField == .name {
+                                hasEditedName = true
+                            }
+                        }
+
+                    LabeledContent(String(localized: "dashboard.accent_title")) {
+                        HStack(spacing: 8) {
+                            ForEach(Self.accentColors, id: \.name) { item in
+                                accentSwatch(item)
+                            }
+                        }
                     }
+                } header: {
+                    Text(isEditing ? String(localized: "dashboard.editor_title_edit") : String(localized: "dashboard.add_accessibility"))
                 }
             }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Spacer()
@@ -362,51 +355,38 @@ private struct WebAppEditorSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid)
             }
-            .padding(.top, 4)
+            .padding([.horizontal, .bottom], 20)
         }
-        .padding(20)
-        .frame(width: 360)
+        .frame(width: 420)
         .focusEffectDisabled()
         .onAppear {
-            // 新增时直接把光标放到网址框；编辑时不抢焦点，避免一打开就选中已有内容。
+            // Put the cursor in the URL field when adding; editing does not grab focus,
+            // so existing content is not selected on open.
             if !isEditing {
                 focusedField = .url
             }
         }
     }
 
-    private func textField(
-        _ title: String,
-        prompt: String,
-        text: Binding<String>,
-        field: Field
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-
-            TextField(prompt, text: text)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .focused($focusedField, equals: field)
-                .padding(.horizontal, 10)
-                .frame(height: 28)
-                .background(
-                    Color(nsColor: .textBackgroundColor),
-                    in: RoundedRectangle(cornerRadius: 7, style: .continuous)
-                )
-                // 系统焦点框已关闭，这里补一套克制的自绘焦点态，保证键盘操作仍看得见焦点。
+    private func accentSwatch(_ item: (name: String, label: String, color: Color)) -> some View {
+        Button {
+            accentColorName = item.name
+        } label: {
+            Circle()
+                .fill(item.color)
+                .frame(width: 18, height: 18)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(
-                            focusedField == field
-                            ? Color.accentColor.opacity(0.8)
-                            : Color(nsColor: .separatorColor),
-                            lineWidth: focusedField == field ? 2 : 1
-                        )
+                    if accentColorName == item.name {
+                        Circle()
+                            .stroke(.white, lineWidth: 2)
+                            .frame(width: 12, height: 12)
+                    }
                 }
         }
+        .buttonStyle(.plain)
+        .help(item.label)
+        .accessibilityLabel(item.label)
+        .accessibilityAddTraits(accentColorName == item.name ? .isSelected : [])
     }
 
     private func save() {

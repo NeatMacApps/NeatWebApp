@@ -1,11 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// 窗口标识：启动器、菜单栏和快捷键都要打开同一个主窗口。
-enum AppWindowID {
-    static let main = "main"
-}
-
 @MainActor
 @main
 struct NeatWebAppApp: App {
@@ -13,7 +8,7 @@ struct NeatWebAppApp: App {
     private let appModel: AppModel
     private let appUpdater: AppUpdater
 
-    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     init() {
         let appModel = AppModel()
@@ -29,8 +24,9 @@ struct NeatWebAppApp: App {
     }
 
     var body: some Scene {
-        // 主窗口同时承担设置界面，不再提供独立的设置窗口。
-        Window("NeatWebApp", id: AppWindowID.main) {
+        // The single management window (catalog + settings) is the Settings scene,
+        // which gives its panes native icon + label toolbar tabs. There is no second window.
+        Settings {
             DashboardView()
                 .environment(appModel)
                 .environmentObject(appUpdater)
@@ -46,9 +42,7 @@ struct NeatWebAppApp: App {
                     openMainWindow()
                 }
         }
-        // 登录与图标可见时的冷启动都不自动开主窗；图标已隐藏且非登录时由 AppDelegate 唤回。
-        .defaultLaunchBehavior(.suppressed)
-        .windowResizability(.contentSize)
+        // The Settings scene never opens on launch; with the icon hidden, AppDelegate recalls it on reopen.
         .commands {
             AppCommands(appModel: appModel)
             CommandGroup(after: .appInfo) {
@@ -113,7 +107,7 @@ struct NeatWebAppApp: App {
 
     /// 常驻菜单栏的应用打开窗口后不会自动激活，要手动抢一次前台，否则窗口会压在别的应用下面。
     private func openMainWindow() {
-        openWindow(id: AppWindowID.main)
+        openSettings()
         NSApplication.shared.activate()
     }
 

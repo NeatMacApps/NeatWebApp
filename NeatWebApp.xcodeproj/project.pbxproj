@@ -30,7 +30,6 @@
 		2424A93CD84E461F797C6730 /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
 		28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */; };
 		28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
-		2D51EE1180C98E2EBE13B44E /* PanelCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F17F52846B3347E6D0CEC6 /* PanelCard.swift */; };
 		2E76E497BEC0B2A99B1354D3 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
 		2F608A187B13024EB8D438F4 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
 		2FD276B0431BABBAD93435EB /* SideDockPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */; };
@@ -48,8 +47,8 @@
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */; };
 		50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
+		51F50D59AC16B43CD497B39B /* SettingsPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */; };
 		54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */; };
-		57255E5E31B75DA42753471B /* SettingsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD8BAF9F67E646378E54D35 /* SettingsSectionView.swift */; };
 		57AAD8C3620E8214942B09CB /* BrowserDownloadStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */; };
 		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
 		5F4410B4386D010AE8CDA0F0 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
@@ -242,7 +241,6 @@
 		849B0F6F38FBDE8583D3B1FD /* 0.3.1.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.1.md; sourceTree = "<group>"; };
 		87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometry.swift; sourceTree = "<group>"; };
 		88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowPlacementLaunchTests.swift; sourceTree = "<group>"; };
-		8BD8BAF9F67E646378E54D35 /* SettingsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSectionView.swift; sourceTree = "<group>"; };
 		91EA688FCF891D0DB8CCF1D5 /* WindowVisibleCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowVisibleCoverageTests.swift; sourceTree = "<group>"; };
 		933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadStatusTests.swift; sourceTree = "<group>"; };
 		93E982F70F601CE4E968D7F1 /* RuntimeBootstrapLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeBootstrapLoaderTests.swift; sourceTree = "<group>"; };
@@ -262,7 +260,7 @@
 		A95538A43E44E067FB865857 /* 0.3.15.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.15.md; sourceTree = "<group>"; };
 		AC891DBB5C3E7A9AF43B963D /* BrowserDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadManager.swift; sourceTree = "<group>"; };
 		AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Lucide-LICENSE.txt"; sourceTree = "<group>"; };
-		B2F17F52846B3347E6D0CEC6 /* PanelCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelCard.swift; sourceTree = "<group>"; };
+		AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPanes.swift; sourceTree = "<group>"; };
 		BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserContainerView.swift; sourceTree = "<group>"; };
 		BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBookmarkTests.swift; sourceTree = "<group>"; };
 		BC7EE445D7133B2C7D938035 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -407,7 +405,7 @@
 		3F0E4E34618244774A750FCA /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				8BD8BAF9F67E646378E54D35 /* SettingsSectionView.swift */,
+				AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -548,7 +546,6 @@
 			isa = PBXGroup;
 			children = (
 				1220370641773E0765018F0B /* EdgeAttachedShape.swift */,
-				B2F17F52846B3347E6D0CEC6 /* PanelCard.swift */,
 				104516AB0D614875D050B34D /* WebAppIconView.swift */,
 			);
 			path = Shared;
@@ -882,7 +879,6 @@
 				E785257BD4C3D661B97F5472 /* NeatWebAppApp.swift in Sources */,
 				50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */,
 				8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */,
-				2D51EE1180C98E2EBE13B44E /* PanelCard.swift in Sources */,
 				CEF7C803632831529F7D9869 /* RuntimeAppLock.swift in Sources */,
 				6C91A519FFB072AF843A9F3C /* RuntimeCommandBus.swift in Sources */,
 				6936D1598B016139645685BE /* RuntimeHealthMonitor.swift in Sources */,
@@ -892,7 +888,7 @@
 				22423776B9700255C6834E20 /* RuntimeStandbyPool.swift in Sources */,
 				5F4410B4386D010AE8CDA0F0 /* RuntimeSupportDirectory.swift in Sources */,
 				98A529BA559227F47CF540EA /* ScreenNotchGeometry.swift in Sources */,
-				57255E5E31B75DA42753471B /* SettingsSectionView.swift in Sources */,
+				51F50D59AC16B43CD497B39B /* SettingsPanes.swift in Sources */,
 				BED783E45515854457B5BEEE /* SideDockOverlayController.swift in Sources */,
 				817BF40EA1083A9C3112C4B0 /* SideDockOverlayRootView.swift in Sources */,
 				E1AF795E7A911E19CCC35BD2 /* SideDockPresentationContext.swift in Sources */,
@@ -1068,7 +1064,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3042;
+				CURRENT_PROJECT_VERSION = 3043;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1089,7 +1085,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.24;
+				MARKETING_VERSION = 0.3.25;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1191,7 +1187,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3042;
+				CURRENT_PROJECT_VERSION = 3043;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1206,7 +1202,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.24;
+				MARKETING_VERSION = 0.3.25;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

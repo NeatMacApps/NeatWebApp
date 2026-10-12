@@ -2,7 +2,6 @@ import AppKit
 import SwiftUI
 
 struct LauncherOverlayRootView: View {
-    @Environment(\.openWindow) private var openWindow
     @Environment(AppModel.self) private var appModel
     @State private var isExpanded = false
     @State private var edgeFadeState = LauncherEdgeFadeState.none
@@ -393,8 +392,7 @@ struct LauncherOverlayRootView: View {
             onSelectApp(app)
         case .dashboard:
             appModel.hideLauncher(immediately: true)
-            openWindow(id: AppWindowID.main)
-            NSApp.activate(ignoringOtherApps: true)
+            (NSApp.delegate as? AppDelegate)?.showMainWindow()
         }
     }
 

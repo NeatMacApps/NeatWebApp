@@ -29,9 +29,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // applicationShouldHandleReopen.
     }
 
-    /// 由界面注入 openWindow。
+    /// Injected by the App scene, which owns `openSettings` for the management window.
     func installMainWindowPresenter(_ present: @escaping () -> Void) {
         presentMainWindow = present
+    }
+
+    /// Opens the single management window from views hosted outside the scene graph (the launcher panel).
+    func showMainWindow() {
+        if let presentMainWindow {
+            presentMainWindow()
+        } else {
+            NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -70,11 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menubarIsPrimaryEntry: true,
             secondsSinceReady: elapsed
         ) == .showRecoveryWindow {
-            if let presentMainWindow {
-                presentMainWindow()
-            } else {
-                NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
-            }
+            showMainWindow()
         }
         return true
     }
