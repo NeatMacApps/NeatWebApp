@@ -45,6 +45,8 @@ A release is complete only when its DMG and ZIP are uploaded and anonymously dow
 
 The 0.3.23/3041 publication stopped after creating its GitHub Release: DMG upload returned HTTP 408 (upload body inactivity timeout), the runner recorded `failed`, both attachments were absent and the appcast remained 0.3.21/3039. This is a server-publication failure; clients cannot discover a build missing from the feed. Recover the original notarized assets rather than rebuilding or resubmitting them. Recreate the signed appcast from the retained ZIP if its temporary draft was lost. Never hand-edit signed XML.
 
+The publisher supports `--resume-publication`: it validates retained app/DMG tickets, the ZIP signature and version/build, and equality between the ZIP application and exported application, then resumes without rebuilding or resubmitting notarization. Uploads retry up to three times; new Releases remain drafts until uploaded names and sizes match. Final anonymous downloads compare complete bytes with the original artifacts.
+
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
 ## v0.3.2 发布与升级验证（2026-08-10）

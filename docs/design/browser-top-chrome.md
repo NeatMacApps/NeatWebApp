@@ -30,6 +30,8 @@ A download notice is indicated by a small dot on More Actions, without adding a 
 
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
 
+Overlapping pinned windows must not alternate key-window ownership: only the frontmost opaque window at the pointer in the same window layer may take focus. Convert AppKit pointer coordinates into the Core Graphics window-list coordinate system before testing coverage. If the window list or target ID is unavailable, keep the current focus. Higher-layer system overlays remain excluded under the existing coverage policy.
+
 ## 被否决的方案
 
 ### 悬浮胶囊 + 系统液态玻璃（已实现后推翻）
