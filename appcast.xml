@@ -6,6 +6,22 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.25</title>
+            <pubDate>Mon, 12 Oct 2026 22:50:27 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3043</sparkle:version>
+            <sparkle:shortVersionString>0.3.25</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.25
+
+- 把常用网站装成独立的 macOS 应用，从刘海位置的启动器一键唤出。
+- 支持应用内自动检查、下载并安装更新。
+- 安装包经过 Developer ID 签名与苹果公证，更新包另有 EdDSA 签名。
+- 下载版双击即可打开，不需要执行任何解除限制命令。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.25/NeatWebApp-0.3.25.zip" length="5790542" type="application/octet-stream" sparkle:edSignature="ZdBEr1jXDrSquxkewyG5MZSIwbKRH1bz7EQ8xckdQFBKM+bVmxjJbWXo+cQSsxOGG7R49FepTWFVcQNsylx3BQ=="/>
+        </item>
+        <item>
             <title>0.3.24</title>
             <pubDate>Mon, 12 Oct 2026 11:53:27 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -95,6 +111,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: N1LNPGXsO58GDarrILQdqqtoAC58ZnbHGJkKPwODBbWpyPuRUUh9J+ObmKEhDcWhm81QGOmQVBlIi9gwdUhZAQ==
-length: 6676
+edSignature: NPyZTcxchXLHIsCwSpi5IY6ujDK5N9/Qwi+hiBf1/FIPDNFJdYIPOYh4nphNEuL3+0B9uWJizawVieH4uvaiDQ==
+length: 7771
 -->
