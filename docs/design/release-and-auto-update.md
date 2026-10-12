@@ -49,6 +49,10 @@ The publisher supports `--resume-publication`: it validates retained app/DMG tic
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
+## Current verification scope (0.3.26 / 3044, 2026-10-12)
+
+Change: the web app list uses the native macOS 27 reorder session, and reordering no longer refreshes the runtime registry (that refresh did synchronous disk I/O and runtime migration at drop time; the owner reported a stutter on drop). Release from commit `3417478`, `publish-release.sh` exit 0. `SUFeedURL` (compressed) returns 3044; anonymous DMG SHA-256 `5abbb82b…8c9e` matches the GitHub asset and Cask. The DMG app installed to `/Applications` passes `spctl` as Notarized Developer ID. On the installed build, a drag showed the system lift and placeholder gap mid-session and persisted the new order once on drop; it was reverted. The owner tested native reordering on the Debug build. 87 host tests (including six reorder-difference tests) and 91 runtime tests passed. Synthetic drags need a press of about 1 s before moving to start the native session.
+
 ## Current verification scope (0.3.25 / 3043, 2026-10-12)
 
 Change: the management window was rebuilt as native icon + label settings panes ([dashboard-settings.md](../../../docs/design/dashboard-settings.md)). `publish-release.sh` exited 0 from commit `0458816`. The exact `SUFeedURL` returned 3043 with both plain and `--compressed` requests. The anonymously downloaded DMG matched the GitHub asset and Cask SHA-256 (`db955c5b…c47d`). The DMG app was installed to `/Applications`; `spctl` reported `accepted, source=Notarized Developer ID` (with `override=security disabled` on this machine, as before).
