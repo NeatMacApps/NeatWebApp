@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0086BDE5E84A48A18FB533AB /* WebAppFaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6535023594466573F6BD745C /* WebAppFaviconLoader.swift */; };
+		00E501563DF79AD51D160A17 /* WebAppOrderMoveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */; };
 		01E935DAB3406150276C32A2 /* EdgeAttachedShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1220370641773E0765018F0B /* EdgeAttachedShape.swift */; };
 		03DC0D096D237AE010145EDE /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
 		053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
@@ -171,6 +172,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppOrderMoveTests.swift; sourceTree = "<group>"; };
 		003798DB63FD24F7EC291869 /* 0.3.24.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.24.md; sourceTree = "<group>"; };
 		05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppPreferencesStore.swift; sourceTree = "<group>"; };
 		072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFloatingIconSupport.swift; sourceTree = "<group>"; };
@@ -385,6 +387,7 @@
 				E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */,
 				A8AFE6A6F3C32A0BD7C7B607 /* WebAppFaviconMemoryCacheTests.swift */,
 				34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */,
+				0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */,
 				986EA0E7897C2F2D26403B3B /* WebAppPreferencesStoreTests.swift */,
 				D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */,
 				88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */,
@@ -848,6 +851,7 @@
 				2FD276B0431BABBAD93435EB /* SideDockPlacementTests.swift in Sources */,
 				74DD7835E63C246981247E38 /* WebAppFaviconMemoryCacheTests.swift in Sources */,
 				B0C402224827E36022AB2A7A /* WebAppFaviconStoreTests.swift in Sources */,
+				00E501563DF79AD51D160A17 /* WebAppOrderMoveTests.swift in Sources */,
 				99A94B44370712902506AB45 /* WebAppPreferencesStoreTests.swift in Sources */,
 				28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */,
 				958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */,
@@ -1064,7 +1068,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3043;
+				CURRENT_PROJECT_VERSION = 3044;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1085,7 +1089,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.25;
+				MARKETING_VERSION = 0.3.26;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1187,7 +1191,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3043;
+				CURRENT_PROJECT_VERSION = 3044;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1202,7 +1206,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.25;
+				MARKETING_VERSION = 0.3.26;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

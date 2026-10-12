@@ -114,10 +114,11 @@ extension AppModel {
         runtimeCoordinator.refreshRegistry()
     }
 
+    // Reordering changes neither the set of apps nor any runtime state, so it only persists the order.
+    // A registry refresh here did synchronous disk I/O and runtime migration at the moment of the drop.
     func moveCustomApps(from source: IndexSet, to destination: Int) {
         apps.move(fromOffsets: source, toOffset: destination)
         customAppStore.save(apps)
-        runtimeCoordinator.refreshRegistry()
     }
 
     /// 用启动器拖动排好的整份顺序覆盖应用顺序并持久化。
@@ -131,7 +132,6 @@ extension AppModel {
 
         apps = orderedApps
         customAppStore.save(apps)
-        runtimeCoordinator.refreshRegistry()
     }
 
     func loadApps() {

@@ -52,11 +52,7 @@ private struct WebAppsPane: View {
     var body: some View {
         Form {
             Section {
-                // Reordering uses drag and drop rather than `onMove`, which grouped forms do not support.
-                // The move is applied and persisted once on drop; cancelled drags change nothing.
-                ForEach(appModel.apps) { app in
-                    appRow(for: app)
-                }
+                appRows
             } footer: {
                 // Both actions belong to the launcher's content, so they sit on the list itself.
                 HStack {
@@ -75,6 +71,7 @@ private struct WebAppsPane: View {
             }
         }
         .settingsPaneStyle(maxHeight: DashboardLayout.webAppsMaxHeight)
+        .modifier(WebAppReorderContainer(appModel: appModel))
         .sheet(item: $editorTarget) { target in
             WebAppEditorSheet(appModel: appModel, target: target)
         }
@@ -97,10 +94,26 @@ private struct WebAppsPane: View {
         }
     }
 
+    /// macOS 27+: the system reorder session (lift, placeholder gap, drop animation), applied once on drop.
+    /// Earlier systems: drag and drop with an insertion line, because `onMove` does not start drags
+    /// inside a grouped form.
+    @ViewBuilder
+    private var appRows: some View {
+        if #available(macOS 27.0, *) {
+            ForEach(appModel.apps) { app in
+                appRow(for: app)
+            }
+            .reorderable()
+        } else {
+            ForEach(appModel.apps) { app in
+                legacyReorderable(appRow(for: app), app: app)
+            }
+        }
+    }
+
     private func appRow(for app: WebAppDefinition) -> some View {
         let host = app.homeURL.host ?? app.homeURL.absoluteString
         let showsActions = hoveredAppID == app.id && draggedApp == nil
-        let isDropTarget = dropTargetID == app.id && draggedApp?.id != app.id
 
         return HStack(spacing: 10) {
             // Visible drag grip: the whole row drags, the grip makes that discoverable.
@@ -149,15 +162,6 @@ private struct WebAppsPane: View {
             .allowsHitTesting(showsActions)
         }
         .contentShape(Rectangle())
-        // While dragging, a single insertion line marks the destination without moving rows.
-        .overlay(alignment: .top) {
-            if isDropTarget {
-                Rectangle()
-                    .fill(Color.accentColor)
-                    .frame(height: 2)
-                    .offset(y: -7)
-            }
-        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(format: String(localized: "dashboard.row_accessibility_format"), app.name, host))
         .accessibilityAction(named: Text("dashboard.open")) {
@@ -173,35 +177,6 @@ private struct WebAppsPane: View {
         .onTapGesture(count: 2) {
             appModel.openWebApp(app)
         }
-        .onDrag {
-            draggedApp = app
-            dropTargetID = nil
-            return NSItemProvider(object: app.id as NSString)
-        } preview: {
-            // Only the icon and name travel with the pointer, not the whole row and its actions.
-            Label {
-                Text(app.name)
-            } icon: {
-                WebAppIconView(
-                    app: app,
-                    size: 24,
-                    font: .system(size: 12, weight: .semibold),
-                    favicon: appModel.faviconImage(for: app),
-                    loadFavicon: {}
-                )
-            }
-            .padding(6)
-        }
-        .onDrop(
-            of: [.text],
-            delegate: AppDropDelegate(
-                item: app,
-                items: appModel.apps,
-                draggedItem: $draggedApp,
-                dropTargetID: $dropTargetID,
-                appModel: appModel
-            )
-        )
         .contextMenu {
             Button(String(localized: "dashboard.open")) {
                 appModel.openWebApp(app)
@@ -209,6 +184,50 @@ private struct WebAppsPane: View {
 
             rowMenuItems(for: app)
         }
+    }
+
+    /// Pre-macOS 27 reordering: a compact icon+name drag preview, an insertion line, one write on drop.
+    private func legacyReorderable(_ row: some View, app: WebAppDefinition) -> some View {
+        let isDropTarget = dropTargetID == app.id && draggedApp?.id != app.id
+
+        return row
+            .overlay(alignment: .top) {
+                if isDropTarget {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(height: 2)
+                        .offset(y: -7)
+                }
+            }
+            .onDrag {
+                draggedApp = app
+                dropTargetID = nil
+                return NSItemProvider(object: app.id as NSString)
+            } preview: {
+                // Only the icon and name travel with the pointer, not the whole row and its actions.
+                Label {
+                    Text(app.name)
+                } icon: {
+                    WebAppIconView(
+                        app: app,
+                        size: 24,
+                        font: .system(size: 12, weight: .semibold),
+                        favicon: appModel.faviconImage(for: app),
+                        loadFavicon: {}
+                    )
+                }
+                .padding(6)
+            }
+            .onDrop(
+                of: [.text],
+                delegate: AppDropDelegate(
+                    item: app,
+                    items: appModel.apps,
+                    draggedItem: $draggedApp,
+                    dropTargetID: $dropTargetID,
+                    appModel: appModel
+                )
+            )
     }
 
     @ViewBuilder
@@ -221,6 +240,28 @@ private struct WebAppsPane: View {
 
         Button(String(localized: "dashboard.delete"), role: .destructive) {
             appToDelete = app
+        }
+    }
+}
+
+/// Declares the web app list as the system reorder container on macOS 27+ and applies each
+/// completed session once through the persisted app order.
+private struct WebAppReorderContainer: ViewModifier {
+    let appModel: AppModel
+
+    func body(content: Content) -> some View {
+        if #available(macOS 27.0, *) {
+            content.reorderContainer(for: WebAppDefinition.self) { difference in
+                let targetID: String? = switch difference.destination.position {
+                case .before(let id):
+                    id
+                case .end:
+                    nil
+                }
+                appModel.applyAppOrder(appModel.apps.movingItems(withIDs: difference.sources, before: targetID))
+            }
+        } else {
+            content
         }
     }
 }

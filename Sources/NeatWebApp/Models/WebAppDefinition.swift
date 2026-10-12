@@ -52,3 +52,24 @@ struct WebAppDefinition: Identifiable, Codable, Hashable, Sendable {
         )
     ]
 }
+
+extension Array where Element: Identifiable {
+    /// Returns the array with the items in `sourceIDs` moved before `targetID`, or to the end when
+    /// `targetID` is nil (the shape of a SwiftUI reorder difference). Moved items keep their
+    /// current relative order; unknown IDs are ignored.
+    func movingItems(withIDs sourceIDs: [Element.ID], before targetID: Element.ID?) -> [Element] {
+        let moving = Set(sourceIDs)
+        let movedItems = filter { moving.contains($0.id) }
+        var remaining = filter { !moving.contains($0.id) }
+        // Dropping before a moved item means "before the next item that stays put".
+        let anchorID = targetID.flatMap { id -> Element.ID? in
+            guard moving.contains(id), let index = firstIndex(where: { $0.id == id }) else {
+                return id
+            }
+            return self[index...].first { !moving.contains($0.id) }?.id
+        }
+        let insertionIndex = anchorID.flatMap { id in remaining.firstIndex { $0.id == id } } ?? remaining.count
+        remaining.insert(contentsOf: movedItems, at: insertionIndex)
+        return remaining
+    }
+}
