@@ -445,7 +445,14 @@ if ! gh release view "${tag}" --repo "${REPO}" >/dev/null 2>&1; then
 fi
 # Retry transport failures with the same immutable notarized bytes.
 upload_asset() {
-  local asset="$1" attempt
+  local asset="$1" attempt name size uploaded_size
+  name="$(basename "${asset}")"
+  size="$(stat -f %z "${asset}")"
+  uploaded_size="$(gh release view "${tag}" --repo "${REPO}" --json assets     --jq ".assets[] | select(.name == \"${name}\" and .state == \"uploaded\") | .size" 2>/dev/null || true)"
+  if [[ "${uploaded_size}" == "${size}" ]]; then
+    echo "Retained uploaded asset: ${name}; full-byte verification follows publication"
+    return 0
+  fi
   for attempt in 1 2 3; do
     if gh release upload "${tag}" --repo "${REPO}" "${asset}" --clobber; then
       return 0
@@ -465,7 +472,7 @@ import json, pathlib, subprocess, sys
 repo, tag, *paths = sys.argv[1:]
 need = {pathlib.Path(p).name: pathlib.Path(p).stat().st_size for p in paths}
 raw = subprocess.check_output(
-    ["gh", "api", f"repos/{repo}/releases/tags/{tag}"],
+    ["gh", "release", "view", tag, "--repo", repo, "--json", "assets"],
     text=True,
 )
 names = {a["name"]: a["size"] for a in json.loads(raw).get("assets", []) if a.get("state") == "uploaded"}
