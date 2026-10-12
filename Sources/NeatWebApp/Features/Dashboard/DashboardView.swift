@@ -33,7 +33,7 @@ enum DashboardPane: String {
 }
 
 private enum DashboardLayout {
-    static let width: CGFloat = 520
+    static let width: CGFloat = 480
     /// Beyond this height the web app list scrolls inside its pane instead of growing the window.
     static let webAppsMaxHeight: CGFloat = 560
 }
