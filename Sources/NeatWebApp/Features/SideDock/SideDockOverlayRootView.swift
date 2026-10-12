@@ -45,7 +45,7 @@ struct SideDockOverlayRootView: View {
         Image("DockDragGrip")
             .renderingMode(.original)
             .resizable()
-            .frame(width: 12, height: 20)
+            .frame(width: 13, height: 22)
             .frame(width: context.edge.isSide
                    ? SideDockPresentationContext.Layout.iconSlotSize
                    : SideDockPresentationContext.Layout.horizontalGripLength,
@@ -93,7 +93,7 @@ struct SideDockOverlayRootView: View {
                 WebAppIconView(
                     app: app,
                     size: SideDockPresentationContext.Layout.iconSize,
-                    font: .system(size: 13, weight: .semibold),
+                    font: .system(size: 15, weight: .semibold),
                     favicon: appModel.faviconImage(for: app),
                     loadFavicon: { appModel.ensureFaviconLoaded(for: app) }
                 )

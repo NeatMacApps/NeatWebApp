@@ -72,6 +72,37 @@ enum WindowVisibleCoverage {
         )
     }
 
+    static func cgPoint(fromAppKitPoint point: CGPoint, primaryDisplayHeight: CGFloat) -> CGPoint {
+        CGPoint(x: point.x, y: primaryDisplayHeight - point.y)
+    }
+
+    /// 鼠标点位是否落在自己窗口未被遮挡的部分上。
+    ///
+    /// 与收起判定一致，只看同层级遮挡：两个交叠的置顶窗口同处浮动层，
+    /// 后窗在重叠区不得抢 key；菜单栏、桌面整屏覆层等更高层级的系统窗口
+    /// 不计入（窗口列表里常驻全屏不透明系统层，计入会让悬停转移永远不触发）。
+    /// Launcher / 侧边 Dock 本就处在更高的状态栏层，自然排除在外。
+    static func isTopmostAtPoint(
+        _ point: CGPoint,
+        targetID: CGWindowID,
+        windowsFrontToBack: [Record]
+    ) -> Bool {
+        guard let targetIndex = windowsFrontToBack.firstIndex(where: { $0.windowID == targetID }) else {
+            return false
+        }
+        let targetLayer = windowsFrontToBack[targetIndex].layer
+
+        for occluder in windowsFrontToBack.prefix(targetIndex) {
+            guard occluder.layer == targetLayer, occluder.alpha >= opaqueAlphaThreshold else {
+                continue
+            }
+            if occluder.frame.contains(point) {
+                return false
+            }
+        }
+        return true
+    }
+
     /// 当前桌面窗口列表里找不到它时：系统也说看不见才当成完全挡住（切桌面、被全屏占掉）。
     /// 系统还说看得见，多半是刚显示出来、列表还没跟上，不能立刻收起。
     static func hiddenFractionWhenMissingFromScreenList(systemReportsVisible: Bool) -> CGFloat {
@@ -108,6 +139,32 @@ enum WindowVisibleCoverage {
             windowsFrontToBack: windowsFrontToBack,
             screenBounds: screenBounds
         )
+    }
+
+    /// 当前鼠标点位是否落在该窗口未被遮挡的部分上。读不到窗口列表、
+    /// 拿不到窗口编号、或列表里找不到自己时一律返回 false（宁可不抢，
+    /// 不可在无法确认层级时参与抢 key 对打）。
+    @MainActor
+    static func isTopmostWindowAtMouseLocation(_ window: NSWindow) -> Bool {
+        let windowNumber = window.windowNumber
+        guard windowNumber > 0 else {
+            return false
+        }
+
+        guard let windowsFrontToBack = captureOnScreenWindows() else {
+            return false
+        }
+
+        let targetID = CGWindowID(windowNumber)
+        guard windowsFrontToBack.contains(where: { $0.windowID == targetID }) else {
+            return false
+        }
+
+        let primaryHeight = NSScreen.screens.first { $0.frame.origin == .zero }?.frame.height
+            ?? NSScreen.screens.first?.frame.height
+            ?? 0
+        let cgMouse = cgPoint(fromAppKitPoint: NSEvent.mouseLocation, primaryDisplayHeight: primaryHeight)
+        return isTopmostAtPoint(cgMouse, targetID: targetID, windowsFrontToBack: windowsFrontToBack)
     }
 
     @MainActor

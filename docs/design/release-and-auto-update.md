@@ -39,6 +39,14 @@
 - **「收不到更新」先查公开 appcast，再查本机构建号。** 匿名打开 `https://raw.githubusercontent.com/NeatMacApps/NeatWebApp/main/appcast.xml`，看最新 `sparkle:version`；若本地 `project.yml` 已抬版本但 appcast 仍是旧号，说明**还没跑完整 `publish-release.sh`**，不是客户端坏了。本机构建号 ≥ 线上最新时，Sparkle 正确表现为「已是最新」。
 - **一上来就开签名清单校验。** `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction` 成对开启（Sparkle 要求必须成对），不只签更新包，连更新清单本身和版本说明也验签。清单自身的签名不是 XML 属性，而是 `generate_appcast` 追加在文件末尾的 `<!-- sparkle-signatures: … -->` 注释块，发版脚本按这个特征做检查。**开启后不允许再手工改已签名的 appcast**，脚本里不得出现「生成完再 sed 改两下」这种步骤。
 
+## Publication completion and recovery
+
+A release is complete only when its DMG and ZIP are uploaded and anonymously downloadable with matching SHA-256 values, the signed public appcast advertises its build and references that ZIP, Homebrew points to that DMG/hash, and the final signed application is installed and its affected behavior is verified. Report each outcome separately. A local version, tag, empty Release page or started background runner does not satisfy this gate.
+
+The 0.3.23/3041 publication stopped after creating its GitHub Release: DMG upload returned HTTP 408 (upload body inactivity timeout), the runner recorded `failed`, both attachments were absent and the appcast remained 0.3.21/3039. This is a server-publication failure; clients cannot discover a build missing from the feed. Recover the original notarized assets rather than rebuilding or resubmitting them. Recreate the signed appcast from the retained ZIP if its temporary draft was lost. Never hand-edit signed XML.
+
+Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
+
 ## v0.3.2 发布与升级验证（2026-08-10）
 
 `v0.3.2`（内部构建号 `3020`）已完成签名、公证、装订、两仓发布。公开更新仓的 appcast、zip 与 dmg 均已用匿名请求验证可访问。
@@ -68,6 +76,7 @@ Release archive and export diagnostics are retained in `build/release-archive.lo
 ```bash
 scripts/publish-release.sh              # 完整发版
 scripts/publish-release.sh --local-only # 只产出本地已公证的 dmg，不碰 git 与 GitHub
+scripts/publish-release.sh --resume-publication # Resume retained notarized artifacts; no rebuild
 ```
 
 前置：钥匙串有 Developer ID 证书与 account 为 `neatwebapp` 的 Sparkle 签名密钥、`.p8` 公证密钥在位、`scripts/publish-local.env` 已配好（模板见同目录 `.example`）、`gh` 已登录且有目标仓库权限（`--local-only` 不需要后两项）。脚本可重复执行，tag / Release 已存在时走更新路径。

@@ -15,8 +15,10 @@ app icons and a persistent two-column dotted drag grip: no compact state, restor
 or added folding interaction. The grip sits first (left in a horizontal Dock, top in a
 vertical Dock), remains outside scrolling app content, and starts native window dragging
 from mouse-down through the same public `performDrag(with:)` API. App icons retain their
-eight-point threshold. The grip occupies fourteen points along a horizontal row, or twenty
+eight-point threshold. The grip occupies fifteen points along a horizontal row, or twenty-two
 points at the top of a vertical column, rather than a full app-icon slot.
+Current capsule metrics (2026-10-11 enlargement): thickness 52, app-icon
+slot 38, icon 32, spacing 7, padding 7; the empty capsule is 52 by 52.
 
 The previous rotated-ellipsis grip and semantic-primary/blurred-shadow treatment failed
 actual light and dark desktop captures; the earlier isolated-window image did not establish

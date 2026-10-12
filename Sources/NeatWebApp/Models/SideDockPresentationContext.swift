@@ -22,13 +22,13 @@ enum SideDockEdge: String, CaseIterable, Codable, Sendable {
 
 struct SideDockPresentationContext: Equatable {
     struct Layout: Equatable, Sendable {
-        static let thickness: CGFloat = 47
-        static let iconSlotSize: CGFloat = 33
-        static let iconSize: CGFloat = 28
-        static let iconSpacing: CGFloat = 6
-        static let horizontalGripLength: CGFloat = 14
-        static let verticalGripLength: CGFloat = 20
-        // The end slot and capsule share a center: 33 / 2 + 7 = 47 / 2.
+        static let thickness: CGFloat = 52
+        static let iconSlotSize: CGFloat = 38
+        static let iconSize: CGFloat = 32
+        static let iconSpacing: CGFloat = 7
+        static let horizontalGripLength: CGFloat = 15
+        static let verticalGripLength: CGFloat = 22
+        // The end slot and capsule share a center: 38 / 2 + 7 = 52 / 2.
         static let padding: CGFloat = (thickness - iconSlotSize) / 2
 
         let edge: SideDockEdge

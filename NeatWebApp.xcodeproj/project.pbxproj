@@ -172,6 +172,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		003798DB63FD24F7EC291869 /* 0.3.24.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.24.md; sourceTree = "<group>"; };
 		05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppPreferencesStore.swift; sourceTree = "<group>"; };
 		072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFloatingIconSupport.swift; sourceTree = "<group>"; };
 		0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatWebAppRuntime.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -482,6 +483,7 @@
 				428257F1D4276D82CFB2D86C /* 0.3.21.md */,
 				9FA06FD043117407C62C6795 /* 0.3.22.md */,
 				78ADBEA562179D96FE84C73F /* 0.3.23.md */,
+				003798DB63FD24F7EC291869 /* 0.3.24.md */,
 			);
 			path = "release-notes";
 			sourceTree = "<group>";
@@ -1066,7 +1068,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3041;
+				CURRENT_PROJECT_VERSION = 3042;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1087,7 +1089,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.23;
+				MARKETING_VERSION = 0.3.24;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1189,7 +1191,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3041;
+				CURRENT_PROJECT_VERSION = 3042;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1204,7 +1206,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.23;
+				MARKETING_VERSION = 0.3.24;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

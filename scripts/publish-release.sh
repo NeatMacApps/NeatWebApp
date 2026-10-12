@@ -57,7 +57,13 @@ readonly NOTARY_POLL_INTERVAL=30      # 轮询公证结果的间隔（秒）
 readonly NOTARY_TIMEOUT=3600          # 单次公证最长等待（秒）
 
 local_only=false
-[[ "${1:-}" == "--local-only" ]] && local_only=true
+resume_publication=false
+case "${1:-}" in
+  "") ;;
+  --local-only) local_only=true ;;
+  --resume-publication) resume_publication=true ;;
+  *) echo "Usage: $0 [--local-only|--resume-publication]" >&2; exit 2 ;;
+esac
 
 log_step() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -259,6 +265,7 @@ log_step "本次发布版本：${tag}（内部构建号 ${build_number}）"
 # 只有按 Developer ID 导出这一步会把这些嵌套辅助程序逐个重新签名并打上可信时间戳。
 # 依据：Sparkle 官方文档明确要求走 Archive + Distribute App (Developer ID)，
 # 自动化环境用 xcodebuild archive 与 xcodebuild -exportArchive 等价替代。
+if [[ "${resume_publication}" == false ]]; then
 log_step "生成 Xcode 工程并做 Release 归档"
 xcodegen generate >/dev/null
 rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}"
@@ -291,6 +298,7 @@ xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" \
   -exportOptionsPlist "${export_options}" -exportPath "${EXPORT_DIR}" \
   -allowProvisioningUpdates >"${BUILD_DIR}/release-export.log" 2>&1 \
   || die "按 Developer ID 导出失败"
+fi
 [[ -d "${APP_PATH}" ]] || die "导出产物不存在：${APP_PATH}"
 [[ -d "${EMBEDDED_RUNTIME_PATH}" ]] || die "内嵌运行时不存在：${EMBEDDED_RUNTIME_PATH}"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
@@ -308,6 +316,7 @@ codesign --verify --deep --strict --verbose=2 "${APP_PATH}" 2>/dev/null \
   || die "嵌套代码签名校验失败（内嵌运行时或 Sparkle 组件），苹果公证会打回"
 
 # ---------- 3. 公证应用本体 ----------
+if [[ "${resume_publication}" == false ]]; then
 log_step "提交苹果公证（应用本体），首次通常 1-5 分钟"
 rm -f "${BUILD_DIR}/NeatWebApp-notarize.zip"
 ditto -c -k --keepParent "${APP_PATH}" "${BUILD_DIR}/NeatWebApp-notarize.zip"
@@ -315,6 +324,19 @@ notarize_and_wait "${BUILD_DIR}/NeatWebApp-notarize.zip"
 
 log_step "把公证票据装订进应用"
 xcrun stapler staple "${APP_PATH}" || die "装订票据失败"
+
+else
+  [[ -f "${dmg_path}" && -f "${update_zip_path}" ]] || die "Resume requires retained DMG and ZIP"
+  xcrun stapler validate "${APP_PATH}" || die "Retained application has no valid ticket"
+  xcrun stapler validate "${dmg_path}" || die "Retained DMG has no valid ticket"
+  mkdir -p "${work_dir}/retained-zip"
+  ditto -x -k "${update_zip_path}" "${work_dir}/retained-zip"
+  retained_app="${work_dir}/retained-zip/NeatWebApp.app"
+  codesign --verify --deep --strict "${retained_app}" || die "Retained ZIP signature invalid"
+  [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${retained_app}/Contents/Info.plist")" == "${build_number}" ]] || die "Retained ZIP build mismatch"
+  [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${retained_app}/Contents/Info.plist")" == "${version}" ]] || die "Retained ZIP version mismatch"
+  diff -rq "${retained_app}" "${APP_PATH}" >/dev/null || die "Retained ZIP differs from exported application"
+fi
 
 # ---------- 4. 生成 Sparkle 更新包与清单 ----------
 # 顺序不能反：Sparkle 下发的 zip 必须是「已装订票据的最终应用」，
@@ -337,8 +359,10 @@ fi
 
 appcast_dir="${work_dir}/appcast"
 mkdir -p "${appcast_dir}"
-rm -f "${update_zip_path}"
-ditto -c -k --keepParent "${APP_PATH}" "${update_zip_path}"
+if [[ "${resume_publication}" == false ]]; then
+  rm -f "${update_zip_path}"
+  ditto -c -k --keepParent "${APP_PATH}" "${update_zip_path}"
+fi
 ditto "${update_zip_path}" "${appcast_dir}/NeatWebApp-${version}.zip"
 ditto "${release_notes_file}" "${appcast_dir}/NeatWebApp-${version}.md"
 if [[ -f appcast.xml ]]; then
@@ -368,6 +392,7 @@ if grep -q "releaseNotesLink" "${appcast_dir}/appcast.xml"; then
 fi
 
 # ---------- 5. 打 dmg ----------
+if [[ "${resume_publication}" == false ]]; then
 log_step "打包 dmg"
 stage_dir="${work_dir}/dmg"
 mkdir -p "${stage_dir}"
@@ -379,6 +404,7 @@ log_step "公证 dmg 并装订票据"
 notarize_and_wait "${dmg_path}"
 xcrun stapler staple "${dmg_path}" || die "dmg 装订票据失败"
 
+fi
 log_step "模拟首次打开做最终校验"
 gatekeeper_result="$(spctl -a -vvv -t exec "${APP_PATH}" 2>&1 || true)"
 grep -q "accepted" <<<"${gatekeeper_result}" \
@@ -414,28 +440,41 @@ git push origin "${tag}"
 log_step "发布 GitHub Release（先建空再传 dmg + 更新 zip）"
 if ! gh release view "${tag}" --repo "${REPO}" >/dev/null 2>&1; then
   gh release create "${tag}" --repo "${REPO}" \
-    --title "${tag}" --notes-file "${release_notes_file}" \
+    --draft --title "${tag}" --notes-file "${release_notes_file}" \
     || die "创建 GitHub Release 失败"
 fi
-gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" --clobber \
-  || die "上传 dmg 失败"
-gh release upload "${tag}" --repo "${REPO}" "${update_zip_path}" --clobber \
-  || die "上传 zip 失败"
+# Retry transport failures with the same immutable notarized bytes.
+upload_asset() {
+  local asset="$1" attempt
+  for attempt in 1 2 3; do
+    if gh release upload "${tag}" --repo "${REPO}" "${asset}" --clobber; then
+      return 0
+    fi
+    echo "Upload failed for $(basename "${asset}"), attempt ${attempt}/3" >&2
+    [[ "${attempt}" -eq 3 ]] || sleep 5
+  done
+  die "Upload failed; resume with --resume-publication, do not rebuild accepted artifacts"
+}
+upload_asset "${dmg_path}"
+upload_asset "${update_zip_path}"
 
 # 两条一起传时，GitHub 可能回报成功但只留下其中一个。逐个传完必须回读确认。
-python3 - "${REPO}" "${tag}" "NeatWebApp-${version}.dmg" "NeatWebApp-${version}.zip" <<'PY' \
+python3 - "${REPO}" "${tag}" "${dmg_path}" "${update_zip_path}" <<'PY' \
   || die "GitHub Release 附件回读失败：dmg 或 zip 不在发行页上"
-import json, subprocess, sys
-repo, tag, *need = sys.argv[1:]
+import json, pathlib, subprocess, sys
+repo, tag, *paths = sys.argv[1:]
+need = {pathlib.Path(p).name: pathlib.Path(p).stat().st_size for p in paths}
 raw = subprocess.check_output(
     ["gh", "api", f"repos/{repo}/releases/tags/{tag}"],
     text=True,
 )
-names = {a["name"] for a in json.loads(raw).get("assets", []) if a.get("state") == "uploaded"}
-missing = [n for n in need if n not in names]
+names = {a["name"]: a["size"] for a in json.loads(raw).get("assets", []) if a.get("state") == "uploaded"}
+missing = [n for n, size in need.items() if names.get(n) != size]
 if missing:
     raise SystemExit("missing " + ", ".join(missing))
 PY
+
+gh release edit "${tag}" --repo "${REPO}" --draft=false --latest || die "Publish populated Release failed"
 
 log_step "更新公开 appcast（随源码仓发布）"
 ditto "${appcast_dir}/appcast.xml" appcast.xml
@@ -523,10 +562,12 @@ if [[ "${appcast_ok}" -ne 1 ]]; then
 fi
 "${sparkle_bin_dir}/sign_update" --account "${SPARKLE_ACCOUNT}" --verify "${work_dir}/published-appcast.xml" >/dev/null \
   || die "线上 appcast 完整性校验失败：公开更新清单未签名或传输后被改写"
-curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/NeatWebApp-${version}.zip" -o /dev/null \
-  || die "Sparkle 更新包无法匿名下载"
-curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/NeatWebApp-${version}.dmg" -o /dev/null \
-  || die "首次安装 dmg 无法匿名下载"
+for extension in zip dmg; do
+  published_asset="${work_dir}/download.${extension}"
+  local_asset="${BUILD_DIR}/NeatWebApp-${version}.${extension}"
+  curl --retry 3 --connect-timeout 20 --max-time 300 -fsSL     "${REPO_WEB}/releases/download/${tag}/NeatWebApp-${version}.${extension}"     -o "${published_asset}" || die "Anonymous ${extension} download failed"
+  cmp -s "${local_asset}" "${published_asset}" || die "Published ${extension} bytes differ"
+done
 curl -fsSL "https://raw.githubusercontent.com/${TAP_REPO}/HEAD/Casks/${CASK_NAME}.rb" \
   | grep -q "version \"${version}\"" \
   || die "Homebrew 配方未指向 ${version}"

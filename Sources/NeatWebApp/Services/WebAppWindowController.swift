@@ -272,6 +272,12 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             return
         }
 
+        // 交叠区内鼠标同时落在前后两扇窗的框里：只有确认自己是该点位
+        // 最顶层未被遮挡的窗口才抢 key，否则两个置顶窗口来回抢焦点闪烁。
+        guard WindowVisibleCoverage.isTopmostWindowAtMouseLocation(window) else {
+            return
+        }
+
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         session.focusWebView()

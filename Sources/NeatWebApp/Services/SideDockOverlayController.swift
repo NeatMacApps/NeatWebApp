@@ -187,7 +187,7 @@ final class SideDockOverlayController {
 
     private func makePanel() -> SideDockPanel {
         let panel = SideDockPanel(
-            contentRect: CGRect(origin: .zero, size: CGSize(width: 47, height: 47)),
+            contentRect: CGRect(origin: .zero, size: CGSize(width: 52, height: 52)),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false

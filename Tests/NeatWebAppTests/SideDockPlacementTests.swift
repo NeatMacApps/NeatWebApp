@@ -75,7 +75,13 @@ final class SideDockPlacementTests: XCTestCase {
         let context = SideDockPresentationContext(
             apps: [], edge: .right, screenFrame: desktop, visibleFrame: desktop, verticalPosition: 0.72
         )
-        XCTAssertEqual(context.layout.panelSize, CGSize(width: 47, height: 47))
+        XCTAssertEqual(
+            context.layout.panelSize,
+            CGSize(
+                width: SideDockPresentationContext.Layout.thickness,
+                height: SideDockPresentationContext.Layout.thickness
+            )
+        )
         XCTAssertFalse(context.layout.shouldScroll)
         XCTAssertEqual(SideDockPresentationContext.Layout.iconSlotSize / 2
                        + SideDockPresentationContext.Layout.padding,

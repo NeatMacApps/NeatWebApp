@@ -124,6 +124,80 @@ final class WindowVisibleCoverageTests: XCTestCase {
         XCTAssertEqual(converted, CGRect(x: 0, y: 920, width: 100, height: 80))
     }
 
+    func testAppKitPointConvertsToTopLeftOrigin() {
+        let converted = WindowVisibleCoverage.cgPoint(
+            fromAppKitPoint: CGPoint(x: 30, y: 100),
+            primaryDisplayHeight: 1000
+        )
+        XCTAssertEqual(converted, CGPoint(x: 30, y: 900))
+    }
+
+    func testTopmostPointWithNoOccluderStealsFocus() {
+        let target = record(id: 2, frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        XCTAssertTrue(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 50, y: 50),
+            targetID: 2,
+            windowsFrontToBack: [target]
+        ))
+    }
+
+    func testPointCoveredByOpaqueFrontWindowDoesNotStealFocus() {
+        let front = record(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let target = record(id: 2, frame: CGRect(x: 50, y: 50, width: 100, height: 100))
+        // 交叠区内的点：后面的窗口不得抢 key，否则两窗来回抢焦点闪烁。
+        XCTAssertFalse(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 75, y: 75),
+            targetID: 2,
+            windowsFrontToBack: [front, target]
+        ))
+        // 前窗没盖住的点：仍可抢。
+        XCTAssertTrue(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 125, y: 125),
+            targetID: 2,
+            windowsFrontToBack: [front, target]
+        ))
+    }
+
+    func testTransparentFrontWindowDoesNotBlockFocusSteal() {
+        let front = record(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100), alpha: 0.2)
+        let target = record(id: 2, frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        XCTAssertTrue(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 50, y: 50),
+            targetID: 2,
+            windowsFrontToBack: [front, target]
+        ))
+    }
+
+    func testHigherLayerOverlaysDoNotBlockFocusSteal() {
+        // 窗口列表里常驻全屏不透明系统层：计入会让悬停转移永远不触发，
+        // 与收起判定一致，高层级浮层不计入遮挡。
+        let overlay = record(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100), layer: 25)
+        let target = record(id: 2, frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        XCTAssertTrue(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 50, y: 50),
+            targetID: 2,
+            windowsFrontToBack: [overlay, target]
+        ))
+    }
+
+    func testDifferentLayerWindowDoesNotBlockFocusSteal() {
+        let front = record(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100), layer: 3)
+        let target = record(id: 2, frame: CGRect(x: 0, y: 0, width: 100, height: 100), layer: 0)
+        XCTAssertTrue(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 50, y: 50),
+            targetID: 2,
+            windowsFrontToBack: [front, target]
+        ))
+    }
+
+    func testMissingTargetNeverStealsFocus() {
+        XCTAssertFalse(WindowVisibleCoverage.isTopmostAtPoint(
+            CGPoint(x: 50, y: 50),
+            targetID: 99,
+            windowsFrontToBack: [record(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100))]
+        ))
+    }
+
     private func record(
         id: CGWindowID,
         frame: CGRect,
