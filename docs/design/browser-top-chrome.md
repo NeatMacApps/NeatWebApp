@@ -8,11 +8,15 @@
 
 - 整条只铺网页自己的背景色（由页面 `theme-color` / 背景色推断），**不画底色横条、不画分割线**，所以看不出是一条独立的栏。
 - 带内叠一层从上到下由浅入透明的**渐变**，给图标托底；页面是纯色时渐变几乎不可见，页面顶部是深色或大图时才显出层次。
-- 图标**裸放**在带上；常驻入口按下文的渐进式菜单规则排列。没有胶囊底板、没有描边、没有圆圈。
+- 图标**裸放**在带上；常驻入口按下文的渐进式菜单规则排列。没有胶囊底板、没有描边；圆形反馈只在悬停或已有动作选中时出现。
 - 网页内容从让位带**下方**开始，网页自己的顶部导航永远不会被盖住。
 - 让位带没有任何网页内容，整条都是窗口拖动区域，双击等同系统的窗口放大／还原。
 
 图标前景色按页面明暗自动翻转（深色页面用近白色，浅色页面用近黑色），与渐变起始色一起构成对比度防御，不依赖任何系统材质。
+
+## Hover feedback
+
+Owner decision (2026-10-13): hovering More Actions shows the same circular shading as the left controls, indicating that it is clickable. Leaving clears the shading. Reuse the inspected `BrowserChromeButton` treatment in `BrowserContainerView.swift`: `Circle`, `theme.highlightedFillColor`, SwiftUI `onHover`, and the existing 0.12-second ease-out animation with Reduce Motion respected. Keep the native `NSPopUpButton` and its menu interaction; do not replace it with a custom menu. This is transient feedback, not a persistent circle or focus frame. Public APIs: [onHover](https://developer.apple.com/documentation/swiftui/view/onhover(perform:)) and [NSPopUpButton](https://developer.apple.com/documentation/appkit/nspopupbutton).
 
 ## Progressive actions menu
 
@@ -70,7 +74,7 @@ Overlapping pinned windows must not alternate key-window ownership: only the fro
 
 ## 实现约束
 
-- **让位带内的阴影必须收在带高以内**。网页视图紧贴让位带下沿且不透明，任何溢出到带子以外的阴影都会被它切掉，看起来是一道断口。当前按钮无阴影；日后若加，半径加偏移必须小于按钮与带子上下沿的间距。
+- **让位带内的阴影必须收在带高以内**。网页视图紧贴让位带下沿且不透明，任何溢出到带子以外的阴影都会被它切掉，看起来是一道断口。悬停反馈使用圆形填色，不额外添加会溢出的投影。
 - 顶栏配色全部从页面色推导，改 `BrowserChromeTheme` 时要保证：渐变起始色叠到页面色上之后，深色页面更暗、浅色页面更亮。对应断言在 `Tests/NeatWebAppRuntimeTests/BrowserChromeThemeTests.swift`。半透明颜色不能直接比较亮度——`relativeLuminance` 会把它合成到兜底深色背景上，必须先 `resolved(over:)` 到页面色再比。
 
 ## 验收

@@ -93,10 +93,18 @@ private struct BrowserMoreActionsControl: View {
     }
 
     @State private var presentedPanel: Panel?
+    @State private var isHovered = false
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     var body: some View {
         BrowserNativeActionsMenu(theme: theme, entries: entries)
             .frame(width: BrowserChromeLayout.buttonSize, height: BrowserChromeLayout.buttonSize)
+            .background {
+                Circle()
+                    .fill(isHovered ? theme.highlightedFillColor.color : .clear)
+            }
+            .onHover { isHovered = $0 }
+            .animation(accessibilityReduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
             .overlay(alignment: .topTrailing) {
                 if !session.downloadItems.isEmpty || session.isPickingElement {
                     Circle()
