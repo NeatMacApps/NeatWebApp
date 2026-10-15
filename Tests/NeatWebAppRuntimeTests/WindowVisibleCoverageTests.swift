@@ -198,6 +198,42 @@ final class WindowVisibleCoverageTests: XCTestCase {
         ))
     }
 
+    func testHoverDebounceRequiresEntryDwellAndSettle() {
+        let now = Date()
+        // 首次进框：还没记入场时刻，不动手。
+        XCTAssertFalse(WindowVisibleCoverage.isHoverDebounceSatisfied(
+            now: now,
+            entryDate: nil,
+            lastKeyTransition: .distantPast,
+            dwell: 0.15,
+            settle: 0.35
+        ))
+        // 刚进框：驻留不够，不动手。
+        XCTAssertFalse(WindowVisibleCoverage.isHoverDebounceSatisfied(
+            now: now,
+            entryDate: now,
+            lastKeyTransition: .distantPast,
+            dwell: 0.15,
+            settle: 0.35
+        ))
+        // 驻留够了，但刚发生过 key 变化：静默期内不动手。
+        XCTAssertFalse(WindowVisibleCoverage.isHoverDebounceSatisfied(
+            now: now,
+            entryDate: now.addingTimeInterval(-1),
+            lastKeyTransition: now,
+            dwell: 0.15,
+            settle: 0.35
+        ))
+        // 两项都满足：动手。
+        XCTAssertTrue(WindowVisibleCoverage.isHoverDebounceSatisfied(
+            now: now,
+            entryDate: now.addingTimeInterval(-1),
+            lastKeyTransition: now.addingTimeInterval(-1),
+            dwell: 0.15,
+            settle: 0.35
+        ))
+    }
+
     private func record(
         id: CGWindowID,
         frame: CGRect,

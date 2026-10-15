@@ -15,6 +15,11 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         /// 用户刚点开或从刘海唤出后，窗口列表和焦点还没站稳，这段时间不自动收起。
         /// 这不是「被挡住再等两秒」的旧延时：过了这段仍按八成看不见立刻收。
         static let autoCollapseGraceAfterExplicitShow: TimeInterval = 1.2
+        /// 悬停抢焦点的防抖：指针持续在框内满这么久才动手，进出抖动与快速扫过不触发。
+        static let hoverDwellBeforeSteal: TimeInterval = 0.15
+        /// 悬停抢焦点的静默：窗口刚发生 key 变化（抢到或被抢）后这么久内不参与抢，
+        /// 等 WindowServer 排序与快照收敛，避免拿着旧排序来回抢两三次。
+        static let hoverSettleAfterKeyChange: TimeInterval = 0.35
     }
 
     let session: BrowserSession
@@ -35,6 +40,10 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     /// 不置顶、隐藏、关闭时拆掉，避免常驻唤醒。
     var hoverFocusGlobalMonitor: Any?
     var hoverFocusLocalMonitor: Any?
+    /// 指针持续进入当前窗口框的起始时刻；移出框即清零，配合入场驻留防抖。
+    var hoverEntryDate: Date?
+    /// 本窗最近一次 key 变化（抢到或被抢）的时刻，配合切换静默防抖。
+    var lastHoverKeyTransition = Date.distantPast
     /// 宿主已经把占位窗摆到这个框上时，首次显示禁止再挪，否则会跳一下。
     var skipNextVisibilityCorrection = false
     /// 盖子还在时不要抢焦点、不要报「窗口已显示」，否则宿主会提前揭盖，底下还是空的。
@@ -218,8 +227,8 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     /// 置顶后鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。
-    /// 跟随图钉默认开，无独立开关、无悬停延迟；拖拽/缩放、盖子未揭、
-    /// 有模态或鼠标按住时不抢。
+    /// 跟随图钉默认开，无独立开关；入场有 150ms 驻留防抖，key 变化后有 350ms 静默。
+    /// 拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
     func startHoverFocusMonitoringIfNeeded() {
         guard session.isPinned,
             hoverFocusGlobalMonitor == nil,
@@ -269,6 +278,23 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         }
 
         guard window.frame.contains(NSEvent.mouseLocation) else {
+            hoverEntryDate = nil
+            return
+        }
+
+        // 通用防抖：入场驻留 + 切换静默都满足才动手。首次进框先记一笔，
+        // 鼠标一直待在框内才会走到顶层判定，避免高频 IPC 与旧快照对打。
+        let now = Date()
+        guard WindowVisibleCoverage.isHoverDebounceSatisfied(
+            now: now,
+            entryDate: hoverEntryDate,
+            lastKeyTransition: lastHoverKeyTransition,
+            dwell: WindowMetrics.hoverDwellBeforeSteal,
+            settle: WindowMetrics.hoverSettleAfterKeyChange
+        ) else {
+            if hoverEntryDate == nil {
+                hoverEntryDate = now
+            }
             return
         }
 
@@ -345,6 +371,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
 
     func windowDidBecomeKey(_ notification: Notification) {
         stopCoverageWatch()
+        lastHoverKeyTransition = Date()
         session.focusWebView()
         guard !isAwaitingHostCoverLift else {
             return
@@ -354,6 +381,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     }
 
     func windowDidResignKey(_ notification: Notification) {
+        lastHoverKeyTransition = Date()
         startCoverageWatch()
     }
 

@@ -76,6 +76,25 @@ enum WindowVisibleCoverage {
         CGPoint(x: point.x, y: primaryDisplayHeight - point.y)
     }
 
+    /// 悬停抢焦点的通用防抖（纯函数，便于单测）：
+    /// 指针必须持续在框内满 dwell，且距离上次 key 变化已满 settle。
+    /// 时钟回拨导致负间隔时按不满足处理，宁可不抢。
+    static func isHoverDebounceSatisfied(
+        now: Date,
+        entryDate: Date?,
+        lastKeyTransition: Date,
+        dwell: TimeInterval,
+        settle: TimeInterval
+    ) -> Bool {
+        guard let entryDate else {
+            return false
+        }
+        guard now.timeIntervalSince(lastKeyTransition) >= settle else {
+            return false
+        }
+        return now.timeIntervalSince(entryDate) >= dwell
+    }
+
     /// 鼠标点位是否落在自己窗口未被遮挡的部分上。
     ///
     /// 与收起判定一致，只看同层级遮挡：两个交叠的置顶窗口同处浮动层，
