@@ -6,6 +6,20 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.29</title>
+            <pubDate>Thu, 15 Oct 2026 14:33:17 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3047</sparkle:version>
+            <sparkle:shortVersionString>0.3.29</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.29
+
+- 修复两个置顶窗口交叠时鼠标放重叠区疯狂切换焦点的闪烁：后窗在被遮挡的点位不再参与抢焦点。
+- 悬停抢焦点加入通用防抖：指针持续停留 150 毫秒才接管，窗口焦点变化后 350 毫秒内不再抢，边沿附近不再抖两三次。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.29/NeatWebApp-0.3.29.zip" length="5808942" type="application/octet-stream" sparkle:edSignature="Ct93uR7BLVijusZIDPwLtd0/lifqJLD1Ca/umFoHDQGlD53OBzrWsPI4nKkP/SGwiCVbg73/g0I6CYe6CnE7AA=="/>
+        </item>
+        <item>
             <title>0.3.28</title>
             <pubDate>Thu, 15 Oct 2026 13:55:38 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -156,6 +170,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: VRXgl7yDhxmXJ1zcl6wEHY8oLCVO1182P2IrQViH0i7M24tI8NKG5ep1Vg75OSfAJ8FGyIWKL1rKGcq/qubSDA==
-length: 10925
+edSignature: bpYkfvp9KBWfdEYnihCTzm6iZEpBigOfK/fxdfKo8v3nCj0yWQf4/sVsNAzBa9jUwJpuiRjKrwnIYdIUjgQSAg==
+length: 12005
 -->
