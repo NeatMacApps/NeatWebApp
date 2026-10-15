@@ -119,6 +119,71 @@ final class WebAppWindowPlacementLaunchTests: XCTestCase {
         XCTAssertLessThanOrEqual(frame.maxX, screen.usableFrame.maxX)
     }
 
+    func testStaleCrossScreenNotchFallsBackToUsableFrame() {
+        // 外接屏当前唯一在线，启动器手里还是之前内置屏的旧刘海几何。
+        // 未修复前两者相减会得到 460×1 的细条；修复后应按默认尺寸居中落窗。
+        let external = WebAppWindowPlacementScreen(
+            displayID: 2,
+            localizedName: "OF27UT Pro",
+            frame: CGRect(x: 0, y: 0, width: 2304, height: 1296),
+            visibleFrame: CGRect(x: 0, y: 0, width: 2228, height: 1266),
+            notchGeometry: nil
+        )
+        let staleNotch = ScreenNotchGeometry(
+            displayID: 1,
+            screenFrame: CGRect(x: 397, y: -982, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 397, y: -982, width: 1446, height: 949),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 397, y: -34, width: 579, height: 34),
+            auxiliaryTopRightArea: CGRect(x: 1154, y: -34, width: 579, height: 34),
+            localizedName: "Built-in Retina Display"
+        )
+        let frame = WebAppWindowPlacementResolver.resolveFrame(
+            preference: StoredWebAppPreference(),
+            preferredGeometry: staleNotch,
+            availableScreens: [external],
+            fallbackDisplayID: external.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
+        )
+
+        XCTAssertEqual(frame.size, WebAppWindowMetrics.defaultFrameSize)
+        XCTAssertGreaterThanOrEqual(frame.height, WebAppWindowMetrics.minimumFrameSize.height)
+        XCTAssertTrue(external.usableFrame.contains(frame))
+    }
+
+    func testFreshSameScreenNotchKeepsTopInset() {
+        let notch = ScreenNotchGeometry(
+            displayID: 1,
+            screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 947),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 948, width: 600, height: 34),
+            auxiliaryTopRightArea: CGRect(x: 912, y: 948, width: 600, height: 34),
+            localizedName: "Built-in Retina Display"
+        )
+        let screen = WebAppWindowPlacementScreen(
+            displayID: 1,
+            localizedName: "Built-in Retina Display",
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 947),
+            notchGeometry: notch
+        )
+        let frame = WebAppWindowPlacementResolver.resolveFrame(
+            preference: StoredWebAppPreference(),
+            preferredGeometry: notch,
+            availableScreens: [screen],
+            fallbackDisplayID: screen.displayID,
+            defaultFrameSize: WebAppWindowMetrics.defaultFrameSize,
+            minimumFrameSize: WebAppWindowMetrics.minimumFrameSize
+        )
+
+        // 刘海底边 948，留 80 间距：可用上沿 868，默认 900 高放不下，取 868。
+        XCTAssertEqual(frame.width, 460, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 868, accuracy: 0.5)
+        XCTAssertEqual(frame.maxY, 868, accuracy: 0.5)
+    }
+
     private func makeBuiltInScreen() -> WebAppWindowPlacementScreen {
         WebAppWindowPlacementScreen(
             displayID: 1,

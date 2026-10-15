@@ -172,10 +172,26 @@ enum WebAppWindowPlacementResolver {
             preference.resolvedWindowPlacement?.frame.size,
             visibleSize: fallbackScreen?.visibleFrame.size
         ) ?? safeDefaultSize
-        let placementBounds = fallbackPlacementBounds(
-            preferredNotch: preferredNotch ?? fallbackScreen?.notchGeometry,
-            usableFrame: fallbackScreen?.usableFrame
+        // 刘海几何可能比屏幕信息更旧（显示器插拔 / 唤醒后启动器还没刷新）：
+        // 跨屏的刘海必须丢掉，否则相减会得到细条或飞出屏幕的框。
+        let effectiveNotch = effectiveFallbackNotch(
+            preferredNotch ?? fallbackScreen?.notchGeometry,
+            on: fallbackScreen
         )
+        var placementBounds = fallbackPlacementBounds(
+            preferredNotch: effectiveNotch,
+            screen: fallbackScreen
+        )
+        if let bounds = placementBounds {
+            let floorSize = sanitizedMinimumSize(
+                minimumFrameSize,
+                visibleSize: bounds.size
+            )
+            if bounds.width < floorSize.width || bounds.height < floorSize.height,
+               let usableFrame = fallbackScreen?.usableFrame {
+                placementBounds = usableFrame
+            }
+        }
         let size = clampedSize(
             requestedSize,
             within: placementBounds?.size ?? fallbackScreen?.usableFrame.size ?? safeDefaultSize,
@@ -191,7 +207,7 @@ enum WebAppWindowPlacementResolver {
 
         return fallbackFrame(
             size: size,
-            preferredNotch: preferredNotch ?? fallbackScreen.notchGeometry,
+            preferredNotch: effectiveNotch,
             visibleFrame: fallbackScreen.visibleFrame,
             placementBounds: placementBounds ?? fallbackScreen.usableFrame
         )
@@ -346,14 +362,36 @@ enum WebAppWindowPlacementResolver {
         return clamp(CGRect(origin: origin, size: size), into: placementBounds)
     }
 
-    private static func fallbackPlacementBounds(
-        preferredNotch: ScreenNotchGeometry?,
-        usableFrame: CGRect?
-    ) -> CGRect? {
-        guard let usableFrame else {
+    /// 刘海与落点屏幕不一致时直接丢掉这个刘海：跨屏相减没有意义。
+    private static func effectiveFallbackNotch(
+        _ notch: ScreenNotchGeometry?,
+        on screen: WebAppWindowPlacementScreen?
+    ) -> ScreenNotchGeometry? {
+        guard let notch, let screen else {
+            return notch
+        }
+
+        if let notchDisplayID = notch.displayID,
+           let screenDisplayID = screen.displayID,
+           notchDisplayID != screenDisplayID {
+            return nil
+        }
+        if !screen.frame.intersects(notch.notchRect) {
             return nil
         }
 
+        return notch
+    }
+
+    private static func fallbackPlacementBounds(
+        preferredNotch: ScreenNotchGeometry?,
+        screen: WebAppWindowPlacementScreen?
+    ) -> CGRect? {
+        guard let screen else {
+            return nil
+        }
+
+        let usableFrame = screen.usableFrame
         guard let preferredNotch else {
             return usableFrame
         }
