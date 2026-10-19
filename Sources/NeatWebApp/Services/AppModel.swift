@@ -105,6 +105,9 @@ final class AppModel {
     var hasStarted = false
 
     @ObservationIgnored
+    var lastRuntimePhases: [String: RuntimePhase] = [:]
+
+    @ObservationIgnored
     var failedFaviconAppIDs: Set<String> = []
 
     @ObservationIgnored

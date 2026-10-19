@@ -6,7 +6,11 @@ When to read: any WebApp becomes unusable as on-page content grows — typing la
 
 NeatWebApp is a **generic** WebApp container. Long-page jank is a WebKit + site-frontend problem that shows up in chats, feeds, and similar lists. The same cliff is widely reported in Safari on fast Apple silicon. A fresh short page is immediately smooth; that rules out “the chip cannot keep up.”
 
-Do **not** add a host allowlist or a ChatGPT-only selector.
+Do **not** add a host allowlist or a ChatGPT-only selector. Owner reaffirmed on 2026-10-17: container compatibility and repair logic must remain generic for every website; no site-specific branches or injected patches. Explicit user-created element-hiding rules remain user configuration, not built-in compatibility logic.
+
+## Scroll oscillation investigation (2026-10-17)
+
+The owner reports a conversation repeatedly jumping while scrolling and an inability to reach the bottom. Treat this as a separate symptom from slow rendering. The historical engine/site explanation above does not establish this incident's cause. Inspect container scripts, current hiding rules, zoom and native viewport changes before attribution; verify the correction with actual scroll positions over time and the affected page when accessible.
 
 ## Veto (2026-09-19): no off-screen list parking
 

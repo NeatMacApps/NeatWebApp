@@ -80,9 +80,11 @@ final class SideDockOverlayController {
         let panel = panel ?? makePanel()
         self.panel = panel
         panel.alphaValue = 1
-        panel.dragGripFrame = context.layout.dragGripFrame
+        let margin = SideDockPresentationContext.Layout.shadowMargin
+        panel.dragGripFrame = context.layout.dragGripFrame.offsetBy(dx: margin, dy: margin)
         installRootView(in: panel, context: context)
-        let nextFrame = context.panelFrame.integral
+        // Placement stays in capsule coordinates; only the window adds the shadow margin.
+        let nextFrame = context.panelFrame.insetBy(dx: -margin, dy: -margin).integral
         if animated, panel.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             NSAnimationContext.runAnimationGroup { animation in
                 animation.duration = Self.transitionDuration
@@ -108,7 +110,9 @@ final class SideDockOverlayController {
         )
         .environment(appModel)
         let hostingView = SideDockHostingView(rootView: AnyView(rootView))
+        let margin = SideDockPresentationContext.Layout.shadowMargin
         hostingView.frame = CGRect(origin: .zero, size: context.layout.panelSize)
+            .insetBy(dx: -margin, dy: -margin)
         hostingView.autoresizingMask = [.width, .height]
         hostingView.clearHostingBackground()
         dockHostingView = hostingView
@@ -137,6 +141,8 @@ final class SideDockOverlayController {
 
     private func finishNativeDragging() {
         guard isDragging, let panel else { return }
+        let margin = SideDockPresentationContext.Layout.shadowMargin
+        let capsuleFrame = panel.frame.insetBy(dx: margin, dy: margin)
         isDragging = false
         panel.isNativeDragging = false
         overlayState?.isDragging = false
@@ -144,12 +150,12 @@ final class SideDockOverlayController {
         suppressSelectionUntil = Date().addingTimeInterval(0.2)
         // Resolve by the actual dragged panel, never by keyboard focus.
         let screen = NSScreen.screens.max { lhs, rhs in
-            intersectionArea(panel.frame, lhs.visibleFrame) < intersectionArea(panel.frame, rhs.visibleFrame)
+            intersectionArea(capsuleFrame, lhs.visibleFrame) < intersectionArea(capsuleFrame, rhs.visibleFrame)
         } ?? panel.screen
         guard let screen else { return }
         preferredDisplayID = screen.displayID
         floatingPosition = SideDockPlacementResolver.normalizedPosition(
-            panelFrame: panel.frame, visibleFrame: screen.visibleFrame
+            panelFrame: capsuleFrame, visibleFrame: screen.visibleFrame
         )
         if let floatingPosition {
             appModel?.updateSideDockPlacement(

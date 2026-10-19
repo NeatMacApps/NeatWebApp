@@ -30,6 +30,8 @@ struct SideDockPresentationContext: Equatable {
         static let verticalGripLength: CGFloat = 22
         // The end slot and capsule share a center: 38 / 2 + 7 = 52 / 2.
         static let padding: CGFloat = (thickness - iconSlotSize) / 2
+        /// Transparent window margin around the capsule so the native glass shadow is not clipped.
+        static let shadowMargin: CGFloat = 16
 
         let edge: SideDockEdge
         let length: CGFloat
@@ -121,6 +123,35 @@ enum SideDockPlacementResolver {
             x: bounds.width > 0 ? clamped((panelFrame.minX - bounds.minX) / bounds.width) : 0.5,
             y: bounds.height > 0 ? clamped((panelFrame.minY - bounds.minY) / bounds.height) : 0.5
         )
+    }
+
+    /// Places the capsule's top-leading corner at the collapsed window's top-leading corner.
+    static func anchoredPosition(windowFrame: CGRect, visibleFrame: CGRect, panelSize: CGSize) -> CGPoint {
+        normalizedPosition(
+            panelFrame: CGRect(
+                x: windowFrame.minX,
+                y: windowFrame.maxY - panelSize.height,
+                width: panelSize.width,
+                height: panelSize.height
+            ),
+            visibleFrame: visibleFrame
+        )
+    }
+
+    /// The frame of the most recent window that just transitioned into the collapsed phase.
+    /// Apps with no previously observed phase (first states after a host launch) never count.
+    static func latestCollapsedWindowFrame(
+        previousPhases: [String: RuntimePhase],
+        states: [RuntimeState]
+    ) -> CGRect? {
+        states
+            .filter { state in
+                guard state.phase == .collapsedToFloatingIcon,
+                      let previous = previousPhases[state.appID] else { return false }
+                return previous != .collapsedToFloatingIcon && state.windowFrame != nil
+            }
+            .max { $0.lastUpdatedAt < $1.lastUpdatedAt }?
+            .windowFrame
     }
 
     private static func originBounds(visibleFrame: CGRect, panelSize: CGSize) -> CGRect {

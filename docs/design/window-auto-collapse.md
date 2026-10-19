@@ -4,6 +4,39 @@
 
 ## 当前规则
 
+### 2026-10-19: Dock follows each collapse; glass keeps its native separation
+
+Owner decision (supersedes the "position only changes by dragging" part of the 2026-10-11 rule):
+
+- **Every collapse moves the Dock to that window.** When a web app window transitions into the
+  collapsed state, the Dock's top-leading corner (where the drag grip sits) aligns with the
+  collapsed window's top-leading corner, where its `×` button was. Auto-collapse (80% hidden)
+  uses the same corner. The capsule is clamped into that window's display `visibleFrame` with
+  the existing twelve-point inset. If the Dock was already visible with other apps, it moves
+  there with the existing short frame animation (no animation under Reduce Motion).
+- The resulting position is persisted like a drag result, so a host restart with apps still
+  collapsed shows the Dock where it last was. Only a real transition counts: runtime states
+  first seen after a host launch do not move the Dock.
+- Manual dragging still works and is persisted; it lasts until the next collapse.
+- Edge presets remain orientation and fallback placement choices.
+
+Glass visibility on flat backgrounds: the clear glass previously disappeared over solid white,
+gray or black because both native separation cues were removed. The panel frame equaled the
+capsule, so the glass's own adaptive shadow
+([Meet Liquid Glass](https://developer.apple.com/videos/play/wwdc2025/219/): "Shadow opacity
+increases or decreases dynamically providing a lightweight separation from background content")
+had no room and was clipped; the window shadow was also off. Correction, public API only:
+
+- Keep `.clear` glass (the 2026-08-16 rejection of regular/frosted glass stands).
+- The transparent panel extends a fixed margin beyond the capsule on every side so the glass
+  shadow can render. All placement, clamping, persistence and drag-grip geometry stay in
+  capsule coordinates; only the window frame adds the margin.
+- A hairline adaptive rim strokes the capsule: dark low-opacity in light appearance, light
+  low-opacity in dark appearance. No fixed dark dimming layer (it blackens dark desktops), and
+  no screen sampling (requires Screen Recording, previously rejected).
+- Restoring the private glass scrim remains a fallback only if the public treatment fails
+  actual flat-background captures.
+
 ### 2026-10-11: Floating activity Dock (supersedes edge attachment)
 
 The activity Dock is a single floating capsule with the existing clear Liquid Glass material.

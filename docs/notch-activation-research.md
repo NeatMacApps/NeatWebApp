@@ -73,14 +73,4 @@ This lets the launcher react both before and after the overlay becomes visible.
 - 虚拟刘海在空闲时完全不可见，只有悬停才出现；发现成本靠首页诊断文案与设置说明兜底，暂时没做常驻提示。
 - Any future animation that depends on directional pointer intent will likely need a richer explicit state machine.
 
-## 验证手法（无人值守时怎么测唤出）
-
-launcher / 侧边 Dock 都是 `NSPanel` 覆盖层，验证时有两个反直觉的点：
-
-- `winshot.py`（截图 skill）只列窗口层级为 0 的普通窗口，**截不到这类覆盖层**；要确认它是否真的出现，用 `CGWindowListCopyWindowInfo` 直接看进程的窗口列表（launcher 在层级 25，可顺带核对位置与尺寸是否等于预期的刘海几何）。
-- 用 `cliclick` 一类工具合成移动、拖动、点击可以走通真实路径，但会接管用户正在用的指针；用户在用这台电脑时不要跑，交给用户手测并说明要测哪几处。用户同时动鼠标还会产生干扰事件（指针离开抽屉触发正常收起），看日志时要区分。
-- 覆盖层的视觉可用 `screencapture -x -R x,y,w,h` 按屏幕区域截（区域截图会带上浮层，与只列普通窗口的截图 skill 不同），连续截几帧再拼起来看拖动过程。
-- 行为细节靠临时加系统日志再用 `/usr/bin/log stream --predicate 'subsystem == "…"'` 看；zsh 里裸写 `log` 是内建命令，会报参数过多。临时日志提交前必须删掉。
-- `CGWarpMouseCursorPosition` 只挪指针、不产生鼠标事件，所以挪过去不会触发唤出；用 `CGEvent.post` 合成移动事件又受辅助功能授权限制。可行做法是：**先把指针停到目标热区，再重启应用**——事件监视器启动时会主动评估一次当前指针位置，从而走完整条唤出链路。
-
 <!-- 该文档整理/压缩于 2026-09-05 -->

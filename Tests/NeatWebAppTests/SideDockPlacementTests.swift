@@ -94,6 +94,58 @@ final class SideDockPlacementTests: XCTestCase {
             visibleFrame: CGRect(x: 0, y: 0, width: 1350, height: 876)
         ), .left)
     }
+
+    func testCollapseAnchorsCapsuleTopLeadingToWindowTopLeading() {
+        let window = CGRect(x: -1200, y: 300, width: 800, height: 500)
+        let position = SideDockPlacementResolver.anchoredPosition(
+            windowFrame: window, visibleFrame: desktop, panelSize: panelSize
+        )
+        let frame = SideDockPlacementResolver.panelFrame(
+            position: position, visibleFrame: desktop, panelSize: panelSize
+        )
+        XCTAssertEqual(frame.minX, window.minX, accuracy: 0.001)
+        XCTAssertEqual(frame.maxY, window.maxY, accuracy: 0.001)
+    }
+
+    func testCollapseAnchorClampsIntoUsableDesktop() {
+        let window = CGRect(x: -1600, y: 700, width: 800, height: 500)
+        let frame = SideDockPlacementResolver.panelFrame(
+            position: SideDockPlacementResolver.anchoredPosition(
+                windowFrame: window, visibleFrame: desktop, panelSize: panelSize
+            ),
+            visibleFrame: desktop,
+            panelSize: panelSize
+        )
+        XCTAssertTrue(desktop.insetBy(dx: 12, dy: 12).contains(frame))
+        XCTAssertEqual(frame.minX, desktop.minX + 12, accuracy: 0.001)
+        XCTAssertEqual(frame.maxY, desktop.maxY - 12, accuracy: 0.001)
+    }
+
+    func testOnlyRealCollapseTransitionsProvideAnchor() {
+        let older = state("a", .collapsedToFloatingIcon, CGRect(x: 1, y: 1, width: 10, height: 10), 1)
+        let newer = state("b", .collapsedToFloatingIcon, CGRect(x: 2, y: 2, width: 10, height: 10), 2)
+        let unseen = state("c", .collapsedToFloatingIcon, CGRect(x: 3, y: 3, width: 10, height: 10), 3)
+        let stillCollapsed = state("d", .collapsedToFloatingIcon, CGRect(x: 4, y: 4, width: 10, height: 10), 4)
+        let previous: [String: RuntimePhase] = [
+            "a": .windowVisible, "b": .windowVisible, "d": .collapsedToFloatingIcon
+        ]
+        XCTAssertEqual(
+            SideDockPlacementResolver.latestCollapsedWindowFrame(
+                previousPhases: previous, states: [older, newer, unseen, stillCollapsed]
+            ),
+            newer.windowFrame
+        )
+        XCTAssertNil(SideDockPlacementResolver.latestCollapsedWindowFrame(
+            previousPhases: [:], states: [older, newer]
+        ))
+    }
+
+    private func state(_ appID: String, _ phase: RuntimePhase, _ frame: CGRect, _ time: TimeInterval) -> RuntimeState {
+        RuntimeState(
+            instanceID: UUID(), appID: appID, pid: 1, phase: phase,
+            windowFrame: frame, floatingIconFrame: nil, lastUpdatedAt: Date(timeIntervalSince1970: time)
+        )
+    }
 }
 
 final class AppPreferencesStoreTests: XCTestCase {

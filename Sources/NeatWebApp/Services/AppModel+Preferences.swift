@@ -47,6 +47,37 @@ extension AppModel {
         syncSideDockOverlay()
     }
 
+    /// Moves the Dock to the window that just collapsed and persists it like a drag result.
+    func anchorSideDock(toCollapsedWindowFrame windowFrame: CGRect) {
+        let screen = NSScreen.screens.max { lhs, rhs in
+            intersectionArea(windowFrame, lhs.frame) < intersectionArea(windowFrame, rhs.frame)
+        } ?? NSScreen.screens.first
+        guard let screen else {
+            syncSideDockOverlay()
+            return
+        }
+        let context = SideDockPresentationContext(
+            apps: collapsedWebApps,
+            edge: sideDockEdge,
+            screenFrame: screen.frame,
+            visibleFrame: screen.visibleFrame,
+            verticalPosition: sideDockVerticalPosition
+        )
+        updateSideDockPlacement(
+            floatingPosition: SideDockPlacementResolver.anchoredPosition(
+                windowFrame: windowFrame,
+                visibleFrame: screen.visibleFrame,
+                panelSize: context.layout.panelSize
+            ),
+            displayID: screen.displayID
+        )
+    }
+
+    private func intersectionArea(_ frame: CGRect, _ screenFrame: CGRect) -> CGFloat {
+        let intersection = frame.intersection(screenFrame)
+        return intersection.isNull ? 0 : intersection.width * intersection.height
+    }
+
     func loadAppPreferences() {
         let fallbackScreen = NSScreen.screens.first
         let defaultEdge = fallbackScreen.map {

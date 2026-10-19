@@ -18,6 +18,8 @@ struct SideDockOverlayRootView: View {
             .contentShape(shape)
             .clipped()
             .modifier(SideDockGlassModifier(shape: shape))
+            // Room outside the capsule for the native glass shadow.
+            .padding(SideDockPresentationContext.Layout.shadowMargin)
             .allowsWindowActivationEvents()
             .disabled(state.isDragging)
             .accessibilityElement(children: .contain)
@@ -117,12 +119,22 @@ struct SideDockOverlayRootView: View {
 }
 
 private struct SideDockGlassModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
     let shape: Capsule
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            content.glassEffect(.clear, in: shape)
+            content
+                .glassEffect(.clear, in: shape)
+                // Clear glass has nothing to refract over a flat color; the rim keeps its outline.
+                .overlay {
+                    shape.strokeBorder(
+                        colorScheme == .dark ? Color.white.opacity(0.22) : Color.black.opacity(0.14),
+                        lineWidth: 1
+                    )
+                    .allowsHitTesting(false)
+                }
         } else {
             content.background {
                 shape.fill(.black)

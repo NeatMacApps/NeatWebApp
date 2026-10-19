@@ -151,6 +151,14 @@ extension AppModel {
                 .map(\.appID)
         )
         collapsedWebApps = apps.filter { collapsedAppIDs.contains($0.id) }
-        syncSideDockOverlay()
+        let collapsedWindowFrame = SideDockPlacementResolver.latestCollapsedWindowFrame(
+            previousPhases: lastRuntimePhases, states: states
+        )
+        lastRuntimePhases = Dictionary(states.map { ($0.appID, $0.phase) }) { _, latest in latest }
+        if let collapsedWindowFrame {
+            anchorSideDock(toCollapsedWindowFrame: collapsedWindowFrame)
+        } else {
+            syncSideDockOverlay()
+        }
     }
 }
