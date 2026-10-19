@@ -37,6 +37,14 @@ had no room and was clipped; the window shadow was also off. Correction, public 
 - Restoring the private glass scrim remains a fallback only if the public treatment fails
   actual flat-background captures.
 
+Status (0.3.30, commit `e0956ae`): anchoring and collapse-transition selection are covered by
+placement tests; 184 host/runtime tests and clean static analysis passed; the signed build is
+published and installed. **Visual acceptance is still open**: the desktop was locked with the
+display asleep, so the Dock's landing position after an actual collapse and the glass rim and
+shadow over solid white, gray and black backgrounds were not captured. The 16-point margin
+and rim opacities (light 0.14 black, dark 0.22 white) are initial values to tune against
+those captures.
+
 ### 2026-10-11: Floating activity Dock (supersedes edge attachment)
 
 The activity Dock is a single floating capsule with the existing clear Liquid Glass material.
