@@ -74,7 +74,7 @@ Test zero, one, and several open/collapsed WebApps. Test both Quit entry points,
 
 The original frame constraint unconditionally clamps to the display's usable rectangle after Dock avoidance. That treats deliberate positioning like recovery from an invalid saved frame. Other placement paths also clamp: Dock reserve updates, initial restoration and screen changes must be checked together.
 
-The prototype removes one clamp but still calls AppKit's superclass constraint; Apple documents that this can adjust the top edge and height. It therefore does not yet prove that dragging beyond every edge works. A one-pixel display intersection also does not guarantee that a window is usable.
+The 2026-10-20 cross-display fix checks the proposed frame before AppKit's superclass constraint; calling the superclass first allowed it to adjust the top edge and height during a drag. The pointer-offset contract and installed acceptance belong to [browser-top-chrome.md](browser-top-chrome.md#cross-display-window-dragging). This bounded fix does not establish every proposed off-screen interaction below. A one-pixel display intersection also does not guarantee that a window is usable.
 
 ### Proposed rules
 

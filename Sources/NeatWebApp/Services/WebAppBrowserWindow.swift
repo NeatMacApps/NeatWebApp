@@ -8,16 +8,15 @@ final class WebAppBrowserWindow: NSWindow {
     var ignoresDockAvoidance = false
 
     override func constrainFrameRect(_ frameRect: CGRect, to screen: NSScreen?) -> CGRect {
-        let constrained = super.constrainFrameRect(frameRect, to: screen)
-
-        // A user may intentionally park part of the window beyond an edge. Keep
-        // a recovery guard only for a frame that has no display intersection at
-        // all; this also gives AppKit a reachable frame after a display vanishes.
+        // Check the proposed frame before AppKit can move its top edge or shrink
+        // it to a shorter display, which changes the grab point during a drag.
         guard !NSScreen.screens.isEmpty,
-              !NSScreen.screens.contains(where: { $0.frame.intersects(constrained) }) else {
-            return constrained
+              !NSScreen.screens.contains(where: { $0.frame.intersects(frameRect) }) else {
+            return frameRect
         }
 
+        // Recover a window stranded outside every display after a display change.
+        let constrained = super.constrainFrameRect(frameRect, to: screen)
         guard let targetScreen = screen ?? self.screen ?? NSScreen.screens.first else {
             return constrained
         }

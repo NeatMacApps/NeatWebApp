@@ -3,6 +3,60 @@ import XCTest
 
 @MainActor
 final class WebAppWindowLaunchFrameTests: XCTestCase {
+    func testFrameConstraintPreservesGrabPointAboveDisplayTop() throws {
+        let screen = try XCTUnwrap(NSScreen.screens.first)
+        let window = makeConstraintWindow()
+        defer { window.close() }
+        let proposed = CGRect(
+            x: screen.frame.midX - 240,
+            y: screen.frame.maxY - 100,
+            width: 480,
+            height: 700
+        )
+
+        XCTAssertEqual(window.constrainFrameRect(proposed, to: screen), proposed)
+    }
+
+    func testFrameConstraintPreservesTallWindowOnAnotherDisplay() throws {
+        let screen = try XCTUnwrap(NSScreen.screens.first)
+        let window = makeConstraintWindow()
+        defer { window.close() }
+        let proposed = CGRect(
+            x: screen.frame.midX - 240,
+            y: screen.frame.minY - 120,
+            width: 480,
+            height: screen.frame.height + 300
+        )
+
+        // The constraint's suggested display may still be the source display.
+        for suggestedScreen in NSScreen.screens {
+            XCTAssertEqual(window.constrainFrameRect(proposed, to: suggestedScreen), proposed)
+        }
+    }
+
+    func testFrameConstraintRecoversWindowOutsideEveryDisplay() throws {
+        let screen = try XCTUnwrap(NSScreen.screens.first)
+        let window = makeConstraintWindow()
+        defer { window.close() }
+        let rightmostEdge = try XCTUnwrap(NSScreen.screens.map(\.frame.maxX).max())
+        let proposed = CGRect(x: rightmostEdge + 500, y: screen.frame.minY, width: 480, height: 700)
+
+        let recovered = window.constrainFrameRect(proposed, to: screen)
+
+        XCTAssertTrue(screen.visibleFrame.contains(recovered))
+    }
+
+    private func makeConstraintWindow() -> WebAppBrowserWindow {
+        let window = WebAppBrowserWindow(
+            contentRect: CGRect(x: 0, y: 0, width: 480, height: 700),
+            styleMask: WebAppWindowMetrics.styleMask,
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        return window
+    }
+
     func testHostProvidedFrameSurvivesAttachingThePage() {
         let tempRoot = FileManager.default.temporaryDirectory
             .appending(path: "NeatWebAppLaunchFrame-\(UUID().uuidString)", directoryHint: .isDirectory)

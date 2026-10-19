@@ -14,6 +14,29 @@
 
 图标前景色按页面明暗自动翻转（深色页面用近白色，浅色页面用近黑色），与渐变起始色一起构成对比度防御，不依赖任何系统材质。
 
+## Cross-display window dragging
+
+The pointer must keep the same grab point in the top band while crossing displays,
+including a destination shorter than the window. Preserve the proposed frame when
+it intersects any connected display; reserve off-screen recovery for a frame outside
+every display. Explicit zoom and initial placement retain their existing fitting rules.
+
+Inspected references: `WindowDragHandleView.mouseDown` in
+`BrowserContainerView.swift` already passes the original mouse-down to the public
+[`NSWindow.performDrag(with:)`](https://developer.apple.com/documentation/appkit/nswindow/performdrag(with:)).
+Keep this native interaction. `WebAppBrowserWindow.constrainFrameRect` currently calls
+the superclass before checking display intersection. Apple's
+[`constrainFrameRect(_:to:)`](https://developer.apple.com/documentation/appkit/nswindow/constrainframerect(_:to:))
+may adjust the top edge and shrink a resizable window to the destination display.
+Both APIs are present in the installed Xcode 27.2 SDK. Check the original proposed
+frame before calling the superclass, rather than accepting an already altered frame.
+
+Baseline installed 0.3.30 evidence: dragging a 642 × 1247 window from the external
+display to the lower built-in display changed the grab offset from (321, 18) to
+(407, 132), with a simultaneous resize to 642 × 949. The actual held-drag context
+capture showed the pointer in page content. Fixed-build acceptance must repeat that
+path in both directions and inspect held-drag frames and returned geometry.
+
 ## Hover feedback
 
 Owner decision (2026-10-13): hovering More Actions shows the same circular shading as the left controls, indicating that it is clickable. Leaving clears the shading. Reuse the inspected `BrowserChromeButton` treatment in `BrowserContainerView.swift`: `Circle`, `theme.highlightedFillColor`, SwiftUI `onHover`, and the existing 0.12-second ease-out animation with Reduce Motion respected. Keep the native `NSPopUpButton` and its menu interaction; do not replace it with a custom menu. This is transient feedback, not a persistent circle or focus frame. Public APIs: [onHover](https://developer.apple.com/documentation/swiftui/view/onhover(perform:)) and [NSPopUpButton](https://developer.apple.com/documentation/appkit/nspopupbutton).
