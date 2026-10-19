@@ -31,6 +31,19 @@ may adjust the top edge and shrink a resizable window to the destination display
 Both APIs are present in the installed Xcode 27.2 SDK. Check the original proposed
 frame before calling the superclass, rather than accepting an already altered frame.
 
+Installed acceptance showed that this constraint change alone is insufficient on
+macOS 27.2: AppKit's screen-layout adjustment separately calls the public
+[`setFrame(_:display:)`](https://developer.apple.com/documentation/appkit/nswindow/setframe(_:display:))
+with a remembered destination frame during native dragging. LLDB traced this call
+through AppKit's screen adjustment and move-event handling, with launch-frame hold
+already released. Ignore programmatic frame replacement only during the native
+drag session; Window Server remains the sole owner of drag motion. Reuse the
+20 ms pressed-button completion check inspected in
+`SideDockOverlayController.beginNativeDragging`, because `performDrag` returns
+immediately and may consume mouse-up. Clear the guard on release so normal resizing,
+zoom and off-screen recovery continue to use the public frame API. No private API
+or replacement mouse-tracking loop is used.
+
 Baseline installed 0.3.30 evidence: dragging a 642 × 1247 window from the external
 display to the lower built-in display changed the grab offset from (321, 18) to
 (407, 132), with a simultaneous resize to 642 × 949. The actual held-drag context

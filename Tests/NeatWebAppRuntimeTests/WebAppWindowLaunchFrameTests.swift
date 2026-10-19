@@ -3,6 +3,22 @@ import XCTest
 
 @MainActor
 final class WebAppWindowLaunchFrameTests: XCTestCase {
+    func testNativeDragRejectsFrameReplacementAndReleaseAllowsIt() throws {
+        let screen = try XCTUnwrap(NSScreen.screens.first)
+        let window = makeConstraintWindow()
+        defer { window.close() }
+        let original = window.frame
+        let replacement = CGRect(x: screen.frame.midX, y: screen.frame.midY, width: 420, height: 680)
+
+        window.isNativeDragging = true
+        window.setFrame(replacement, display: false)
+        XCTAssertEqual(window.frame, original)
+
+        window.isNativeDragging = false
+        window.setFrame(replacement, display: false)
+        XCTAssertEqual(window.frame, replacement)
+    }
+
     func testFrameConstraintPreservesGrabPointAboveDisplayTop() throws {
         let screen = try XCTUnwrap(NSScreen.screens.first)
         let window = makeConstraintWindow()

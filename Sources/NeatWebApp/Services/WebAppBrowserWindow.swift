@@ -6,6 +6,31 @@ import AppKit
 final class WebAppBrowserWindow: NSWindow {
     var dockReserve: SideDockScreenReserve?
     var ignoresDockAvoidance = false
+    var isNativeDragging = false
+    private var dragCompletionTask: Task<Void, Never>?
+
+    override func performDrag(with event: NSEvent) {
+        isNativeDragging = true
+        dragCompletionTask?.cancel()
+        super.performDrag(with: event)
+
+        // Window Server may consume mouse-up, so the view cannot end this guard.
+        dragCompletionTask = Task { @MainActor [weak self] in
+            while NSEvent.pressedMouseButtons & 1 != 0 {
+                do { try await Task.sleep(for: .milliseconds(20)) }
+                catch { return }
+            }
+            self?.isNativeDragging = false
+            self?.dragCompletionTask = nil
+        }
+    }
+
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        // AppKit can restore a remembered display layout mid-drag. Replacing the
+        // server-owned frame here breaks the pointer's original grab point.
+        guard !isNativeDragging else { return }
+        super.setFrame(frameRect, display: flag)
+    }
 
     override func constrainFrameRect(_ frameRect: CGRect, to screen: NSScreen?) -> CGRect {
         // Check the proposed frame before AppKit can move its top edge or shrink
