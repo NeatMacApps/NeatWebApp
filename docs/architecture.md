@@ -137,7 +137,7 @@ The browser bridge owns daily browser capabilities that WebKit does not enable b
 - camera and microphone requests are passed through to the system/WebKit prompt from the runtime process
 - file upload uses the native macOS file picker
 - downloads are saved to the user's Downloads folder with sanitized filenames and collision-safe suffixes
-- download progress and final status are surfaced in the browser top chrome band, and completed downloads can be revealed in Finder
+- download progress and final status stay visible beside More Actions; a small native popover shows the current web app's transfers, byte counts and native progress bars, per-file Finder reveal and terminal-only clearing (presentation authority: [browser-top-chrome.md](design/browser-top-chrome.md#compact-downloads-owner-correction-2026-10-21))
 - external URL schemes stay out of the web view; direct user clicks open the system app, while script-triggered external schemes require confirmation
 - JavaScript alert, confirm, prompt, and `window.close()` are mapped to native window behavior
 - browser-level keyboard shortcuts are resolved by `BrowserKeyCommand` and consumed in the web view's `performKeyEquivalent`

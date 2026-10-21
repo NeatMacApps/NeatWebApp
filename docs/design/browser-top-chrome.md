@@ -102,6 +102,24 @@ and present in the installed Xcode 27.2 SDK: SwiftUI `popover`, `ProgressView`,
 `Button`, `ScrollView`, and `WKDownload.progress` via `NSProgressReporting`.
 Keep the system popover appearance; use existing SF Symbols for interface actions.
 
+Verification (2026-10-21): Debug build, 92 host tests, 101 runtime tests and clean
+derived-data static analysis passed with Xcode 27.2 on arm64. Regression coverage
+includes active-transfer priority, unknown totals, queued progress after completion
+or failure, batch clearing without file deletion, and missing-file feedback. Only
+the existing AppIntents metadata tool warning remains; its assessment is in
+[architecture.md](../architecture.md). WebKit's XPC/pasteboard connection errors
+occurred during test-host teardown after the runtime suite passed, with no failed
+assertions; they do not establish installed pasteboard behavior.
+
+Installed Debug visual acceptance is limited: the session is locked. Native probing
+confirmed capture access, an initially inactive/asleep display, then active/awake
+output after a bounded wake. The new 423-point browser window can be captured, but
+its WebKit content is blank and Accessibility exposes no window for interaction.
+This proves neither the opened download list nor live progress, light/dark layout,
+Finder interaction or Escape/outside dismissal. Repeat those paths on the installed
+signed build when an interactive desktop is available; do not treat compilation or
+the blank-window capture as visual acceptance.
+
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
 
 Overlapping pinned windows must not alternate key-window ownership: only the frontmost opaque window at the pointer in the same window layer may take focus. Convert AppKit pointer coordinates into the Core Graphics window-list coordinate system before testing coverage. If the window list or target ID is unavailable, keep the current focus. Higher-layer system overlays remain excluded under the existing coverage policy.
