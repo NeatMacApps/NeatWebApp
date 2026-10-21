@@ -133,7 +133,7 @@ scripts/publish-release.sh --resume-publication # Resume retained notarized arti
 
 **签名 / 公证 / `codesign` / `notarytool` 必须在 macOS 本机跑**——Linux 侧（suzhou）没有 `xcrun` 与钥匙串，不能代跑公证，连编译验证都做不了。
 
-**在家里的网络下公证会卡死**，判别与临时绕过（换手机热点）见 [苹果公证上传在家里网络下必定卡死](../../../../.config/agentsync/docs/troubleshooting/2026-07-31-apple-notary-upload-stall.md)；这条修好之前发版要么换网络、要么先解决路由器分流，别误判成签名配置问题反复重交。
+**在家里的网络下公证会卡死**，判别与临时绕过（换手机热点）见 [苹果公证上传在家里网络下必定卡死](~/.config/agentsync/docs/troubleshooting/2026-07-31-apple-notary-upload-stall.md)；这条修好之前发版要么换网络、要么先解决路由器分流，别误判成签名配置问题反复重交。
 
 ## 发布与升级验证结果
 
