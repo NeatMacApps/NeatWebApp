@@ -51,6 +51,7 @@
 		51F50D59AC16B43CD497B39B /* SettingsPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */; };
 		54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */; };
 		57AAD8C3620E8214942B09CB /* BrowserDownloadStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */; };
+		5DAA0E1AAC254E3AA6650D89 /* BrowserDownloadPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */; };
 		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
 		5F4410B4386D010AE8CDA0F0 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
 		60CE1016D049876F3849958F /* RuntimeEventPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */; };
@@ -215,6 +216,7 @@
 		444290C186B94D63848D4F55 /* RuntimeAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeAppModel.swift; sourceTree = "<group>"; };
 		470B4F909E0E810D718B3B98 /* AppModel+Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Launcher.swift"; sourceTree = "<group>"; };
 		47F1CBA9CC3053593AB4F506 /* 0.3.27.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.27.md; sourceTree = "<group>"; };
+		481847E8EDFBD506DF2371D6 /* 0.3.31.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.31.md; sourceTree = "<group>"; };
 		4C084ACC3797AB50289A4CE2 /* AppModel+WebApps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+WebApps.swift"; sourceTree = "<group>"; };
 		4C168513923E317D80AEDF8A /* 0.3.10.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.10.md; sourceTree = "<group>"; };
 		4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeMetrics.swift; sourceTree = "<group>"; };
@@ -290,8 +292,10 @@
 		D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeEventPublisher.swift; sourceTree = "<group>"; };
 		E04E737919EBF36DA156FC46 /* publish-release.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "publish-release.sh"; sourceTree = "<group>"; };
+		E289709351426DD39225C62E /* 0.3.32.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.32.md; sourceTree = "<group>"; };
 		E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockPlacementTests.swift; sourceTree = "<group>"; };
 		E99EC881717F8D1FB6B86741 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadPanel.swift; sourceTree = "<group>"; };
 		EC457812D675337401F6B7A6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		ECC909AF939C06BEA4512768 /* 0.3.17.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.17.md; sourceTree = "<group>"; };
 		ED7BC742F636A67853E2AE7F /* CustomWebAppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWebAppStore.swift; sourceTree = "<group>"; };
@@ -358,6 +362,7 @@
 				FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */,
 				BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */,
 				3117F16F6830A5EFCBDB74C0 /* BrowserDownloadDestinationResolver.swift */,
+				E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */,
 				13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */,
 				72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */,
 				5D23996E32BE971B55D6AED5 /* BrowserKeyCommand.swift */,
@@ -491,6 +496,8 @@
 				47F1CBA9CC3053593AB4F506 /* 0.3.27.md */,
 				156BEF08D8828B0651C6F0AF /* 0.3.29.md */,
 				EEDB5E9EE24785458D0F91D5 /* 0.3.30.md */,
+				481847E8EDFBD506DF2371D6 /* 0.3.31.md */,
+				E289709351426DD39225C62E /* 0.3.32.md */,
 			);
 			path = "release-notes";
 			sourceTree = "<group>";
@@ -945,6 +952,7 @@
 				03DC0D096D237AE010145EDE /* BrowserContainerView.swift in Sources */,
 				F1ECF8A7EFDFC91290F01450 /* BrowserDownloadDestinationResolver.swift in Sources */,
 				1FB2A9FDAC6C02C2A8AB783F /* BrowserDownloadManager.swift in Sources */,
+				5DAA0E1AAC254E3AA6650D89 /* BrowserDownloadPanel.swift in Sources */,
 				841A0DC1EABE5B409CE32E32 /* BrowserElementHidingScript.swift in Sources */,
 				B22E00514FCD745321704093 /* BrowserExternalNavigationPolicy.swift in Sources */,
 				EE10CEDD2CCD3C778298619F /* BrowserKeyCommand.swift in Sources */,
@@ -1074,7 +1082,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3049;
+				CURRENT_PROJECT_VERSION = 3050;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1095,7 +1103,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.31;
+				MARKETING_VERSION = 0.3.32;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1197,7 +1205,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3049;
+				CURRENT_PROJECT_VERSION = 3050;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1212,7 +1220,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.31;
+				MARKETING_VERSION = 0.3.32;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

@@ -62,11 +62,45 @@ Installed-app acceptance of the earlier SwiftUI `Menu` showed horizontal dots an
 
 On macOS 27 and later, AppKit's automatic menu image visibility typically hides action images even when `NSMenuItem.image` is set. Every action must set [`preferredImageVisibility`](https://developer.apple.com/documentation/appkit/nsmenuitem/preferredimagevisibility) to `.visible` under a macOS 27 availability check. Earlier systems retain the normal explicit-image behavior. The requirement is a visible icon beside each label; accessibility descriptions and tooltips do not satisfy it. Acceptance must inspect the opened menu on the installed system.
 
-Move Bookmarks, element hiding, reload, website identity switching and download status/actions into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary.
+Move Bookmarks, element hiding, reload and website identity switching into More Actions. Bookmarks uses the ribbon-shaped `bookmark` SF Symbol; the current-page action keeps `star` / `star.fill`. Selecting Bookmarks or element hiding opens the existing native popover anchored to More Actions. Each web app retains its own bookmark list and persistence boundary. Download status follows the separate compact presentation below.
 
 Owner correction (2026-10-11): each menu row uses a short action label, with no more than two English words. The labels are `Bookmarks`, `Hide Element` / `Cancel Selection`, `Reload`, and `Mobile Site` / `Desktop Site`. Simplified Chinese uses `收藏夹`, `隐藏元素` / `取消选取`, `刷新`, and `移动版` / `桌面版`. Do not put behavior explanations such as "Return to Configured Address and Reload" in menu rows. Download labels obey the same limit, including `Dismiss Download` and a count followed by `Downloads`.
 
-A download notice is indicated by a small dot on More Actions, without adding a fifth top-bar control. The menu retains download progress/completion/failure, revealing the saved file in Finder, and dismissing a finished notice. Dismissal only clears UI state; it does not delete the file. Running downloads cannot be dismissed.
+### Compact downloads (owner correction, 2026-10-21)
+
+Restore the visible download status beside More Actions. The earlier download dot and
+download rows inside the kebab menu are superseded. With no download records, More
+Actions remains the only right-side control. With records, a compact status capsule
+shows active progress, completion or failure and opens a small native popover anchored
+to that capsule. This is an upper-right menu-sized presentation, never a separate
+window, large modal or download-management page. Keep the close, pin and bookmark
+controls unchanged.
+
+The list shows filenames, native progress bars and percentages when a total is known,
+and transferred bytes when supplied by WebKit. Unknown totals remain indeterminate;
+do not invent percentages. Active downloads take precedence over a newer completed
+record in the capsule. Each completed file can be revealed in Finder. Missing files
+produce visible feedback. Finished records can be dismissed individually or cleared
+as a batch without deleting files; active records cannot be dismissed. The capsule's
+close action clears the finished batch, avoiding a sequence of old completion notices.
+Keep records scoped to the current web app/runtime; no new persistent history or
+pause/resume/cancellation feature is introduced. The popover has an explicit close
+button and native Escape/outside dismissal.
+
+Inspected implementation references: the pre-kebab `BrowserDownloadIndicator`
+(`git show d24c80f^:Sources/NeatWebApp/Features/Browser/BrowserContainerView.swift`)
+supplies the compact status location and Finder workflow; the current
+`BrowserBookmarkListPanel` supplies the native anchored popover and restrained row
+spacing. Reuse these patterns without the old focus outline. Apple's
+[Safari download list](https://support.apple.com/en-gb/guide/safari/sfri40598/27.0/mac/27)
+confirms the upper-right list/reveal/clear interaction; Safari's persistence and
+pause/resume policies are not adopted. Public APIs checked against official
+[popover](https://developer.apple.com/documentation/swiftui/view/popover(ispresented:attachmentanchor:arrowedge:content:)),
+[ProgressView](https://developer.apple.com/documentation/swiftui/progressview) and
+[WKDownload](https://developer.apple.com/documentation/webkit/wkdownload) documentation,
+and present in the installed Xcode 27.2 SDK: SwiftUI `popover`, `ProgressView`,
+`Button`, `ScrollView`, and `WKDownload.progress` via `NSProgressReporting`.
+Keep the system popover appearance; use existing SF Symbols for interface actions.
 
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
 
@@ -115,7 +149,7 @@ Overlapping pinned windows must not alternate key-window ownership: only the fro
 
 ## 验收
 
-Verify the collapsed band has three controls on the left and only More Actions on the right. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long menu labels must remain readable.
+Verify the band has three controls on the left, and More Actions plus the conditional download capsule on the right. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Exercise real downloads in the compact popover, including progress updates, concurrent active/completed records, failure, per-file Finder reveal and terminal-only clearing. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long labels must remain readable at a 423-point window width.
 
 改顶栏后至少要在**浅色页面和深色页面**各截一次图，确认：网页自身顶部导航完整可见、看不出横条与分割线、图标对比度足够、阴影没有断口。
 

@@ -414,11 +414,21 @@ final class BrowserSession {
     }
 
     func updateDownload(id: UUID, fractionCompleted: Double?) {
-        guard let index = downloadItems.firstIndex(where: { $0.id == id }) else {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id && $0.phase == .running }) else {
             return
         }
 
-        downloadItems[index].fractionCompleted = fractionCompleted
+        downloadItems[index].fractionCompleted = fractionCompleted.flatMap { $0.isFinite ? $0.clamped(to: 0 ... 1) : nil }
+    }
+
+    func updateDownload(id: UUID, completedBytes: Int64, totalBytes: Int64) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id && $0.phase == .running }) else {
+            return
+        }
+
+        downloadItems[index].completedBytes = max(0, completedBytes)
+        downloadItems[index].totalBytes = totalBytes > 0 ? totalBytes : nil
+        updateDownload(id: id, fractionCompleted: totalBytes > 0 ? Double(max(0, completedBytes)) / Double(totalBytes) : nil)
     }
 
     func updateDownload(id: UUID, filename: String) {
@@ -458,11 +468,36 @@ final class BrowserSession {
         downloadItems.removeAll { $0.id == id }
     }
 
-    func revealLatestDownload() {
-        guard let destinationURL = downloadItems.first(where: { $0.destinationURL != nil })?.destinationURL else {
+    var activeDownloadCount: Int {
+        downloadItems.filter { $0.phase == .running }.count
+    }
+
+    var downloadIndicatorItem: BrowserDownloadItem? {
+        downloadItems.first { $0.phase == .running } ?? downloadItems.first
+    }
+
+    var hasFinishedDownloads: Bool {
+        downloadItems.contains { $0.phase != .running }
+    }
+
+    /// Clear the finished batch, keeping active transfers and all saved files.
+    func clearFinishedDownloads() {
+        downloadItems.removeAll { $0.phase != .running }
+    }
+
+    func revealDownload(id: UUID) {
+        guard let index = downloadItems.firstIndex(where: { $0.id == id }),
+              downloadItems[index].phase == .completed,
+              let destinationURL = downloadItems[index].destinationURL else {
             return
         }
 
+        guard FileManager.default.fileExists(atPath: destinationURL.path) else {
+            downloadItems[index].message = String(localized: "browser.download.file_missing")
+            return
+        }
+
+        downloadItems[index].message = nil
         NSWorkspace.shared.activateFileViewerSelecting([destinationURL])
     }
 
@@ -595,6 +630,8 @@ struct BrowserDownloadItem: Identifiable, Equatable {
     var filename: String
     var phase: BrowserDownloadPhase
     var fractionCompleted: Double?
+    var completedBytes: Int64
+    var totalBytes: Int64?
     var destinationURL: URL?
     var message: String?
 
@@ -602,7 +639,9 @@ struct BrowserDownloadItem: Identifiable, Equatable {
         id: UUID = UUID(),
         filename: String,
         phase: BrowserDownloadPhase = .running,
-        fractionCompleted: Double? = 0,
+        fractionCompleted: Double? = nil,
+        completedBytes: Int64 = 0,
+        totalBytes: Int64? = nil,
         destinationURL: URL? = nil,
         message: String? = nil
     ) {
@@ -610,6 +649,8 @@ struct BrowserDownloadItem: Identifiable, Equatable {
         self.filename = filename
         self.phase = phase
         self.fractionCompleted = fractionCompleted
+        self.completedBytes = completedBytes
+        self.totalBytes = totalBytes
         self.destinationURL = destinationURL
         self.message = message
     }

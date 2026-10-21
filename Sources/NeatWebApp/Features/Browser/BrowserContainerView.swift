@@ -73,7 +73,10 @@ private struct BrowserChromeBand: View {
 
                 Spacer(minLength: 0)
 
-                BrowserMoreActionsControl(session: session, theme: theme)
+                HStack(spacing: BrowserChromeLayout.buttonSpacing) {
+                    BrowserDownloadControl(session: session, theme: theme)
+                    BrowserMoreActionsControl(session: session, theme: theme)
+                }
             }
             .padding(.horizontal, BrowserChromeLayout.windowMargin)
         }
@@ -106,7 +109,7 @@ private struct BrowserMoreActionsControl: View {
             .onHover { isHovered = $0 }
             .animation(accessibilityReduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
             .overlay(alignment: .topTrailing) {
-                if !session.downloadItems.isEmpty || session.isPickingElement {
+                if session.isPickingElement {
                     Circle()
                         .fill(theme.foregroundColor.color)
                         .frame(width: 4, height: 4)
@@ -130,7 +133,7 @@ private struct BrowserMoreActionsControl: View {
             .separator,
             .action(localized("browser.chrome.reload"), "arrow.clockwise", true, session.reload),
             .action(localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"), session.isMobileUA ? "laptopcomputer" : "iphone", true, session.toggleUA)
-        ] + BrowserDownloadMenuItems(session: session).entries
+        ]
     }
 
     private func toggleElementHiding() {
@@ -231,67 +234,6 @@ private struct BrowserNativeActionsMenu: NSViewRepresentable {
 
         @objc func performAction() {
             action()
-        }
-    }
-}
-
-@MainActor
-private struct BrowserDownloadMenuItems {
-    let session: BrowserSession
-
-    var entries: [BrowserMenuEntry] {
-        guard let latestDownload = session.downloadItems.first else { return [] }
-        var entries: [BrowserMenuEntry] = [
-            .separator,
-            .action(title(for: latestDownload), iconName(for: latestDownload.phase), latestDownload.destinationURL != nil, session.revealLatestDownload)
-        ]
-        if isDismissible(latestDownload) {
-            entries.append(.action(localized("browser.download.dismiss"), "xmark", true, { session.clearDownload(id: latestDownload.id) }))
-        }
-        return entries
-    }
-
-    private func isDismissible(_ item: BrowserDownloadItem) -> Bool {
-        item.phase != .running
-    }
-
-    private func title(for item: BrowserDownloadItem) -> String {
-        switch item.phase {
-        case .running:
-            let activeCount = session.downloadItems.filter { $0.phase == .running }.count
-            if activeCount > 1 {
-                return String(format: localized("browser.download.status.multiple"), activeCount)
-            }
-            if let fractionCompleted = item.fractionCompleted, fractionCompleted > 0, fractionCompleted < 1 {
-                return String(format: localized("browser.download.status.progress"), Int(fractionCompleted * 100))
-            }
-            return localized("browser.download.status.running")
-        case .completed:
-            return localized("browser.download.status.completed")
-        case .failed:
-            return localized("browser.download.status.failed")
-        }
-    }
-
-    private func iconName(for phase: BrowserDownloadPhase) -> String {
-        switch phase {
-        case .running:
-            return "arrow.down.circle"
-        case .completed:
-            return "checkmark.circle"
-        case .failed:
-            return "exclamationmark.triangle"
-        }
-    }
-
-    private func helpText(for item: BrowserDownloadItem) -> String {
-        switch item.phase {
-        case .running:
-            return String(format: localized("browser.download.help.running"), item.filename)
-        case .completed:
-            return String(format: localized("browser.download.help.reveal"), item.filename)
-        case .failed:
-            return item.message ?? localized("browser.download.status.failed")
         }
     }
 }

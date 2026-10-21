@@ -19,13 +19,19 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
 
         let filename = BrowserDownloadDestinationResolver.sanitizedFilename(from: suggestedFilename ?? String(localized: "browser.download.unnamed_file"))
         let itemID = session.startDownload(filename: filename)
-        let observation = download.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, _ in
+        let update: @Sendable (Progress) -> Void = { [weak self] progress in
+            let completedBytes = progress.completedUnitCount
+            let totalBytes = progress.totalUnitCount
             Task { @MainActor in
-                self?.session.updateDownload(id: itemID, fractionCompleted: progress.fractionCompleted)
+                self?.session.updateDownload(id: itemID, completedBytes: completedBytes, totalBytes: totalBytes)
             }
         }
+        let observations = [
+            download.progress.observe(\.completedUnitCount, options: [.initial, .new]) { progress, _ in update(progress) },
+            download.progress.observe(\.totalUnitCount, options: [.new]) { progress, _ in update(progress) }
+        ]
 
-        activeDownloads[identifier] = ActiveDownload(itemID: itemID, progressObservation: observation)
+        activeDownloads[identifier] = ActiveDownload(itemID: itemID, progressObservations: observations)
     }
 
     func download(
@@ -34,15 +40,13 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
         suggestedFilename: String,
         completionHandler: @escaping @MainActor (URL?) -> Void
     ) {
+        track(download, suggestedFilename: suggestedFilename)
         let destinationURL = destinationResolver.reserveDestination(suggestedFilename: suggestedFilename)
         let identifier = ObjectIdentifier(download)
 
         if let activeDownload = activeDownloads[identifier] {
             activeDownloads[identifier] = activeDownload.withDestinationURL(destinationURL)
             session.updateDownload(id: activeDownload.itemID, filename: destinationURL.lastPathComponent)
-        } else {
-            let itemID = session.startDownload(filename: destinationURL.lastPathComponent)
-            activeDownloads[identifier] = ActiveDownload(itemID: itemID, destinationURL: destinationURL)
         }
 
         completionHandler(destinationURL)
@@ -79,9 +83,9 @@ final class BrowserDownloadManager: NSObject, WKDownloadDelegate {
 private struct ActiveDownload {
     let itemID: UUID
     var destinationURL: URL?
-    var progressObservation: NSKeyValueObservation?
+    var progressObservations: [NSKeyValueObservation]
 
     func withDestinationURL(_ url: URL) -> ActiveDownload {
-        ActiveDownload(itemID: itemID, destinationURL: url, progressObservation: progressObservation)
+        ActiveDownload(itemID: itemID, destinationURL: url, progressObservations: progressObservations)
     }
 }
