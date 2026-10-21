@@ -49,6 +49,36 @@ The publisher supports `--resume-publication`: it validates retained app/DMG tic
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
+## 0.3.32 / 3050 (2026-10-21)
+
+The compact download presentation shipped from source commit `f08be79`; publisher
+and detached installation runner exited 0. Both targets compiled for arm64 and
+x86_64 in Release, and the complete archive/export logs retained only the assessed
+AppIntents metadata diagnostic. Debug build, 92 host tests, 101 runtime tests and
+clean-derived-data analysis passed on arm64; Intel execution was not exercised.
+
+Anonymous full-byte comparisons passed for the 5,840,823-byte DMG and 5,868,167-byte
+ZIP. SHA-256: DMG `86a4d7dace85abc9f17e0f6cf9e7ef7fc4c5d6a63c6e0228319d8c3e237455d8`;
+ZIP `6de8e08a6b077e6c4ca2498e66873bbe9a2eacef47c5e831e0cb4bd162b38448`.
+The exact signed public feed advertises build 3050 and this ZIP. The public Cask
+advertises 0.3.32 and the matching DMG hash. Release assets are available at
+[v0.3.32](https://github.com/NeatMacApps/NeatWebApp/releases/tag/v0.3.32).
+
+The exported, stapled application replaced `/Applications/NeatWebApp.app`, read back
+0.3.32 / 3050 and launched. Deep strict signature verification and ticket validation
+passed. `spctl` reported `accepted, source=Notarized Developer ID`, also reporting
+the machine's existing `override=security disabled`; this does not establish
+Gatekeeper enforcement on a clean Mac. A real installed-build download showed
+progress and completion and produced matching 8 MiB bytes. The session remained
+locked: expanded-list interaction, dark-page contrast and Finder/dismissal actions
+are still unverified as detailed in [browser-top-chrome.md](browser-top-chrome.md#compact-downloads-owner-correction-2026-10-21).
+
+Current leak scan found no blocking results: the six medium entropy findings are
+the intentionally public Sparkle verification key, existing taskboard prose,
+troubleshooting-index prose and a source exclusion path. No private credential was
+identified. Detailed check/runner output is retained in `build/download-verification/`;
+archive/export diagnostics remain in the standard release logs.
+
 ## 0.3.27 / 3045 verification limits (2026-10-13)
 
 More Actions now reuses the left controls' circular hover fill and Reduce Motion-aware timing. Debug build and clean-derived-data static analysis passed; both targets emit only the assessed no-AppIntents metadata diagnostic in [architecture.md](../architecture.md). The desktop is locked (loginwindow and Display Shield are visible in the window inventory), so installed light/dark hover, pointer exit and menu interaction acceptance remain unverified. The build selected arm64 from two same-device architecture destinations; this is a destination-selection diagnostic, not a source warning. No x86_64 execution was checked. Compilation does not establish those behaviors. Publication and installation status must be read from the retained release logs, not inferred from this version entry.

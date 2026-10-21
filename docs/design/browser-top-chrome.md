@@ -111,14 +111,22 @@ the existing AppIntents metadata tool warning remains; its assessment is in
 occurred during test-host teardown after the runtime suite passed, with no failed
 assertions; they do not establish installed pasteboard behavior.
 
-Installed Debug visual acceptance is limited: the session is locked. Native probing
-confirmed capture access, an initially inactive/asleep display, then active/awake
-output after a bounded wake. The new 423-point browser window can be captured, but
-its WebKit content is blank and Accessibility exposes no window for interaction.
-This proves neither the opened download list nor live progress, light/dark layout,
-Finder interaction or Escape/outside dismissal. Repeat those paths on the installed
-signed build when an interactive desktop is available; do not treat compilation or
-the blank-window capture as visual acceptance.
+Installed acceptance is limited by the locked session. Native probing confirmed
+capture access, an initially inactive/asleep display, then active/awake output after
+a bounded wake. A local fixture page automatically initiated an actual WebKit
+download: Debug captures showed 3%, 15% and completion; the final signed 0.3.32
+installation showed 60% and `Download Complete` in the restored capsule at a
+423-point window width. Both resulting 8 MiB files matched the fixture bytes.
+Simplified Chinese also showed the translated progress capsule. The byte-count,
+unknown-total and late-callback mechanism is documented in the shared
+[WebKit integration guide](../../../../_standards/workspace-docs/swift-docs/webkit-integration.md#download-progress).
+
+WebKit page pixels remain blank and Accessibility exposes no interactive window.
+The attempted dark-page launch therefore does not establish dark-page contrast.
+The opened download list, pseudolanguage layouts, Finder interaction and
+Escape/outside dismissal remain unverified. Repeat those paths on the installed
+signed build when an interactive desktop is available; do not treat compilation
+or the blank page as visual acceptance.
 
 置顶窗跟随鼠标聚焦：图钉置顶后，鼠标进入窗口即抢回 key 焦点并聚焦网页，便于并排多应用快速切换输入。无悬停延迟；拖拽/缩放、盖子未揭、有模态或鼠标按住时不抢。
 

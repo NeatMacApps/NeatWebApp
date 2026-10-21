@@ -4,7 +4,6 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| Restore visible download status and compact top-right download list | 验证中 | BrowserContainerView, BrowserDownloadPanel, BrowserSession, BrowserDownloadManager, runtime tests/localization, browser chrome docs, version/release | 2026-10-21 | 2026-10-21 | Primary model owns UI; Xcode 27.2, native popover/ProgressView; older Browser-wide entries have no current heartbeat; no shared extraction |
 | Fix browser window pointer offset during cross-display dragging | 验证中 | WebAppBrowserWindow, window placement regression tests/docs, version/release | 2026-10-20 | 2026-10-20 | 187 tests + build/analyze passed; Xcode 27.2; installed mixed-display drag acceptance next |
 | Generic page scroll oscillation investigation and fix | In progress | Browser scripts/session/layout, runtime regression tests, long-page troubleshooting, release | 2026-10-17 | 2026-10-17 | Current owner request; inspect installed behavior, no site-specific compatibility logic |
 | 继续执行 App 优化计划（退出联动/下载收藏/窗口越界/管理窗重画/长页性能） | 进行中 | Sources/NeatWebApp/App、Services/WebAppRuntimeCoordinator+RuntimeLauncher+WebAppBrowserWindow+WebAppWindowController*、Features/Dashboard+Settings+Browser、Sources/NeatWebAppRuntime、Sources/Shared、Tests、docs | 00:49 | 2026-09-21 00:49 | 续跑 2026-09-20 计划；保留工作区原型，已修构建错误，全量测试绿并覆盖安装验证中 |
