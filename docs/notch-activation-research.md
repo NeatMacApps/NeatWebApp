@@ -83,8 +83,11 @@ Owner report: clicking the launcher's plus button did nothing.
 - **The plus stays a normal item of the icon row.** Pinning it outside the scrolling row was
   rejected by the owner (2026-10-24): the row keeps its single left-aligned flow, the plus scrolls
   with the icons, and no icon gets a fixed trailing slot.
-- **Acceptance (2026-10-24)**: with the settings window closed, clicking the plus in the launcher
-  opens the management window and closes the launcher.
+- **Acceptance (2026-10-24)**: with the settings window closed, clicking the plus closes the
+  launcher and creates the management window (window list + screenshot). The window is ordered
+  in front and the app is activated with the same call the browser windows use, so it is not
+  left behind the active app. The focused-window check was blocked by a locked screen during
+  the final pass; re-check on the next interactive session.
 
 ## Pointer Monitoring
 
