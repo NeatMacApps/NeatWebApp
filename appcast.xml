@@ -6,6 +6,22 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.34</title>
+            <pubDate>Sat, 24 Oct 2026 18:19:34 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3052</sparkle:version>
+            <sparkle:shortVersionString>0.3.34</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.34
+
+- 把常用网站装成独立的 macOS 应用，从刘海位置的启动器一键唤出。
+- 支持应用内自动检查、下载并安装更新。
+- 安装包经过 Developer ID 签名与苹果公证，更新包另有 EdDSA 签名。
+- 下载版双击即可打开，不需要执行任何解除限制命令。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.34/NeatWebApp-0.3.34.zip" length="5912110" type="application/octet-stream" sparkle:edSignature="CtradgfGqhjS7iNUzakuHCTL+TgG7jclpH7nWU3ewG1XkWs64mpo2viExSCqKq+unt7FLweoYXicB4zPwe51AQ=="/>
+        </item>
+        <item>
             <title>0.3.33</title>
             <pubDate>Sat, 24 Oct 2026 16:58:36 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -164,30 +180,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.24/NeatWebApp-0.3.24.zip" length="5835569" type="application/octet-stream" sparkle:edSignature="Qzy78BXzWqOToBRnerPm2fAbh6ADQ9Dvlj4X33JKW2TjLUWvFQdz5/z6/PXCPRN5R2VXbmo8IkgMOYZIWWIQAw=="/>
         </item>
-        <item>
-            <title>0.3.23</title>
-            <pubDate>Sun, 11 Oct 2026 13:37:30 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatWebApp</link>
-            <sparkle:version>3041</sparkle:version>
-            <sparkle:shortVersionString>0.3.23</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatWebApp 0.3.23
-
-- Added a persistent two-column dotted grip to the floating activity Dock so its drag target is clear. The compact grip stays visible when app icons scroll and uses solid dots without hollow rings or blurred halos.
-- Kept native free dragging and remembered placement; no collapse or expand controls.
-- Shortened browser menu labels for faster scanning.
-
-## 简体中文
-
-- 悬浮活动 Dock 增加常驻双列点阵手柄，让拖动入口清晰可见；手柄区域保持紧凑，图标滚动时仍可见，使用实心圆点，去掉空心圈和模糊光晕。
-- 保留原生自由拖动和位置记忆，不增加展开或收缩控件。
-- 缩短浏览器菜单名称，便于快速查找。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.23/NeatWebApp-0.3.23.zip" length="5834376" type="application/octet-stream" sparkle:edSignature="Ng6nAAKW2TkcJb2COZfQG9+yGpnoJ2jIHMyk16C/na5BBsedYdW95ftKCUa/utA3ySjdiXBjoF2yAIbBd/WgCw=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: SeV8VzmFCWVFQ4DhTDsT36PQjEVyYlF/+Xi/klsvqh0IiwHzunWlrgxj83Hcct9sel1BQM0VLAYgHGVdlPaQDA==
-length: 13373
+edSignature: ski9bmL5WETaSy9vc09MkJrkRkQ38T+QYgkMokn8A73WIqFpJowTsqOZg+9YYgctLMmsokwNas7YEyJcw9MEBg==
+length: 12991
 -->
