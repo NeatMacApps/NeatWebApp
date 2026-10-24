@@ -80,6 +80,12 @@ Owner request (2026-10-24): Command-Tab must return to a running web app, includ
 one collapsed into the activity Dock. The host exposes one native NeatWebApp entry
 while at least one web app is running; the same public activation policy also
 makes its system Dock icon visible. With no web apps, it remains an accessory app.
+Apply this policy only after AppKit finishes launching, not from the initial
+SwiftUI `App.init` registry callback. The management `Settings` scene explicitly
+uses `.defaultLaunchBehavior(.suppressed)` and `.restorationBehavior(.disabled)`:
+promoting the host must not let SwiftUI's first-scene fallback open settings.
+These public scene APIs are available from macOS 15; see
+[launch behavior](https://developer.apple.com/documentation/swiftui/scene/defaultlaunchbehavior(_:)).
 Warm standby helpers never count as running web apps. Runtime helpers remain
 accessory applications so they do not create duplicate generic switcher entries.
 

@@ -58,6 +58,15 @@ That derived geometry is then expanded into an activation region and a launcher-
 - **验证状态（2026-10-07）**：拖动跟手、让位动画、松手落位已在真机截图确认；点图标空隙与顶部刘海段一次收起已由真人点击确认（界面手势版）。改为宿主监听判定后的「圆外黑角一次收起」、加号圆底、贴边自动滚动尚待用户手测，未发版。
 - **自动滚动的坐标（未实测确认）**：图标行用了左右内容边距，实测滚动几何的起点偏移是 -8（等于边距），可滚范围约 -8…83；实现按「读到的偏移与程序滚动目标同一坐标」处理。若手测发现拖动开始瞬间整行跳几点，先查这里。
 
+## Add item stays visible and opens the management window (2026-10-24)
+
+Owner report: clicking the launcher's plus button did nothing. Two independent defects produced that symptom.
+
+- **The plus was the last item of the scrolling icon row.** The bar is only as wide as the hardware notch (185 pt on a 14-inch MacBook Pro, room for four 36 pt slots). With six web apps the row needed 260 pt, so the plus was laid out past the bar's right edge and never drawn; a mouse wheel does not scroll that row, so the entry could not be reached at all. The plus is an app-level entry, not a web app, so it must not compete with the app icons for scroll space: when the row overflows, the plus is pinned outside the scroll view at the trailing edge, and only the web app icons scroll. When everything fits, the plus stays adjacent to the icons. The edge fade belongs to the scrolling region only; masking the whole row would fade the pinned plus.
+- **Opening the window relied on SwiftUI scene machinery that is not available in the launcher panel.** The panel hosts its own `NSHostingView` outside the scene graph, so scene actions (`openWindow`, `openSettings`) do not resolve there. Since 2026-10-12 the plus called `AppDelegate.showMainWindow()`, which used a presenter installed by an `onAppear` inside a command menu item, with a notification fallback observed only by the management window's own view. On a cold start neither exists, so the click hid the launcher and opened nothing.
+- **Use the app menu's Settings command instead.** On macOS 14+ the legacy `NSApp.sendAction(Selector(("showSettingsWindow:")))` no longer works ([SO 77597257](https://stackoverflow.com/questions/77597257/opening-swiftui-settings-from-appkit)), and `OpenSettingsAction` is only valid inside a view that belongs to a scene. The public path that works before any window exists is the Settings item SwiftUI installs in the app menu (the same item ⌘, performs): find the item with key equivalent ⌘ and perform its action. Verified on this Mac: an AX press on that item from a cold start creates the window. `ManagementWindowPresenter` owns this order: focus an existing settings window, otherwise perform that menu command, otherwise post the legacy notification.
+- **Acceptance (2026-10-24)**: cold start with six web apps, hover the notch, click the plus; the management window opens and the launcher closes. `NSWindow frame` update and screenshot confirmation are recorded in the release evidence.
+
 ## Pointer Monitoring
 
 A local event monitor alone is not sufficient because the pointer may move while another app is active. The current implementation combines:

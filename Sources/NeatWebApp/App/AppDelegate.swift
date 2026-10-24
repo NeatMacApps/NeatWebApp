@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
     var prepareForTermination: () -> Void = {}
+    var refreshApplicationSwitchingPolicy: () -> Void = {}
     var hasRunningWebApps: () -> Bool = { false }
     var restoreMostRecentWebApp: () -> Bool = { false }
     private var pendingWebAppRestoration: Task<Void, Never>?
@@ -26,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.isUpdateSessionInProgress() ?? false
         }
         readyAt = Date()
+        refreshApplicationSwitchingPolicy()
         // The catalog/settings window is not the daily entry (the notch launcher is).
         // Never auto-present it on launch — including when the menu bar icon is hidden.
         // A later Finder/Spotlight reopen of the already-running app still uses

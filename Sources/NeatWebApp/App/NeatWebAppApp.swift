@@ -21,6 +21,9 @@ struct NeatWebAppApp: App {
         appDelegate.prepareForTermination = { [weak appModel] in
             appModel?.prepareForApplicationTermination()
         }
+        appDelegate.refreshApplicationSwitchingPolicy = { [weak appModel] in
+            appModel?.runtimeCoordinator.refreshRegistry()
+        }
         appDelegate.hasRunningWebApps = { [weak appModel] in
             appModel?.runtimeCoordinator.hasRunningWebApps ?? false
         }
@@ -51,6 +54,8 @@ struct NeatWebAppApp: App {
                     openMainWindow()
                 }
         }
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
         // The Settings scene never opens on launch; with the icon hidden, AppDelegate recalls it on reopen.
         .commands {
             AppCommands(appModel: appModel)
