@@ -19,7 +19,6 @@ enum ManagementWindowPresenter {
         }
 
         if performSettingsMenuCommand() {
-            NSApp.activate()
             focusSettingsWindowAfterPresentation()
         }
     }
@@ -33,7 +32,10 @@ enum ManagementWindowPresenter {
     }
 
     private static func activate(_ window: NSWindow) {
-        NSApp.activate()
+        // A panel click does not make the app active, so the window would open behind
+        // whatever the user is working in. Keep the established activation call used by
+        // the rest of the app; plain `activate()` is not enough from a status-bar panel.
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
 
@@ -95,7 +97,7 @@ enum ManagementWindowPresenter {
             return false
         }
 
-        NSApp.activate()
+        NSApp.activate(ignoringOtherApps: true)
         NSApp.postEvent(event, atStart: false)
         return true
     }
