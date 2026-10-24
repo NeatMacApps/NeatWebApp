@@ -10,7 +10,7 @@ final class RuntimeDockIdentityTests: XCTestCase {
         XCTAssertFalse(changed)
     }
 
-    func testWebsiteIconIsInstalledBeforeNativePromotion() throws {
+    func testWebsiteIconIsInstalledAfterNativePromotionCreatesTheTile() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
         fixture.store.saveDockSource(try source(color: .red), for: "website")
@@ -22,7 +22,7 @@ final class RuntimeDockIdentityTests: XCTestCase {
         }, promoteApplication: { events.append("regular"); return true })
         defer { identity.stop() }
         identity.update(for: definition())
-        XCTAssertEqual(events, ["icon", "regular"])
+        XCTAssertEqual(events, ["regular", "icon"])
         let bitmap = try bitmap(of: XCTUnwrap(icon))
         XCTAssertGreaterThan(bitmap.colorAt(x: 256, y: 256)?.redComponent ?? 0, 0.9)
     }

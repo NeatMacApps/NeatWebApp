@@ -94,6 +94,10 @@ Render the temporary Dock image with SwiftUI's public continuous `RoundedRectang
 path and a neutral opaque backing for transparent site marks. This is runtime
 website-image presentation, not a redesign/replacement of the product's AppIcon
 or a claim that arbitrary website images are layered Icon Composer assets.
+Assign `applicationIconImage` after promoting the helper to `.regular`: installed
+macOS 27.2 acceptance showed that the promotion recreated the tile with the generic
+bundle icon when the website image was assigned only beforehand. A post-promotion
+assignment changed the actual native Dock tile; tests retain this ordering.
 Do not redraw website branding or copy the host icon into each running tile. The native app switcher and Dock remain
 system-owned; no custom switcher or global shortcut interception is needed.
 A runtime keeps its entry while its window is collapsed or hidden. Selecting that

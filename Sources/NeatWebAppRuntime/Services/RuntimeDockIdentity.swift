@@ -20,13 +20,13 @@ final class RuntimeDockIdentity {
 
     func update(for definition: WebAppDefinition) {
         stop()
+        // Promotion recreates the native tile and discards an image set while still accessory.
+        if !promoteApplication() {
+            NSLog("Unable to expose the web app in the system Dock and application switcher.")
+        }
         applyIcon(for: definition)
         faviconObserver = faviconStore.observeChanges(for: definition.id) { [weak self] in
             self?.applyIcon(for: definition)
-        }
-        // Set the website image before promotion so a cached site never flashes the host icon.
-        if !promoteApplication() {
-            NSLog("Unable to expose the web app in the system Dock and application switcher.")
         }
     }
 
