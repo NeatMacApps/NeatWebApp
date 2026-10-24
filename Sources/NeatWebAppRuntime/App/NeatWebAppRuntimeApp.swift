@@ -12,6 +12,8 @@ struct NeatWebAppRuntimeApp: App {
         Settings {
             EmptyView()
         }
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
         .commands {
             CommandGroup(replacing: .appSettings) {}
         }
@@ -47,6 +49,19 @@ final class RuntimeAppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             terminateUnlessTesting()
         }
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        runtimeCoordinator?.restoreWindowAfterApplicationActivation()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        runtimeCoordinator?.restoreWindowAfterApplicationActivation()
+        return false
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
     }
 
     func applicationWillTerminate(_ notification: Notification) {

@@ -8,8 +8,6 @@ struct NeatWebAppApp: App {
     private let appModel: AppModel
     private let appUpdater: AppUpdater
 
-    @Environment(\.openSettings) private var openSettings
-
     init() {
         let appModel = AppModel()
         appModel.startIfNeeded()
@@ -20,15 +18,6 @@ struct NeatWebAppApp: App {
         self.appUpdater = updater
         appDelegate.prepareForTermination = { [weak appModel] in
             appModel?.prepareForApplicationTermination()
-        }
-        appDelegate.refreshApplicationSwitchingPolicy = { [weak appModel] in
-            appModel?.runtimeCoordinator.refreshRegistry()
-        }
-        appDelegate.hasRunningWebApps = { [weak appModel] in
-            appModel?.runtimeCoordinator.hasRunningWebApps ?? false
-        }
-        appDelegate.restoreMostRecentWebApp = { [weak appModel] in
-            appModel?.runtimeCoordinator.restoreMostRecentWindow() ?? false
         }
         appDelegate.isUpdateSessionInProgress = { [weak updater] in
             updater?.updater.sessionInProgress ?? false
@@ -50,25 +39,12 @@ struct NeatWebAppApp: App {
                         appUpdater.updater.sessionInProgress
                     }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .neatWebAppOpenMainWindow)) { _ in
-                    openMainWindow()
-                }
         }
         .defaultLaunchBehavior(.suppressed)
         .restorationBehavior(.disabled)
         // The Settings scene never opens on launch; with the icon hidden, AppDelegate recalls it on reopen.
         .commands {
             AppCommands(appModel: appModel)
-            CommandGroup(after: .appInfo) {
-                Color.clear
-                    .frame(width: 0, height: 0)
-                    .accessibilityHidden(true)
-                    .onAppear {
-                        appDelegate.installMainWindowPresenter {
-                            openMainWindow()
-                        }
-                    }
-            }
         }
 
         MenuBarExtra(
@@ -121,8 +97,7 @@ struct NeatWebAppApp: App {
 
     /// 常驻菜单栏的应用打开窗口后不会自动激活，要手动抢一次前台，否则窗口会压在别的应用下面。
     private func openMainWindow() {
-        openSettings()
-        NSApplication.shared.activate()
+        ManagementWindowPresenter.present()
     }
 
     private var updateButtonTitle: String {

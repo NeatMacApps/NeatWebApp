@@ -2,11 +2,6 @@ import AppKit
 import MacKitCore
 import MacKitLifecycle
 
-extension Notification.Name {
-    /// 图标隐藏后或再次打开时，要求把主窗口带到前台。
-    static let neatWebAppOpenMainWindow = Notification.Name("NeatWebApp.openMainWindow")
-}
-
 /// 菜单栏宿主的退出与再次打开：藏图标时系统可能顺手 terminate，必须拦住。
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -14,10 +9,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
     var prepareForTermination: () -> Void = {}
-    var refreshApplicationSwitchingPolicy: () -> Void = {}
-    var hasRunningWebApps: () -> Bool = { false }
-    var restoreMostRecentWebApp: () -> Bool = { false }
-    private var pendingWebAppRestoration: Task<Void, Never>?
     private var presentMainWindow: (() -> Void)?
     /// 后台就绪时刻；菜单栏即主入口的二次启动防呆用。
     private var readyAt = Date()
@@ -27,43 +18,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.isUpdateSessionInProgress() ?? false
         }
         readyAt = Date()
-        refreshApplicationSwitchingPolicy()
         // The catalog/settings window is not the daily entry (the notch launcher is).
         // Never auto-present it on launch — including when the menu bar icon is hidden.
         // A later Finder/Spotlight reopen of the already-running app still uses
         // applicationShouldHandleReopen.
     }
 
-    /// Injected by the App scene, which owns `openSettings` for the management window.
+    /// Replacement injection point for tests and for callers that already own a scene action.
+    /// Production leaves it empty: `showMainWindow()` then uses `ManagementWindowPresenter`,
+    /// which works outside the SwiftUI scene graph.
     func installMainWindowPresenter(_ present: @escaping () -> Void) {
         presentMainWindow = present
     }
 
-    /// Opens the single management window from views hosted outside the scene graph (the launcher panel).
+    /// Opens the single management window from AppKit code outside the scene graph
+    /// (the launcher panel, reopen handling). Ownership of the window stays with SwiftUI.
     func showMainWindow() {
-        if let presentMainWindow {
-            presentMainWindow()
-        } else {
-            NotificationCenter.default.post(name: .neatWebAppOpenMainWindow, object: nil)
+        guard let presentMainWindow else {
+            ManagementWindowPresenter.present()
+            return
         }
-    }
 
-    func applicationDidBecomeActive(_ notification: Notification) {
-        scheduleWebAppRestoration()
-    }
-
-    private func scheduleWebAppRestoration() {
-        pendingWebAppRestoration?.cancel()
-        pendingWebAppRestoration = Task { @MainActor [weak self] in
-            // Let an explicit Settings/update/launch-cover presentation acquire its window first.
-            await Task.yield()
-            guard !Task.isCancelled, let self, NSApp.isActive,
-                  !self.isUpdateSessionInProgress(),
-                  !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeKey && !($0 is NSPanel) }) else {
-                return
-            }
-            _ = self.restoreMostRecentWebApp()
-        }
+        presentMainWindow()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -82,17 +58,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        pendingWebAppRestoration?.cancel()
         // Keep this idempotent: this is also the fallback for termination paths
         // that do not give the normal quit action another callback opportunity.
         prepareForTermination()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if hasRunningWebApps() {
-            scheduleWebAppRestoration()
-            return false
-        }
         let elapsed = Date().timeIntervalSince(readyAt)
         // Finder/`open` often delivers reopen as part of the same cold start.
         // That is not a second launch; showing the catalog would pop a config

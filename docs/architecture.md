@@ -76,49 +76,52 @@ Host and runtime are separate processes with separate preference domains. Window
 
 ## Application switching
 
-Owner request (2026-10-24): Command-Tab must return to a running web app, including
-one collapsed into the activity Dock. The host exposes one native NeatWebApp entry
-while at least one web app is running; the same public activation policy also
-makes its system Dock icon visible. With no web apps, it remains an accessory app.
-Apply this policy only after AppKit finishes launching, not from the initial
-SwiftUI `App.init` registry callback. The management `Settings` scene explicitly
-uses `.defaultLaunchBehavior(.suppressed)` and `.restorationBehavior(.disabled)`:
-promoting the host must not let SwiftUI's first-scene fallback open settings.
-These public scene APIs are available from macOS 15; see
-[launch behavior](https://developer.apple.com/documentation/swiftui/scene/defaultlaunchbehavior(_:)).
-Warm standby helpers never count as running web apps. Runtime helpers remain
-accessory applications so they do not create duplicate generic switcher entries.
+Owner correction (2026-10-24): each running web app may appear in the system Dock
+and Command-Tab, but its icon must be the website's own favicon, not the generic
+NeatWebApp icon. This supersedes the earlier single-host-entry implementation.
+The host remains an accessory menu-bar app; only helpers assigned to real web apps
+become regular applications. Warm standby helpers stay hidden until adoption.
 
-Activating the host through Command-Tab or the system Dock restores the most
-recently focused live web app through the existing runtime focus command, which
-already expands hidden/collapsed windows and moves them to the current Space.
-Collapse/hide events must not erase this focus history or promote a different app
-merely because it collapsed later. If that runtime exits, use the next most recently
-focused surviving runtime. Do not reload pages, start extra runtimes, change the
-80% auto-collapse rule, or open the management window to implement switching.
+A runtime uses native `NSApplication.setActivationPolicy(.regular)` and
+`applicationIconImage`, loading the existing per-web-app favicon cache and updating
+it when the website icon becomes available. Owner correction (2026-10-24): all
+system Dock icons use one Apple-style continuous rounded-rectangle silhouette,
+with consistent scale and margins, preserving each website's mark and colors.
+Do not reuse the launcher's circular crop as the source for new Dock icons.
+The host retains an uncropped favicon alongside the existing launcher cache;
+older circular cache entries are an offline fallback until the normal refresh.
+Render the temporary Dock image with SwiftUI's public continuous `RoundedRectangle`
+path and a neutral opaque backing for transparent site marks. This is runtime
+website-image presentation, not a redesign/replacement of the product's AppIcon
+or a claim that arbitrary website images are layered Icon Composer assets.
+Do not redraw website branding or copy the host icon into each running tile. The native app switcher and Dock remain
+system-owned; no custom switcher or global shortcut interception is needed.
+A runtime keeps its entry while its window is collapsed or hidden. Selecting that
+entry restores the same window/page/session on the current Space through the
+existing `showAndFocus` path. Its own `applicationDidBecomeActive` and reopen
+callbacks handle restoration; internal activation during launch or expansion must
+not restart presentation or reveal the launch cover early. Ending that runtime
+removes its entry. The existing 80% auto-collapse rule and manual collapse remain.
+
 The host passes the last real external application's identity (PID, launch date and
-bundle identifier) during launch/focus handoff. The runtime validates that identity
-before retaining it as the collapse return target; the host proxy itself must never
-be remembered as that target, or collapsing would immediately restore the browser.
-Explicit management/update windows and first-launch covers retain their own focus;
-internal host activation must not restore an unrelated browser behind them. A
-system Dock reopen with running web apps restores content instead of triggering
-the management-window second-launch fallback. With no runtimes, the existing
-Finder/Spotlight recovery behavior remains unchanged.
+bundle identifier) during launch/focus handoff. The runtime validates it before
+retaining a collapse return target and never chooses the host itself as that target.
+The management `Settings` scene explicitly suppresses launch and restoration;
+application switching never opens settings. Its explicit menu/Command-comma path
+and the host's existing Finder/Spotlight recovery behavior remain available.
 
-Reference inspected: the existing `WebAppRuntimeCoordinator.focus` →
-`RuntimeWindowCoordinator.handle` → `WebAppWindowController.showAndFocus` chain,
-plus MacKit's `AccessoryActivationSession` and
-[Helm's activation-policy implementation](https://www.polpiella.dev/keep-menu-bar-running-after-quitting-app).
-Reuse the public `NSApplication.setActivationPolicy`,
-`NSApplicationDelegate.applicationDidBecomeActive` and existing focus command;
-no custom switcher, global shortcut interception, or additional permission is
-needed. MacKit's temporary session is not used because it activates immediately
-and ends when a host window closes, whereas this entry must survive browser
-collapse in separate helper processes. These AppKit APIs are present in the
-installed Xcode 27.2 SDK (policy switching is available since macOS 10.6).
-Official contracts: [activation policy](https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy-swift.enum),
-[activation notification](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationdidbecomeactive(_:)).
+References inspected: the existing `WebAppWindowController.showAndFocus`, runtime
+App delegate, per-app `WebAppFaviconStore`, MacKit's `AccessoryActivationSession`,
+and [Helm's activation-policy implementation](https://www.polpiella.dev/keep-menu-bar-running-after-quitting-app).
+Reuse their applicable native policy/focus behavior and cached website images;
+do not use MacKit's temporary session, which activates immediately and hides an
+entry when a window closes. Official contracts:
+[activation policy](https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy-swift.enum),
+[application icon](https://developer.apple.com/documentation/appkit/nsapplication/applicationiconimage),
+[activation callback](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationdidbecomeactive(_:)).
+The installed Xcode 27.2 SDK declares these public AppKit APIs; the product remains
+macOS 15+. Icon/name behavior across multiple instances requires installed native
+Dock/Command-Tab acceptance, not just a running-process policy readback.
 
 ## Runtime Window Lifecycle
 
@@ -188,7 +191,7 @@ The browser bridge owns daily browser capabilities that WebKit does not enable b
 - JavaScript alert, confirm, prompt, and `window.close()` are mapped to native window behavior
 - browser-level keyboard shortcuts are resolved by `BrowserKeyCommand` and consumed in the web view's `performKeyEquivalent`
 
-`NeatWebAppRuntime` is `LSUIElement`, so it never shows a menu bar and only inherits the standard menu suite SwiftUI creates implicitly (Cut/Copy/Paste/Select All/Undo, Hide, Quit). Those keep working through that hidden menu, but no browser action has a menu item to hang a key equivalent on, so the web view owns them:
+`NeatWebAppRuntime` starts as `LSUIElement`; an assigned web app then becomes a regular application with its website icon in the Dock/app switcher. Its SwiftUI menu supplies standard editing, Hide and Quit commands. Browser actions still belong to the web view's `performKeyEquivalent`, so focused page fields cannot swallow them:
 
 | Shortcut | Action |
 | --- | --- |

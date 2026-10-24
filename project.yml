@@ -112,6 +112,8 @@ targets:
       - Sources/NeatWebApp/Services/WebAppWindowController+FramePlacement.swift
       - Sources/NeatWebApp/Services/WindowVisibleCoverage.swift
       - Sources/NeatWebApp/Services/WebAppFaviconStore.swift
+      - Sources/NeatWebApp/Services/WebAppFaviconImagePreparing.swift
+      - Sources/NeatWebApp/Services/WebAppIconNormalizer.swift
       - Sources/NeatWebApp/Models/WebAppDefinition.swift
       - Sources/NeatWebApp/Models/ScreenNotchGeometry.swift
       - Sources/NeatWebApp/Services/WebAppPreferencesStore.swift

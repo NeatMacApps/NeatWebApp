@@ -36,7 +36,6 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let runtimeMetricsProvider: RuntimeProcessMetricsProviding
     private let runtimeHealthMonitor: RuntimeHealthMonitor
     private var registry: [String: RuntimeState] = [:]
-    private var switchingHistory = WebAppSwitchingHistory()
     private var nextSequence = 1
     private var eventObserver: NSObjectProtocol?
     private var workspaceActivationObserver: NSObjectProtocol?
@@ -156,23 +155,6 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             reason: .openFromLauncher,
             showsPlaceholder: true
         )
-    }
-
-    var hasRunningWebApps: Bool {
-        registry.values.contains { $0.phase != .terminating }
-    }
-
-    /// The host is the single native app-switcher entry for all accessory runtimes.
-    @discardableResult
-    func restoreMostRecentWindow() -> Bool {
-        refreshRegistry()
-        // Activating a launch cover must not bring a different web app over the new one.
-        guard placeholderAppIDs.isEmpty else { return true }
-        guard let state = switchingHistory.restorationTarget(in: Array(registry.values)) else {
-            return false
-        }
-        focus(appID: state.appID)
-        return true
     }
 
     func focus(appID: String) {
@@ -633,9 +615,6 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         state: RuntimeState,
         definition: WebAppDefinition? = nil
     ) {
-        if commandName == .showWindow || commandName == .focusWindow || commandName == .expandWindow {
-            switchingHistory.recordFocus(appID: state.appID)
-        }
         let command = RuntimeCommand(
             instanceID: state.instanceID,
             appID: state.appID,
@@ -663,10 +642,6 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             floatingIconFrame: event.floatingIconFrame,
             lastUpdatedAt: event.lastUpdatedAt
         )
-
-        if event.event == .windowFocused || event.event == .windowExpanded {
-            switchingHistory.recordFocus(appID: event.appID)
-        }
 
         switch event.event {
         case .windowShown, .windowFocused, .windowExpanded:
@@ -702,7 +677,6 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     }
 
     private func publishRuntimeStates() {
-        switchingHistory.retainRunningApps(in: Array(registry.values))
         onRuntimeStatesChange(
             registry.values.sorted {
                 if $0.lastUpdatedAt == $1.lastUpdatedAt {

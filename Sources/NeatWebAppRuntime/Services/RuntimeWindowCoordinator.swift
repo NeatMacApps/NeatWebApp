@@ -12,6 +12,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private let hostProcessID: Int32?
     private let preferencesStore = WebAppPreferencesStore()
     private let dockReserveStore = SideDockReserveStore()
+    private let dockIdentity = RuntimeDockIdentity()
     private var windowController: WebAppWindowController?
     private var hasPreparedTermination = false
     private var dockReserveObserver: NSObjectProtocol?
@@ -74,6 +75,14 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             self.windowController?.applyDockReserve(self.dockReserveStore.load())
         }
         restoreInitialPresentation(with: controller)
+        dockIdentity.update(for: bootstrap.definition)
+    }
+
+    func restoreWindowAfterApplicationActivation() {
+        guard let controller = windowController, let window = controller.window,
+              !controller.isAnimatingFloatingIconTransition,
+              !window.isVisible || window.isMiniaturized else { return }
+        controller.showAndFocus(preferredGeometry: resolvePreferredGeometry())
     }
 
     func prepareForTermination() {
@@ -82,6 +91,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         }
 
         hasPreparedTermination = true
+        dockIdentity.stop()
         if let dockReserveObserver {
             dockReserveStore.removeObserver(dockReserveObserver)
             self.dockReserveObserver = nil
@@ -212,6 +222,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             NSLog("Failed to save the updated runtime bootstrap: %@", error.localizedDescription)
         }
         appModel.applyDefinition(definition)
+        dockIdentity.update(for: definition)
         windowController?.applyDefinition(definition)
     }
 

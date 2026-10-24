@@ -2,8 +2,9 @@ import AppKit
 
 /// WebApp 窗口内的浏览器级快捷键。
 ///
-/// 运行时进程是 `LSUIElement`，永远不显示菜单栏，只能拿到 SwiftUI 隐式生成的标准菜单
-/// （复制、粘贴、撤销、全选等），浏览器动作没有任何菜单项可挂，因此这里自己做按键映射，
+/// Assigned runtimes expose their website icon in the native Dock/app switcher. Their
+/// SwiftUI menu supplies standard editing commands, but browser actions are mapped here,
+///
 /// 交给 WebView 在 `performKeyEquivalent` 阶段消费——网页里的输入框拿到焦点时，
 /// 普通 `keyDown` 会先被网页吃掉。
 ///

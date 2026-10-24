@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 
 extension AppModel {
@@ -146,14 +145,6 @@ extension AppModel {
     }
 
     func handleRuntimeStatesChange(_ states: [RuntimeState]) {
-        // Initial registry loading precedes AppKit launch. The delegate refreshes it once ready.
-        if let application = NSApp, application.isRunning {
-            let policy: NSApplication.ActivationPolicy = states.contains { $0.phase != .terminating }
-                ? .regular : .accessory
-            if application.activationPolicy() != policy, !application.setActivationPolicy(policy) {
-                NSLog("Unable to update the application switching policy to %ld.", policy.rawValue)
-            }
-        }
         let collapsedAppIDs = Set(
             states.lazy
                 .filter { $0.phase == .collapsedToFloatingIcon }

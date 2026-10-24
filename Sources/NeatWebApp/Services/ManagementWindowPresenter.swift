@@ -37,16 +37,17 @@ enum ManagementWindowPresenter {
         window.makeKeyAndOrderFront(nil)
     }
 
-    /// SwiftUI may realise the window on the next main-queue turn instead of synchronously.
+    /// SwiftUI realises the window asynchronously, and activating before it exists is
+    /// dropped by the system. Poll for a short while and then bring the app forward.
     private static func focusSettingsWindowAfterPresentation() {
-        if let window = settingsWindow() {
-            activate(window)
-            return
-        }
-
         Task { @MainActor in
-            if let window = settingsWindow() {
-                activate(window)
+            for _ in 0..<12 {
+                if let window = settingsWindow() {
+                    activate(window)
+                    return
+                }
+
+                try? await Task.sleep(for: .milliseconds(50))
             }
         }
     }

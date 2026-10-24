@@ -25,7 +25,11 @@ struct LauncherOverlayRootView: View {
     let onSelectApp: (WebAppDefinition) -> Void
 
     private var launcherItems: [LauncherItem] {
-        orderedApps.map(LauncherItem.webApp) + [.dashboard]
+        webAppItems + [.dashboard]
+    }
+
+    private var webAppItems: [LauncherItem] {
+        orderedApps.map(LauncherItem.webApp)
     }
 
     var body: some View {
@@ -91,7 +95,6 @@ struct LauncherOverlayRootView: View {
 
     private func iconRow(layout: LauncherPresentationContext.Layout) -> some View {
         iconRowContent(layout: layout)
-            .mask(edgeFadeMask)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .frame(height: layout.iconRowHeight, alignment: .top)
             .animation(.easeOut(duration: 0.12), value: edgeFadeState)
@@ -100,51 +103,63 @@ struct LauncherOverlayRootView: View {
     @ViewBuilder
     private func iconRowContent(layout: LauncherPresentationContext.Layout) -> some View {
         if layout.shouldScroll {
-            ScrollView(.horizontal, showsIndicators: false) {
-                iconButtons(layout: layout)
-                    .scrollTargetLayout()
-            }
-            .contentMargins(.horizontal, layout.iconHorizontalPadding, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
-            .scrollPosition($scrollPosition)
-            .scrollClipDisabled()
-            .onScrollGeometryChange(for: LauncherScrollMetrics.self) { geometry in
-                LauncherScrollMetrics(geometry: geometry)
-            } action: { _, newValue in
-                scrollMetrics = newValue
-            }
-            .onGeometryChange(for: CGRect.self) { proxy in
-                proxy.frame(in: .global)
-            } action: { newValue in
-                scrollViewportFrame = newValue
-            }
-            .onScrollGeometryChange(for: LauncherEdgeFadeState.self) { geometry in
-                LauncherEdgeFadeState(
-                    scrollGeometry: geometry,
-                    horizontalPadding: layout.iconHorizontalPadding
-                )
-            } action: { _, newValue in
-                edgeFadeState = newValue
+            // 图标行放不下时只让网页应用图标滚动，加号固定在右侧。
+            // 它是应用级入口，不能跟着图标滚出可视区——那等于把「打开主窗口」藏起来。
+            HStack(alignment: .top, spacing: 0) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    iconButtons(items: webAppItems, layout: layout)
+                        .scrollTargetLayout()
+                }
+                .contentMargins(.horizontal, layout.iconHorizontalPadding, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition($scrollPosition)
+                .scrollClipDisabled()
+                .onScrollGeometryChange(for: LauncherScrollMetrics.self) { geometry in
+                    LauncherScrollMetrics(geometry: geometry)
+                } action: { _, newValue in
+                    scrollMetrics = newValue
+                }
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .global)
+                } action: { newValue in
+                    scrollViewportFrame = newValue
+                }
+                .onScrollGeometryChange(for: LauncherEdgeFadeState.self) { geometry in
+                    LauncherEdgeFadeState(
+                        scrollGeometry: geometry,
+                        horizontalPadding: layout.iconHorizontalPadding
+                    )
+                } action: { _, newValue in
+                    edgeFadeState = newValue
+                }
+                // 边缘过渡只属于滚动区；套到整行会把固定的加号一起淡掉。
+                .mask(edgeFadeMask)
+
+                iconButton(item: .dashboard, layout: layout)
+                    .frame(width: layout.addSlotWidth, alignment: .trailing)
             }
         } else if launcherItems.count == 1 {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
-                iconButtons(layout: layout)
+                iconButtons(items: launcherItems, layout: layout)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, layout.iconHorizontalPadding)
         } else {
             HStack(spacing: 0) {
-                iconButtons(layout: layout)
+                iconButtons(items: launcherItems, layout: layout)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, layout.iconHorizontalPadding)
         }
     }
 
-    private func iconButtons(layout: LauncherPresentationContext.Layout) -> some View {
+    private func iconButtons(
+        items: [LauncherItem],
+        layout: LauncherPresentationContext.Layout
+    ) -> some View {
         HStack(alignment: .top, spacing: layout.iconSpacing) {
-            ForEach(launcherItems) { item in
+            ForEach(items) { item in
                 iconButton(item: item, layout: layout)
             }
         }
@@ -392,7 +407,7 @@ struct LauncherOverlayRootView: View {
             onSelectApp(app)
         case .dashboard:
             appModel.hideLauncher(immediately: true)
-            (NSApp.delegate as? AppDelegate)?.showMainWindow()
+            ManagementWindowPresenter.present()
         }
     }
 

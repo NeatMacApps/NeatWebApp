@@ -21,6 +21,12 @@ struct LauncherPresentationContext: Equatable, Sendable {
                 height: barSize.height + panelBottomPadding
             )
         }
+
+        /// 图标行放不下时，加号固定在行尾独占的宽度：图标本身、它与图标行的间距、行尾内边距。
+        /// 加号是应用级入口，不能被滚动区挤到看不见的地方。
+        var addSlotWidth: CGFloat {
+            iconSize + iconSpacing + iconHorizontalPadding
+        }
     }
 
     let geometry: ScreenNotchGeometry

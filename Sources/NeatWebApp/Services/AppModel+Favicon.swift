@@ -116,6 +116,7 @@ extension AppModel {
             return
         }
 
+        faviconStore.saveDockSource(image, for: appID)
         let normalizedImage = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
         faviconMemoryCache.store(normalizedImage, for: appID)
         faviconStore.save(normalizedImage, for: appID)

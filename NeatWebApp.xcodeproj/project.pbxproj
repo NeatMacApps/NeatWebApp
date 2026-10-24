@@ -13,6 +13,7 @@
 		03DC0D096D237AE010145EDE /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
 		053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
 		0937D755A341693BD29F6C32 /* AppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAACF7514AACDFED1FCC44F /* AppPreferencesStore.swift */; };
+		09C9B7EEC567342F88910471 /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		0A038C6B5FD86944B36705DC /* MacKitUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = 15A2F506E8CA2097B82F9F36 /* MacKitUpdater */; };
 		0BD6E80B683962E747B95377 /* BrowserDownloadDestinationResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5251982D120DB93D8AF56428 /* BrowserDownloadDestinationResolverTests.swift */; };
 		0ECAB78372A0A9CB81E8B068 /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B6E6D82411C62C8C81826 /* BrowserWebView.swift */; };
@@ -48,6 +49,7 @@
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */; };
 		50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
+		51491DB1F19D547D0CBAC550 /* RuntimeDockIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B7A7905FF98401C35E50582 /* RuntimeDockIdentityTests.swift */; };
 		51F50D59AC16B43CD497B39B /* SettingsPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */; };
 		54161B39D4D5D3CEE355AD78 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */; };
 		57AAD8C3620E8214942B09CB /* BrowserDownloadStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */; };
@@ -67,16 +69,16 @@
 		74CA6CEF02CC7A7472803574 /* RuntimeBootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE823187BD8E760027A23AEA /* RuntimeBootstrapLoader.swift */; };
 		74DD7835E63C246981247E38 /* WebAppFaviconMemoryCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AFE6A6F3C32A0BD7C7B607 /* WebAppFaviconMemoryCacheTests.swift */; };
 		7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */; };
-		77EA0D535DF3821E26C35951 /* WebAppSwitchingHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */; };
 		7926F5A4E94CB1F40F4A3DCD /* WebAppWindowController+FramePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = D691F7D5920B1A802329B73C /* WebAppWindowController+FramePlacement.swift */; };
 		7BB48B2FEC53B70D80028CBA /* RuntimeAppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */; };
+		7DBCE8A0EDCC24FFB29928D2 /* ManagementWindowPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC78B5910D7223B29C28FC50 /* ManagementWindowPresenter.swift */; };
 		817BF40EA1083A9C3112C4B0 /* SideDockOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4358833521E486B408BC9DBC /* SideDockOverlayRootView.swift */; };
 		81D743A4C462116F8795445A /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */; };
+		83648ADE128F1195E698B820 /* WebAppFaviconImagePreparing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7651A8811C098F15EC555632 /* WebAppFaviconImagePreparing.swift */; };
 		841A0DC1EABE5B409CE32E32 /* BrowserElementHidingScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */; };
 		845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */ = {isa = PBXBuildFile; productRef = FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */; };
 		898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
-		8F33EF58963610073A8E7E5B /* WebAppSwitchingHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */; };
 		958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */; };
 		95CE927752E483EA23997DF8 /* BrowserUserScriptsInstallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521CA5D23D659D716BBF1F96 /* BrowserUserScriptsInstallTests.swift */; };
 		975833919EE8C49A5F5EB1A3 /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
@@ -87,6 +89,7 @@
 		99E063C94472E720E4759907 /* MacKitLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = A82CEC9C739DBA32DB5BEC54 /* MacKitLifecycle */; };
 		9B0877DF32DA630BAE907157 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC457812D675337401F6B7A6 /* AppDelegate.swift */; };
 		9D0B050EE850F82D133D25EF /* AppModel+WebApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C084ACC3797AB50289A4CE2 /* AppModel+WebApps.swift */; };
+		9FF27453AFFFB3E16AA2E8AA /* RuntimeFocusReturnTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F56ADEC781C6E0204CEF3C8 /* RuntimeFocusReturnTargetTests.swift */; };
 		A2E13446DACEC8A5009DE4B8 /* WindowVisibleCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91EA688FCF891D0DB8CCF1D5 /* WindowVisibleCoverageTests.swift */; };
 		A7243172079700FAA6172130 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 26C080DE9BFB192B813F8AF3 /* Localizable.xcstrings */; };
 		A99EDC06F81B9C12BFDB2EA6 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
@@ -96,6 +99,7 @@
 		B22E00514FCD745321704093 /* BrowserExternalNavigationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */; };
 		BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104516AB0D614875D050B34D /* WebAppIconView.swift */; };
 		BB96BE8598BE043C6F554DF0 /* RuntimeCommandListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F27201C35EE84004BEEE965 /* RuntimeCommandListener.swift */; };
+		BE66CDB1B23FC1F90CAEF500 /* RuntimeDockIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF818EEBC5F317893E7452 /* RuntimeDockIdentity.swift */; };
 		BE9B43F23AE7130A54EB71D6 /* RuntimeBootstrapLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E982F70F601CE4E968D7F1 /* RuntimeBootstrapLoaderTests.swift */; };
 		BED783E45515854457B5BEEE /* SideDockOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4E7683C0CD075DD5F6B3AD /* SideDockOverlayController.swift */; };
 		BF8B414BB1B51D4679447C5C /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
@@ -189,7 +193,6 @@
 		13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserElementHidingScript.swift; sourceTree = "<group>"; };
 		156BEF08D8828B0651C6F0AF /* 0.3.29.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.29.md; sourceTree = "<group>"; };
 		169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSwitchingHistoryTests.swift; sourceTree = "<group>"; };
 		1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppDefinition.swift; sourceTree = "<group>"; };
 		1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeSupportDirectory.swift; sourceTree = "<group>"; };
 		227C0DAE2EAFC68634EB0C6B /* 0.3.4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.4.md; sourceTree = "<group>"; };
@@ -236,7 +239,6 @@
 		6535023594466573F6BD745C /* WebAppFaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconLoader.swift; sourceTree = "<group>"; };
 		67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHealthMonitorTests.swift; sourceTree = "<group>"; };
 		67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebAppWindowController+FloatingIcon.swift"; sourceTree = "<group>"; };
-		6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSwitchingHistory.swift; sourceTree = "<group>"; };
 		6D4E7683C0CD075DD5F6B3AD /* SideDockOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockOverlayController.swift; sourceTree = "<group>"; };
 		72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserExternalNavigationPolicy.swift; sourceTree = "<group>"; };
 		75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconStore.swift; sourceTree = "<group>"; };
@@ -245,12 +247,14 @@
 		7651A8811C098F15EC555632 /* WebAppFaviconImagePreparing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconImagePreparing.swift; sourceTree = "<group>"; };
 		78ADBEA562179D96FE84C73F /* 0.3.23.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.23.md; sourceTree = "<group>"; };
 		79539E73EF39352B35A55B6C /* LaunchPlaceholderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchPlaceholderController.swift; sourceTree = "<group>"; };
+		7B7A7905FF98401C35E50582 /* RuntimeDockIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeDockIdentityTests.swift; sourceTree = "<group>"; };
 		7C0EC99CC12C2CF75E76E9D5 /* RuntimeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeModels.swift; sourceTree = "<group>"; };
 		7C243140E6212B5615A0C9D3 /* publish-local.env */ = {isa = PBXFileReference; path = "publish-local.env"; sourceTree = "<group>"; };
 		80B48173EF6202C4AFC2C0CC /* 0.3.8.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.8.md; sourceTree = "<group>"; };
 		849B0F6F38FBDE8583D3B1FD /* 0.3.1.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.1.md; sourceTree = "<group>"; };
 		87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometry.swift; sourceTree = "<group>"; };
 		88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowPlacementLaunchTests.swift; sourceTree = "<group>"; };
+		8F56ADEC781C6E0204CEF3C8 /* RuntimeFocusReturnTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeFocusReturnTargetTests.swift; sourceTree = "<group>"; };
 		91EA688FCF891D0DB8CCF1D5 /* WindowVisibleCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowVisibleCoverageTests.swift; sourceTree = "<group>"; };
 		933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadStatusTests.swift; sourceTree = "<group>"; };
 		93E982F70F601CE4E968D7F1 /* RuntimeBootstrapLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeBootstrapLoaderTests.swift; sourceTree = "<group>"; };
@@ -296,6 +300,7 @@
 		D97408F059C53BA18814C526 /* NeatWebAppRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeEventPublisher.swift; sourceTree = "<group>"; };
+		DCCF818EEBC5F317893E7452 /* RuntimeDockIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeDockIdentity.swift; sourceTree = "<group>"; };
 		E04E737919EBF36DA156FC46 /* publish-release.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "publish-release.sh"; sourceTree = "<group>"; };
 		E289709351426DD39225C62E /* 0.3.32.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.32.md; sourceTree = "<group>"; };
 		E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockPlacementTests.swift; sourceTree = "<group>"; };
@@ -319,6 +324,7 @@
 		FA8E0636DDA9544F89A1DF07 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeTheme.swift; sourceTree = "<group>"; };
 		FAEE97117BE593E10BB07730 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		FC78B5910D7223B29C28FC50 /* ManagementWindowPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagementWindowPresenter.swift; sourceTree = "<group>"; };
 		FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayRootView.swift; sourceTree = "<group>"; };
 		FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppIconNormalizer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -353,6 +359,7 @@
 				521CA5D23D659D716BBF1F96 /* BrowserUserScriptsInstallTests.swift */,
 				D153AAAC2CEBD9238FE58516 /* FloatingIconSnapResolverTests.swift */,
 				93E982F70F601CE4E968D7F1 /* RuntimeBootstrapLoaderTests.swift */,
+				7B7A7905FF98401C35E50582 /* RuntimeDockIdentityTests.swift */,
 				F064968ED7E8033EDBBE526F /* WebAppWindowAutoCollapseTests.swift */,
 				EF732394FEB42B01E110C5DB /* WebAppWindowLaunchFrameTests.swift */,
 				91EA688FCF891D0DB8CCF1D5 /* WindowVisibleCoverageTests.swift */,
@@ -394,6 +401,7 @@
 				328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */,
 				F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */,
 				C57977D8DAC4B5A0185A191C /* LaunchPlaceholderCoordinatorTests.swift */,
+				8F56ADEC781C6E0204CEF3C8 /* RuntimeFocusReturnTargetTests.swift */,
 				67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */,
 				5FB57677B77DDAA3883AD1B3 /* RuntimeRegistryStoreTests.swift */,
 				257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */,
@@ -402,7 +410,6 @@
 				34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */,
 				0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */,
 				986EA0E7897C2F2D26403B3B /* WebAppPreferencesStoreTests.swift */,
-				1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */,
 				D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */,
 				88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */,
 			);
@@ -580,6 +587,7 @@
 				444290C186B94D63848D4F55 /* RuntimeAppModel.swift */,
 				CE823187BD8E760027A23AEA /* RuntimeBootstrapLoader.swift */,
 				4F27201C35EE84004BEEE965 /* RuntimeCommandListener.swift */,
+				DCCF818EEBC5F317893E7452 /* RuntimeDockIdentity.swift */,
 				DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */,
 				3A7262991AE7B7C2E52DB06C /* RuntimeHostLifecycleMonitor.swift */,
 				5B659482338571EEDBF5A9D1 /* RuntimeStandby.swift */,
@@ -638,6 +646,7 @@
 				A33922B59A6A520EBF73E69D /* HostMemoryPressureMonitor.swift */,
 				249468F78ECB158EF76D893C /* LauncherOverlayController.swift */,
 				79539E73EF39352B35A55B6C /* LaunchPlaceholderController.swift */,
+				FC78B5910D7223B29C28FC50 /* ManagementWindowPresenter.swift */,
 				270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */,
 				C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */,
 				A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */,
@@ -654,7 +663,6 @@
 				FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */,
 				05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */,
 				C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */,
-				6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */,
 				763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */,
 				9C08C578E84A6D6B91AD0989 /* WebAppWindowController+AutoCollapse.swift */,
 				67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */,
@@ -866,6 +874,7 @@
 				D30327832ACF73029AA7CA9B /* LaunchPlaceholderCoordinatorTests.swift in Sources */,
 				FF83C2338E69D5313467C47E /* LauncherPresentationContextTests.swift in Sources */,
 				4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */,
+				9FF27453AFFFB3E16AA2E8AA /* RuntimeFocusReturnTargetTests.swift in Sources */,
 				38CDA3B1E1182BF7F8B70EA2 /* RuntimeHealthMonitorTests.swift in Sources */,
 				EF92116A31AAC5E5495BABF0 /* RuntimeRegistryStoreTests.swift in Sources */,
 				7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */,
@@ -874,7 +883,6 @@
 				B0C402224827E36022AB2A7A /* WebAppFaviconStoreTests.swift in Sources */,
 				00E501563DF79AD51D160A17 /* WebAppOrderMoveTests.swift in Sources */,
 				99A94B44370712902506AB45 /* WebAppPreferencesStoreTests.swift in Sources */,
-				77EA0D535DF3821E26C35951 /* WebAppSwitchingHistoryTests.swift in Sources */,
 				28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */,
 				958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */,
 			);
@@ -902,6 +910,7 @@
 				5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */,
 				11F5F79C56256DD9DAFACF9E /* LauncherOverlayRootView.swift in Sources */,
 				42BB40148402990AFA14688D /* LauncherPresentationContext.swift in Sources */,
+				7DBCE8A0EDCC24FFB29928D2 /* ManagementWindowPresenter.swift in Sources */,
 				E785257BD4C3D661B97F5472 /* NeatWebAppApp.swift in Sources */,
 				50CCC4C251B629C85D8D55CC /* NotchActivationMonitor.swift in Sources */,
 				8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */,
@@ -927,7 +936,6 @@
 				BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */,
 				667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */,
 				6C94CC55D95577FE7CDDA210 /* WebAppRuntimeCoordinator.swift in Sources */,
-				8F33EF58963610073A8E7E5B /* WebAppSwitchingHistory.swift in Sources */,
 				28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */,
 				BF8B414BB1B51D4679447C5C /* WebAppWindowPlacement.swift in Sources */,
 			);
@@ -947,6 +955,7 @@
 				95CE927752E483EA23997DF8 /* BrowserUserScriptsInstallTests.swift in Sources */,
 				C91EE5D52855A67FAB29DB0D /* FloatingIconSnapResolverTests.swift in Sources */,
 				BE9B43F23AE7130A54EB71D6 /* RuntimeBootstrapLoaderTests.swift in Sources */,
+				51491DB1F19D547D0CBAC550 /* RuntimeDockIdentityTests.swift in Sources */,
 				C7CFB29D76DCBF3C46AF31BF /* WebAppWindowAutoCollapseTests.swift in Sources */,
 				3F55DE9DA94A02B25FAD683E /* WebAppWindowLaunchFrameTests.swift in Sources */,
 				A2E13446DACEC8A5009DE4B8 /* WindowVisibleCoverageTests.swift in Sources */,
@@ -976,6 +985,7 @@
 				74CA6CEF02CC7A7472803574 /* RuntimeBootstrapLoader.swift in Sources */,
 				C6064F8FC631E8352C4DCE57 /* RuntimeCommandBus.swift in Sources */,
 				BB96BE8598BE043C6F554DF0 /* RuntimeCommandListener.swift in Sources */,
+				BE66CDB1B23FC1F90CAEF500 /* RuntimeDockIdentity.swift in Sources */,
 				60CE1016D049876F3849958F /* RuntimeEventPublisher.swift in Sources */,
 				1F93E4EAA678A4DF5C5D6E41 /* RuntimeHostLifecycleMonitor.swift in Sources */,
 				FF351FCB373414DD5C663EA7 /* RuntimeModels.swift in Sources */,
@@ -987,8 +997,10 @@
 				C3114857C0069E7BA483668B /* ScreenNotchGeometry.swift in Sources */,
 				ECCD030047980CEB3EC5EE5B /* WebAppBrowserWindow.swift in Sources */,
 				2E76E497BEC0B2A99B1354D3 /* WebAppDefinition.swift in Sources */,
+				83648ADE128F1195E698B820 /* WebAppFaviconImagePreparing.swift in Sources */,
 				EDF6064356A37537C2EE5BA0 /* WebAppFaviconStore.swift in Sources */,
 				4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */,
+				09C9B7EEC567342F88910471 /* WebAppIconNormalizer.swift in Sources */,
 				FFB3A7624E8DC565D4EC7D75 /* WebAppPreferencesStore.swift in Sources */,
 				B0894FF652F3B43C49A0FA7E /* WebAppWindowController+AutoCollapse.swift in Sources */,
 				316732268B23ECEAA72742A2 /* WebAppWindowController+FloatingIcon.swift in Sources */,

@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 enum WebAppIconNormalizer {
     static func normalizedLauncherIcon(
@@ -45,6 +46,36 @@ enum WebAppIconNormalizer {
         context.restoreGState()
 
         return output
+    }
+
+    /// Runtime Dock images are already-rendered tiles, not full-bleed asset-catalog masters.
+    static func normalizedDockIcon(from image: NSImage, canvasSize: Int = 512) -> NSImage? {
+        guard canvasSize > 0,
+              let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let analysis = analyze(source),
+              let context = CGContext(
+                data: nil, width: canvasSize, height: canvasSize, bitsPerComponent: 8,
+                bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              ) else { return nil }
+
+        let side = CGFloat(canvasSize)
+        let bounds = CGRect(x: 0, y: 0, width: side, height: side)
+        let tile = bounds.insetBy(dx: side * 0.1, dy: side * 0.1)
+        let shape = RoundedRectangle(cornerRadius: tile.width * 0.225, style: .continuous)
+        context.addPath(shape.path(in: tile).cgPath)
+        context.clip()
+        context.setFillColor(analysis.backgroundColor.withAlphaComponent(1).cgColor)
+        context.fill(tile)
+        context.interpolationQuality = .high
+        let sourceImage = croppedImage(from: source, rect: analysis.visibleRect) ?? source
+        let sourceSize = CGSize(width: sourceImage.width, height: sourceImage.height)
+        let imageRect = analysis.isFullBleed
+            ? aspectFillRect(for: sourceSize, in: tile)
+            : aspectFitRect(for: sourceSize, in: tile.insetBy(dx: tile.width * 0.14, dy: tile.height * 0.14))
+        context.draw(sourceImage, in: imageRect)
+        guard let rendered = context.makeImage() else { return nil }
+        return NSImage(cgImage: rendered, size: NSSize(width: side, height: side))
     }
 
     private static func analyze(_ cgImage: CGImage) -> IconAnalysis? {
