@@ -6,6 +6,29 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.33</title>
+            <pubDate>Sat, 24 Oct 2026 16:58:36 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3051</sparkle:version>
+            <sparkle:shortVersionString>0.3.33</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## English
+
+- Switch directly to each running web app with Command-Tab or the system Dock, including windows collapsed into the activity Dock.
+- Each web app uses its website icon in a consistent Apple-style rounded rectangle. The host and warm standby helpers stay out of the Dock and app switcher.
+- Switching back restores the existing page and session without opening settings. The notch launcher, activity Dock and automatic window collapse remain available.
+- Open the management window directly from the notch launcher's Add button.
+
+## 简体中文
+
+- 支持通过 Command-Tab 或系统程序坞直接切换到每个正在运行的网页应用，已收进悬浮 Dock 的窗口也能恢复。
+- 每个网页应用使用自己网站的图标，统一呈现苹果风格的圆角矩形；主程序和预热进程不占系统 Dock 或应用切换列表。
+- 切回时恢复原有网页和会话，不会弹出设置；顶部刘海、悬浮 Dock 和窗口自动收起保持可用。
+- 支持从顶部刘海的加号直接打开管理窗口。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.33/NeatWebApp-0.3.33.zip" length="5910436" type="application/octet-stream" sparkle:edSignature="X1oTKTULWs9S4F3Aez/R1j+1cju2N80DxAkl6tM2FVglKP2tny5qrpOGxJK85C9icIcRTcEV8fbWWMNONZTCBg=="/>
+        </item>
+        <item>
             <title>0.3.32</title>
             <pubDate>Wed, 21 Oct 2026 11:19:39 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -162,25 +185,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.23/NeatWebApp-0.3.23.zip" length="5834376" type="application/octet-stream" sparkle:edSignature="Ng6nAAKW2TkcJb2COZfQG9+yGpnoJ2jIHMyk16C/na5BBsedYdW95ftKCUa/utA3ySjdiXBjoF2yAIbBd/WgCw=="/>
         </item>
-        <item>
-            <title>0.3.21</title>
-            <pubDate>Thu, 08 Oct 2026 17:37:42 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatWebApp</link>
-            <sparkle:version>3039</sparkle:version>
-            <sparkle:shortVersionString>0.3.21</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.21
-
-- 置顶窗口跟随鼠标自动聚焦：图钉置顶后，鼠标进入窗口即抢回焦点并聚焦网页，并排多应用切换输入更快；拖拽、启动盖未揭、有弹窗或按住鼠标时不抢。
-- 刷新按钮改为重载当前页面，不再跳回首页。
-- 新开网页应用更快：后台常备一个预热好的窗口进程，点开还没运行的网页应用时直接接手，省掉约 1.5 秒冷启动（实测从点击到网页请求发出由约 2 秒降到 0.4–0.5 秒）。
-- 刘海启动器抽屉更好用：点黑底空白处收起，图标拖动换位跟手不跳动，拖到边缘自动滚动。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.21/NeatWebApp-0.3.21.zip" length="5846212" type="application/octet-stream" sparkle:edSignature="Sizrt20R69tkJGjNlARJhGq/1V036My76WqBUGsq3uGJQPuBLKC9iYKh92jjK1EyDexeAa29XZUiZKAw/LzWCw=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: cjN3kPfyG5SJj5BGcz6xnwBPdFFCDVPiBWmz1VCaIa5AkjKdZx4XMED1Iaevr4oyWTiPAJ9mgwj54n6o2nCvDQ==
-length: 12981
+edSignature: SeV8VzmFCWVFQ4DhTDsT36PQjEVyYlF/+Xi/klsvqh0IiwHzunWlrgxj83Hcct9sel1BQM0VLAYgHGVdlPaQDA==
+length: 13373
 -->
