@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 extension AppModel {
@@ -145,6 +146,13 @@ extension AppModel {
     }
 
     func handleRuntimeStatesChange(_ states: [RuntimeState]) {
+        let policy: NSApplication.ActivationPolicy = states.contains { $0.phase != .terminating }
+            ? .regular : .accessory
+        // The first registry callback can precede creation of the NSApp global in SwiftUI init.
+        let application = NSApplication.shared
+        if application.activationPolicy() != policy, !application.setActivationPolicy(policy) {
+            NSLog("Unable to update the application switching policy to %ld.", policy.rawValue)
+        }
         let collapsedAppIDs = Set(
             states.lazy
                 .filter { $0.phase == .collapsedToFloatingIcon }

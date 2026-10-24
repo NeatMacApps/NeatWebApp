@@ -18,6 +18,7 @@ extension WebAppWindowController {
             environmentObservers.append(
                 center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                     Task { @MainActor in
+                        self?.rememberFrontmostExternalApplication()
                         self?.evaluateAutoCollapse()
                         if self?.window?.isKeyWindow == false {
                             self?.startCoverageWatch()

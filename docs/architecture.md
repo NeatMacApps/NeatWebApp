@@ -74,6 +74,46 @@ Placeholder windows live in the host process only as a **covering lid** while La
 
 Host and runtime are separate processes with separate preference domains. Window size and position therefore live in a shared Application Support file both processes read, and the host still passes the exact frame in the bootstrap so the first appearance cannot drift even if the two processes would otherwise pick different screens.
 
+## Application switching
+
+Owner request (2026-10-24): Command-Tab must return to a running web app, including
+one collapsed into the activity Dock. The host exposes one native NeatWebApp entry
+while at least one web app is running; the same public activation policy also
+makes its system Dock icon visible. With no web apps, it remains an accessory app.
+Warm standby helpers never count as running web apps. Runtime helpers remain
+accessory applications so they do not create duplicate generic switcher entries.
+
+Activating the host through Command-Tab or the system Dock restores the most
+recently focused live web app through the existing runtime focus command, which
+already expands hidden/collapsed windows and moves them to the current Space.
+Collapse/hide events must not erase this focus history or promote a different app
+merely because it collapsed later. If that runtime exits, use the next most recently
+focused surviving runtime. Do not reload pages, start extra runtimes, change the
+80% auto-collapse rule, or open the management window to implement switching.
+The host passes the last real external application's identity (PID, launch date and
+bundle identifier) during launch/focus handoff. The runtime validates that identity
+before retaining it as the collapse return target; the host proxy itself must never
+be remembered as that target, or collapsing would immediately restore the browser.
+Explicit management/update windows and first-launch covers retain their own focus;
+internal host activation must not restore an unrelated browser behind them. A
+system Dock reopen with running web apps restores content instead of triggering
+the management-window second-launch fallback. With no runtimes, the existing
+Finder/Spotlight recovery behavior remains unchanged.
+
+Reference inspected: the existing `WebAppRuntimeCoordinator.focus` →
+`RuntimeWindowCoordinator.handle` → `WebAppWindowController.showAndFocus` chain,
+plus MacKit's `AccessoryActivationSession` and
+[Helm's activation-policy implementation](https://www.polpiella.dev/keep-menu-bar-running-after-quitting-app).
+Reuse the public `NSApplication.setActivationPolicy`,
+`NSApplicationDelegate.applicationDidBecomeActive` and existing focus command;
+no custom switcher, global shortcut interception, or additional permission is
+needed. MacKit's temporary session is not used because it activates immediately
+and ends when a host window closes, whereas this entry must survive browser
+collapse in separate helper processes. These AppKit APIs are present in the
+installed Xcode 27.2 SDK (policy switching is available since macOS 10.6).
+Official contracts: [activation policy](https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy-swift.enum),
+[activation notification](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationdidbecomeactive(_:)).
+
 ## Runtime Window Lifecycle
 
 The 2026-09-21 implementation passes the host process identifier only as a launch-time supervision hint. The runtime resolves that identifier to an `NSRunningApplication` object before starting its monitor, so a reused PID is not treated as the original host. The monitor is cancelled during normal runtime cleanup. Site data remains in the existing per-web-app WebKit data store; lifecycle cleanup removes only runtime registry/bootstrap/lock artifacts. Build plus full unit tests pass; installed-app acceptance (real Quit linkage, abnormal-termination drill) is still pending.

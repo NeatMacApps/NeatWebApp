@@ -36,8 +36,11 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private let runtimeMetricsProvider: RuntimeProcessMetricsProviding
     private let runtimeHealthMonitor: RuntimeHealthMonitor
     private var registry: [String: RuntimeState] = [:]
+    private var switchingHistory = WebAppSwitchingHistory()
     private var nextSequence = 1
     private var eventObserver: NSObjectProtocol?
+    private var workspaceActivationObserver: NSObjectProtocol?
+    private var lastExternalApplication: NSRunningApplication?
     private var runtimeHealthCheckTask: Task<Void, Never>?
     private var migratingAppIDs: Set<String> = []
     private var recoveringAppIDs: Set<String> = []
@@ -84,11 +87,38 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.eventObserver = commandBus.observeEvents { [weak self] event in
             self?.handle(event)
         }
+        rememberExternalApplication()
+        workspaceActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.rememberExternalApplication() }
+        }
         refreshRegistry()
         startRuntimeHealthChecks()
     }
 
+    private func rememberExternalApplication() {
+        guard let application = NSWorkspace.shared.frontmostApplication,
+              application.activationPolicy == .regular,
+              let bundleID = application.bundleIdentifier,
+              bundleID != Bundle.main.bundleIdentifier,
+              bundleID != "com.geraltgraham.NeatWebAppRuntime" else { return }
+        lastExternalApplication = application
+    }
+
+    private var focusReturnTarget: RuntimeFocusReturnTarget? {
+        guard let application = lastExternalApplication, !application.isTerminated,
+              let launchDate = application.launchDate,
+              let bundleIdentifier = application.bundleIdentifier else { return nil }
+        return RuntimeFocusReturnTarget(
+            processID: application.processIdentifier,
+            launchDate: launchDate,
+            bundleIdentifier: bundleIdentifier
+        )
+    }
+
     func open(_ definition: WebAppDefinition, preferredGeometry: ScreenNotchGeometry?) {
+        rememberExternalApplication()
         refreshRegistry()
 
         if placeholderAppIDs.contains(definition.id),
@@ -128,7 +158,25 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         )
     }
 
+    var hasRunningWebApps: Bool {
+        registry.values.contains { $0.phase != .terminating }
+    }
+
+    /// The host is the single native app-switcher entry for all accessory runtimes.
+    @discardableResult
+    func restoreMostRecentWindow() -> Bool {
+        refreshRegistry()
+        // Activating a launch cover must not bring a different web app over the new one.
+        guard placeholderAppIDs.isEmpty else { return true }
+        guard let state = switchingHistory.restorationTarget(in: Array(registry.values)) else {
+            return false
+        }
+        focus(appID: state.appID)
+        return true
+    }
+
     func focus(appID: String) {
+        rememberExternalApplication()
         guard let state = registry[appID] else {
             return
         }
@@ -145,6 +193,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     }
 
     func expand(appID: String) {
+        rememberExternalApplication()
         guard let state = registry[appID] else {
             return
         }
@@ -227,7 +276,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                 restoredWindowFrame: bootstrap.restoredWindowFrame,
                 restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
                 createdAt: bootstrap.createdAt,
-                hostVersion: bootstrap.hostVersion
+                hostVersion: bootstrap.hostVersion,
+                focusReturnTarget: bootstrap.focusReturnTarget
             )
             do {
                 _ = try registryStore.saveBootstrap(updatedBootstrap)
@@ -310,7 +360,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             restoredWindowFrame: launchFrame,
             restoredFloatingIconFrame: nil,
             createdAt: .now,
-            hostVersion: hostVersion
+            hostVersion: hostVersion,
+            focusReturnTarget: focusReturnTarget
         )
     }
 
@@ -372,7 +423,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                     restoredWindowFrame: bootstrap.restoredWindowFrame,
                     restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
                     createdAt: .now,
-                    hostVersion: bootstrap.hostVersion
+                    hostVersion: bootstrap.hostVersion,
+                    focusReturnTarget: bootstrap.focusReturnTarget
                 )
             )
         }
@@ -508,7 +560,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             restoredWindowFrame: state.windowFrame,
             restoredFloatingIconFrame: state.floatingIconFrame,
             createdAt: .now,
-            hostVersion: hostVersion
+            hostVersion: hostVersion,
+            focusReturnTarget: focusReturnTarget ?? bootstrap.focusReturnTarget
         )
 
         do {
@@ -580,12 +633,16 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         state: RuntimeState,
         definition: WebAppDefinition? = nil
     ) {
+        if commandName == .showWindow || commandName == .focusWindow || commandName == .expandWindow {
+            switchingHistory.recordFocus(appID: state.appID)
+        }
         let command = RuntimeCommand(
             instanceID: state.instanceID,
             appID: state.appID,
             sequence: nextSequence,
             command: commandName,
-            definition: definition
+            definition: definition,
+            focusReturnTarget: focusReturnTarget
         )
         nextSequence += 1
         commandBus.send(command)
@@ -606,6 +663,10 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             floatingIconFrame: event.floatingIconFrame,
             lastUpdatedAt: event.lastUpdatedAt
         )
+
+        if event.event == .windowFocused || event.event == .windowExpanded {
+            switchingHistory.recordFocus(appID: event.appID)
+        }
 
         switch event.event {
         case .windowShown, .windowFocused, .windowExpanded:
@@ -641,6 +702,7 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     }
 
     private func publishRuntimeStates() {
+        switchingHistory.retainRunningApps(in: Array(registry.values))
         onRuntimeStatesChange(
             registry.values.sorted {
                 if $0.lastUpdatedAt == $1.lastUpdatedAt {

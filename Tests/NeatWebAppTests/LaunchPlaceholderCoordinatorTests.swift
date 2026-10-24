@@ -165,6 +165,49 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
         XCTAssertNil(fixture.registryStore.loadBootstrap(instanceID: standbyID))
     }
 
+    func testAppSwitcherRestoresCollapsedRuntimeWithoutLaunchingOrShowingCover() async throws {
+        let fixture = makeFixture()
+        let instanceID = UUID()
+        try fixture.registryStore.saveState(RuntimeState(
+            instanceID: instanceID, appID: claude.id, pid: ProcessInfo.processInfo.processIdentifier,
+            phase: .collapsedToFloatingIcon, windowFrame: nil, floatingIconFrame: nil, lastUpdatedAt: .now
+        ))
+        var commands: [RuntimeCommand] = []
+        let observer = fixture.commandBus.observeCommands(for: instanceID) { commands.append($0) }
+        defer { fixture.commandBus.removeObserver(observer) }
+
+        XCTAssertTrue(fixture.coordinator.restoreMostRecentWindow())
+        let received = await waitUntil { !commands.isEmpty }
+        XCTAssertTrue(received)
+        XCTAssertEqual(commands.first?.command, .focusWindow)
+        XCTAssertTrue(fixture.placeholder.shownAppIDs.isEmpty)
+        XCTAssertEqual(fixture.launcher.launchCount, 0)
+    }
+
+    func testAppSwitcherDoesNotRestoreAnotherAppDuringFirstLaunchCover() async throws {
+        let fixture = makeFixture()
+        let instanceID = UUID()
+        try fixture.registryStore.saveState(RuntimeState(
+            instanceID: instanceID, appID: "other", pid: ProcessInfo.processInfo.processIdentifier,
+            phase: .collapsedToFloatingIcon, windowFrame: nil, floatingIconFrame: nil, lastUpdatedAt: .now
+        ))
+        var commands: [RuntimeCommand] = []
+        let observer = fixture.commandBus.observeCommands(for: instanceID) { commands.append($0) }
+        defer { fixture.commandBus.removeObserver(observer) }
+        fixture.coordinator.open(claude, preferredGeometry: nil)
+        XCTAssertTrue(fixture.coordinator.restoreMostRecentWindow())
+        await Task.yield()
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(fixture.launcher.launchedAppIDs, [claude.id])
+    }
+
+    func testEmptyRegistryHasNoAppSwitcherRestoration() {
+        let fixture = makeFixture()
+        XCTAssertFalse(fixture.coordinator.hasRunningWebApps)
+        XCTAssertFalse(fixture.coordinator.restoreMostRecentWindow())
+        XCTAssertEqual(fixture.launcher.launchCount, 0)
+    }
+
     private func makeFixture(standbyPool: (any RuntimeStandbyProviding)? = nil) -> Fixture {
         let tempRoot = FileManager.default.temporaryDirectory
             .appending(path: "NeatWebAppPlaceholderTests-\(UUID().uuidString)", directoryHint: .isDirectory)

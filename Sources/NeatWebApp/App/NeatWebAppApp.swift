@@ -21,6 +21,15 @@ struct NeatWebAppApp: App {
         appDelegate.prepareForTermination = { [weak appModel] in
             appModel?.prepareForApplicationTermination()
         }
+        appDelegate.hasRunningWebApps = { [weak appModel] in
+            appModel?.runtimeCoordinator.hasRunningWebApps ?? false
+        }
+        appDelegate.restoreMostRecentWebApp = { [weak appModel] in
+            appModel?.runtimeCoordinator.restoreMostRecentWindow() ?? false
+        }
+        appDelegate.isUpdateSessionInProgress = { [weak updater] in
+            updater?.updater.sessionInProgress ?? false
+        }
     }
 
     var body: some Scene {

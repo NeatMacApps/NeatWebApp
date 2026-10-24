@@ -14,6 +14,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
     var prepareForTermination: () -> Void = {}
+    var hasRunningWebApps: () -> Bool = { false }
+    var restoreMostRecentWebApp: () -> Bool = { false }
+    private var pendingWebAppRestoration: Task<Void, Never>?
     private var presentMainWindow: (() -> Void)?
     /// 后台就绪时刻；菜单栏即主入口的二次启动防呆用。
     private var readyAt = Date()
@@ -43,6 +46,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        scheduleWebAppRestoration()
+    }
+
+    private func scheduleWebAppRestoration() {
+        pendingWebAppRestoration?.cancel()
+        pendingWebAppRestoration = Task { @MainActor [weak self] in
+            // Let an explicit Settings/update/launch-cover presentation acquire its window first.
+            await Task.yield()
+            guard !Task.isCancelled, let self, NSApp.isActive,
+                  !self.isUpdateSessionInProgress(),
+                  !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeKey && !($0 is NSPanel) }) else {
+                return
+            }
+            _ = self.restoreMostRecentWebApp()
+        }
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
@@ -59,12 +80,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        pendingWebAppRestoration?.cancel()
         // Keep this idempotent: this is also the fallback for termination paths
         // that do not give the normal quit action another callback opportunity.
         prepareForTermination()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if hasRunningWebApps() {
+            scheduleWebAppRestoration()
+            return false
+        }
         let elapsed = Date().timeIntervalSince(readyAt)
         // Finder/`open` often delivers reopen as part of the same cold start.
         // That is not a second launch; showing the catalog would pop a config

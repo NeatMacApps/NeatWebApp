@@ -65,6 +65,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil
         )
         windowController = controller
+        controller.applyFocusReturnTarget(bootstrap.focusReturnTarget)
         dockReserveObserver = dockReserveStore.observeChanges { [weak self] in
             guard let self else {
                 return
@@ -164,6 +165,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
 
         switch command.command {
         case .showWindow, .focusWindow, .expandWindow:
+            windowController?.applyFocusReturnTarget(command.focusReturnTarget)
             windowController?.showAndFocus(preferredGeometry: resolvePreferredGeometry())
         case .collapseWindow:
             windowController?.collapseWindow()
@@ -201,7 +203,8 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             restoredWindowFrame: bootstrap.restoredWindowFrame,
             restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
             createdAt: bootstrap.createdAt,
-            hostVersion: bootstrap.hostVersion
+            hostVersion: bootstrap.hostVersion,
+            focusReturnTarget: bootstrap.focusReturnTarget
         )
         do {
             _ = try registryStore.saveBootstrap(bootstrap)

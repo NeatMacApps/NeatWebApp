@@ -67,6 +67,7 @@
 		74CA6CEF02CC7A7472803574 /* RuntimeBootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE823187BD8E760027A23AEA /* RuntimeBootstrapLoader.swift */; };
 		74DD7835E63C246981247E38 /* WebAppFaviconMemoryCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AFE6A6F3C32A0BD7C7B607 /* WebAppFaviconMemoryCacheTests.swift */; };
 		7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */; };
+		77EA0D535DF3821E26C35951 /* WebAppSwitchingHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */; };
 		7926F5A4E94CB1F40F4A3DCD /* WebAppWindowController+FramePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = D691F7D5920B1A802329B73C /* WebAppWindowController+FramePlacement.swift */; };
 		7BB48B2FEC53B70D80028CBA /* RuntimeAppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */; };
 		817BF40EA1083A9C3112C4B0 /* SideDockOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4358833521E486B408BC9DBC /* SideDockOverlayRootView.swift */; };
@@ -75,6 +76,7 @@
 		841A0DC1EABE5B409CE32E32 /* BrowserElementHidingScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */; };
 		845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */ = {isa = PBXBuildFile; productRef = FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */; };
 		898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
+		8F33EF58963610073A8E7E5B /* WebAppSwitchingHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */; };
 		958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */; };
 		95CE927752E483EA23997DF8 /* BrowserUserScriptsInstallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521CA5D23D659D716BBF1F96 /* BrowserUserScriptsInstallTests.swift */; };
 		975833919EE8C49A5F5EB1A3 /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
@@ -187,6 +189,7 @@
 		13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserElementHidingScript.swift; sourceTree = "<group>"; };
 		156BEF08D8828B0651C6F0AF /* 0.3.29.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.29.md; sourceTree = "<group>"; };
 		169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSwitchingHistoryTests.swift; sourceTree = "<group>"; };
 		1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppDefinition.swift; sourceTree = "<group>"; };
 		1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeSupportDirectory.swift; sourceTree = "<group>"; };
 		227C0DAE2EAFC68634EB0C6B /* 0.3.4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.4.md; sourceTree = "<group>"; };
@@ -233,6 +236,7 @@
 		6535023594466573F6BD745C /* WebAppFaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconLoader.swift; sourceTree = "<group>"; };
 		67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHealthMonitorTests.swift; sourceTree = "<group>"; };
 		67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebAppWindowController+FloatingIcon.swift"; sourceTree = "<group>"; };
+		6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSwitchingHistory.swift; sourceTree = "<group>"; };
 		6D4E7683C0CD075DD5F6B3AD /* SideDockOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockOverlayController.swift; sourceTree = "<group>"; };
 		72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserExternalNavigationPolicy.swift; sourceTree = "<group>"; };
 		75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconStore.swift; sourceTree = "<group>"; };
@@ -259,6 +263,7 @@
 		9FA06FD043117407C62C6795 /* 0.3.22.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.22.md; sourceTree = "<group>"; };
 		A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHealthMonitor.swift; sourceTree = "<group>"; };
 		A33922B59A6A520EBF73E69D /* HostMemoryPressureMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostMemoryPressureMonitor.swift; sourceTree = "<group>"; };
+		A3B883665D5AB3EF50FE13ED /* 0.3.33.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.33.md; sourceTree = "<group>"; };
 		A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherPresentationContext.swift; sourceTree = "<group>"; };
 		A8AFE6A6F3C32A0BD7C7B607 /* WebAppFaviconMemoryCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconMemoryCacheTests.swift; sourceTree = "<group>"; };
 		A8B239093AFEBF2974ED7349 /* RuntimeCommandBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeCommandBus.swift; sourceTree = "<group>"; };
@@ -397,6 +402,7 @@
 				34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */,
 				0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */,
 				986EA0E7897C2F2D26403B3B /* WebAppPreferencesStoreTests.swift */,
+				1D1B3B4A9856ED706805C666 /* WebAppSwitchingHistoryTests.swift */,
 				D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */,
 				88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */,
 			);
@@ -498,6 +504,7 @@
 				EEDB5E9EE24785458D0F91D5 /* 0.3.30.md */,
 				481847E8EDFBD506DF2371D6 /* 0.3.31.md */,
 				E289709351426DD39225C62E /* 0.3.32.md */,
+				A3B883665D5AB3EF50FE13ED /* 0.3.33.md */,
 			);
 			path = "release-notes";
 			sourceTree = "<group>";
@@ -647,6 +654,7 @@
 				FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */,
 				05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */,
 				C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */,
+				6B0FCD1E1DE08A0659C31FD2 /* WebAppSwitchingHistory.swift */,
 				763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */,
 				9C08C578E84A6D6B91AD0989 /* WebAppWindowController+AutoCollapse.swift */,
 				67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */,
@@ -866,6 +874,7 @@
 				B0C402224827E36022AB2A7A /* WebAppFaviconStoreTests.swift in Sources */,
 				00E501563DF79AD51D160A17 /* WebAppOrderMoveTests.swift in Sources */,
 				99A94B44370712902506AB45 /* WebAppPreferencesStoreTests.swift in Sources */,
+				77EA0D535DF3821E26C35951 /* WebAppSwitchingHistoryTests.swift in Sources */,
 				28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */,
 				958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */,
 			);
@@ -918,6 +927,7 @@
 				BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */,
 				667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */,
 				6C94CC55D95577FE7CDDA210 /* WebAppRuntimeCoordinator.swift in Sources */,
+				8F33EF58963610073A8E7E5B /* WebAppSwitchingHistory.swift in Sources */,
 				28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */,
 				BF8B414BB1B51D4679447C5C /* WebAppWindowPlacement.swift in Sources */,
 			);
@@ -1082,7 +1092,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3050;
+				CURRENT_PROJECT_VERSION = 3051;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1103,7 +1113,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.32;
+				MARKETING_VERSION = 0.3.33;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1205,7 +1215,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3050;
+				CURRENT_PROJECT_VERSION = 3051;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1220,7 +1230,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.32;
+				MARKETING_VERSION = 0.3.33;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

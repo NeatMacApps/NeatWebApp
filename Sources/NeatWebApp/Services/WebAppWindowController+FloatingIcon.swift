@@ -217,12 +217,23 @@ extension WebAppWindowController {
         return panel
     }
 
+    func applyFocusReturnTarget(_ target: RuntimeFocusReturnTarget?) {
+        guard let target,
+              let application = NSRunningApplication(processIdentifier: target.processID),
+              !application.isTerminated,
+              application.launchDate == target.launchDate,
+              application.bundleIdentifier == target.bundleIdentifier else { return }
+        lastExternalFrontmostApplication = application
+    }
+
     func rememberFrontmostExternalApplication() {
         guard let frontmostApplication = NSWorkspace.shared.frontmostApplication else {
             return
         }
 
-        guard frontmostApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+        // The host is a switcher proxy, not the application to return to after collapse.
+        guard frontmostApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+              frontmostApplication.bundleIdentifier != "com.geraltgraham.NeatWebApp" else {
             return
         }
 

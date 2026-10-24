@@ -25,6 +25,14 @@ struct RuntimeBootstrap: Codable, Sendable {
     let restoredFloatingIconFrame: CGRect?
     let createdAt: Date
     let hostVersion: String
+    var focusReturnTarget: RuntimeFocusReturnTarget? = nil
+}
+
+/// PID alone can refer to a different application after the original process exits.
+struct RuntimeFocusReturnTarget: Codable, Equatable, Sendable {
+    let processID: Int32
+    let launchDate: Date
+    let bundleIdentifier: String
 }
 
 struct RuntimeState: Codable, Equatable, Sendable {
@@ -58,6 +66,7 @@ struct RuntimeCommand: Codable, Sendable {
     let sequence: Int
     let command: RuntimeCommandName
     let definition: WebAppDefinition?
+    var focusReturnTarget: RuntimeFocusReturnTarget? = nil
 }
 
 enum RuntimeEventName: String, Codable, Equatable, Sendable {
