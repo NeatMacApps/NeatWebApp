@@ -4,6 +4,7 @@ extension AppModel {
     // MARK: - Web apps / Runtime
 
     func openWebApp(_ app: WebAppDefinition) {
+        ensureFaviconLoaded(for: app)
         let preferredGeometry = launcherContext?.geometry ?? mainScreenPreferredGeometry
         hideLauncher(immediately: true)
         runtimeCoordinator.open(app, preferredGeometry: preferredGeometry)
@@ -34,6 +35,7 @@ extension AppModel {
     }
 
     func expandCollapsedWebApp(_ app: WebAppDefinition) {
+        ensureFaviconLoaded(for: app)
         runtimeCoordinator.expand(appID: app.id)
     }
 
@@ -58,6 +60,7 @@ extension AppModel {
     /// 宿主正常退出也要收掉所有 WebApp 运行时：它们是从应用包里启动的独立进程，
     /// 宿主没了它们还会留在后台。和更新覆盖安装共用同一条收口。
     func prepareForApplicationTermination() {
+        faviconLoadCoordinator.cancelAll()
         runtimeCoordinator.terminateAll()
     }
 
@@ -91,10 +94,8 @@ extension AppModel {
 
         // 只有网址变了才值得丢掉站点图标缓存重新抓，改名或换底色没必要。
         if app.homeURL != homeURL {
-            faviconLoadTasks[app.id]?.cancel()
-            faviconLoadTasks[app.id] = nil
+            faviconLoadCoordinator.invalidate(appID: app.id)
             faviconMemoryCache.remove(for: app.id)
-            failedFaviconAppIDs.remove(app.id)
             faviconStore.delete(for: app.id)
             faviconCacheGeneration &+= 1
             ensureFaviconLoaded(for: updatedApp, refreshCachedImage: true)
@@ -107,8 +108,8 @@ extension AppModel {
     func deleteCustomApp(_ app: WebAppDefinition) {
         apps.removeAll { $0.id == app.id }
         customAppStore.save(apps)
+        faviconLoadCoordinator.invalidate(appID: app.id)
         faviconMemoryCache.remove(for: app.id)
-        failedFaviconAppIDs.remove(app.id)
         faviconStore.delete(for: app.id)
         faviconCacheGeneration &+= 1
         runtimeCoordinator.refreshRegistry()

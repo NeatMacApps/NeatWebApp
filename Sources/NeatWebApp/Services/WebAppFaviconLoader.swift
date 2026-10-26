@@ -1,18 +1,25 @@
 import Foundation
 
 enum WebAppFaviconLoader {
-    static func loadFaviconData(for websiteURL: URL) async -> Data? {
-        let session = makeSession()
+    static func loadFaviconData(for websiteURL: URL, session suppliedSession: URLSession? = nil) async -> Data? {
+        let session = suppliedSession ?? makeSession()
+        defer {
+            if suppliedSession == nil { session.finishTasksAndInvalidate() }
+        }
+        guard !Task.isCancelled else { return nil }
         let candidateURLs = await resolveCandidateURLs(for: websiteURL, session: session)
         var visitedURLs = Set<String>()
 
         for candidateURL in candidateURLs {
+            guard !Task.isCancelled else { return nil }
             guard visitedURLs.insert(normalizedCacheKey(for: candidateURL)).inserted else {
                 continue
             }
 
             if let data = await fetchImageData(from: candidateURL, session: session) {
-                return data
+                let isDecodable = await MainActor.run { WebAppFaviconImagePreparing.image(from: data) != nil }
+                guard !Task.isCancelled else { return nil }
+                if isDecodable { return data }
             }
         }
 
@@ -23,6 +30,7 @@ enum WebAppFaviconLoader {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 12
         configuration.timeoutIntervalForResource = 20
+        configuration.waitsForConnectivity = true
         configuration.httpAdditionalHeaders = [
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
             "Accept-Language": "en-US,en;q=0.9"
@@ -38,6 +46,7 @@ enum WebAppFaviconLoader {
             candidates.append(contentsOf: parseIconLinks(in: page.html, baseURL: page.url))
 
             for manifestURL in parseManifestLinks(in: page.html, baseURL: page.url) {
+                guard !Task.isCancelled else { return [] }
                 guard visitedManifestURLs.insert(normalizedCacheKey(for: manifestURL)).inserted else {
                     continue
                 }

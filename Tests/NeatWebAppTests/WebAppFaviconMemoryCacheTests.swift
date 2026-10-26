@@ -39,6 +39,12 @@ final class WebAppFaviconMemoryCacheTests: XCTestCase {
         XCTAssertLessThanOrEqual(max(cgImage.width, cgImage.height), 128)
     }
 
+    func testMalformedDataCannotBeDownsampledOrDecoded() {
+        let data = Data("not a decodable PNG".utf8)
+        XCTAssertNil(WebAppFaviconImagePreparing.downsampleCGImage(data: data, maxPixelDimension: 128))
+        XCTAssertNil(WebAppFaviconImagePreparing.image(from: data))
+    }
+
     private func makeImage(color: NSColor, size: NSSize = NSSize(width: 32, height: 32)) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()

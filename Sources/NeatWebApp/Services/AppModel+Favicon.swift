@@ -20,42 +20,19 @@ extension AppModel {
         return diskImage
     }
 
-    func ensureFaviconLoaded(for app: WebAppDefinition, refreshCachedImage: Bool = false) {
-        if !refreshCachedImage {
-            if faviconMemoryCache.image(for: app.id) != nil || faviconStore.contains(appID: app.id) {
-                return
-            }
-        }
-
-        guard refreshCachedImage || !failedFaviconAppIDs.contains(app.id) else {
-            return
-        }
-
-        guard !isFaviconPrefetchSuspended || refreshCachedImage else {
-            return
-        }
-
-        guard faviconLoadTasks[app.id] == nil else {
-            return
-        }
-
-        faviconLoadTasks[app.id] = Task { [appID = app.id, websiteURL = app.homeURL] in
-            let data = await WebAppFaviconLoader.loadFaviconData(for: websiteURL)
-            guard !Task.isCancelled else {
-                return
-            }
-
-            storeFaviconResponse(data, for: appID)
-        }
+    func ensureFaviconLoaded(
+        for app: WebAppDefinition,
+        refreshCachedImage: Bool = false,
+        priority: WebAppFaviconLoadCoordinator.Priority = .demand
+    ) {
+        // An existing but undecodable cache file is a miss, not a permanent success.
+        guard refreshCachedImage || faviconImage(for: app) == nil else { return }
+        faviconLoadCoordinator.request(appID: app.id, websiteURL: app.homeURL, priority: priority)
     }
 
     /// 系统内存压力：丢掉可从磁盘重建的图标内存缓存；不卸网页、不杀保活运行时。
     func handleHostMemoryPressure(isCritical: Bool) {
-        isFaviconPrefetchSuspended = true
-        for task in faviconLoadTasks.values {
-            task.cancel()
-        }
-        faviconLoadTasks.removeAll()
+        faviconLoadCoordinator.suspendPrefetch()
         purgeFaviconMemoryCache()
         // 仍刻意不杀任何网页应用的运行时；严重压力时只丢掉不属于任何网页应用、可重建的预热运行时。
         if isCritical {
@@ -64,12 +41,8 @@ extension AppModel {
     }
 
     func preloadFavicons() {
-        guard !isFaviconPrefetchSuspended else {
-            return
-        }
-
         for app in apps {
-            ensureFaviconLoaded(for: app, refreshCachedImage: true)
+            ensureFaviconLoaded(for: app, refreshCachedImage: true, priority: .prefetch)
         }
     }
 
@@ -106,21 +79,11 @@ extension AppModel {
         monitor.start()
     }
 
-    func storeFaviconResponse(_ data: Data?, for appID: String) {
-        defer {
-            faviconLoadTasks[appID] = nil
-        }
-
-        guard let data, let image = WebAppFaviconImagePreparing.image(from: data) else {
-            failedFaviconAppIDs.insert(appID)
-            return
-        }
-
+    func storeFaviconImage(_ image: NSImage, for appID: String) {
         faviconStore.saveDockSource(image, for: appID)
         let normalizedImage = WebAppIconNormalizer.normalizedLauncherIcon(from: image) ?? image
         faviconMemoryCache.store(normalizedImage, for: appID)
         faviconStore.save(normalizedImage, for: appID)
         faviconCacheGeneration &+= 1
-        failedFaviconAppIDs.remove(appID)
     }
 }

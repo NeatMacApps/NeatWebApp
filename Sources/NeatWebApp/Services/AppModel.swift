@@ -62,9 +62,10 @@ final class AppModel {
     @ObservationIgnored
     var memoryPressureMonitor: HostMemoryPressureMonitor?
 
-    /// 系统内存告警期间暂停图标网络预取，压力解除后不自动恢复预取风暴（下次启动或显式刷新再抓）。
     @ObservationIgnored
-    var isFaviconPrefetchSuspended = false
+    lazy var faviconLoadCoordinator = WebAppFaviconLoadCoordinator { [weak self] appID, image in
+        self?.storeFaviconImage(image, for: appID)
+    }
 
     @ObservationIgnored
     let launchAtLoginService = LaunchAtLoginService()
@@ -106,12 +107,6 @@ final class AppModel {
 
     @ObservationIgnored
     var lastRuntimePhases: [String: RuntimePhase] = [:]
-
-    @ObservationIgnored
-    var failedFaviconAppIDs: Set<String> = []
-
-    @ObservationIgnored
-    var faviconLoadTasks: [String: Task<Void, Never>] = [:]
 
     @ObservationIgnored
     var hideLauncherTask: Task<Void, Never>?
@@ -165,6 +160,7 @@ final class AppModel {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshLaunchAtLoginState()
+                self?.faviconLoadCoordinator.retryDueLoads()
             }
         }
     }

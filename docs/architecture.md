@@ -246,6 +246,75 @@ Both the host and runtime Info.plist files keep camera and microphone usage desc
 - Glass, fallback fill and pointer hit geometry share the native `Capsule` shape.
   System focus rings are disabled. The Dock never takes keyboard focus.
 
+## Website icon loading
+
+Website icons must recover without restarting the host. A letter is only a temporary
+fallback, not evidence that a site has no icon. AI Studio's public welcome page, for
+example, advertises 32/64/96/512-pixel PNGs on `www.gstatic.com`; a local probe fetched
+and decoded its 512-pixel source while the installed catalog had no cached image.
+The original incident's transient request/pressure state was not logged and remains
+unknown; both the session-long failed-ID blacklist and the shared prefetch pause
+prevented recovery in the old implementation.
+
+The host separates three responsibilities:
+
+- `WebAppFaviconLoader` discovers/ranks HTML, manifest and origin candidates. It
+  skips unsuccessful or undecodable candidates, respects cancellation between
+  requests, and uses native `URLSession` connectivity waiting with a 20-second
+  resource timeout. No reachability preflight, third-party favicon proxy or
+  site-specific exception is needed. Before thumbnailing index zero, the shared
+  decoder checks that the image source actually contains an image; malformed
+  candidates must not be treated as a valid image container. See Apple's
+  [image-count contract](https://developer.apple.com/documentation/imageio/cgimagesourcegetcount(_:)).
+- `WebAppFaviconLoadCoordinator` owns per-app request identity, demand priority,
+  deduplication, a two-load concurrency limit and retry scheduling. Demand comes
+  from adding/opening an app or showing its icon. Failed demand loads retry after
+  2, 10 and 60 seconds, then at most once every five minutes until successful or
+  invalidated. Repeated view appearances cannot reset backoff. Startup refreshes
+  are lower-priority, single-attempt prefetches. A demand request promotes an
+  existing prefetch, including its recovery policy.
+- The existing store, downsampling, normalization and cache-generation notification
+  continue to own images and presentation. Failed refreshes never replace a good
+  image with a letter. URL edits/deletion cancel and invalidate outstanding work;
+  late completions must not repopulate a deleted or changed app's cache.
+
+Memory pressure cancels/pauses only speculative prefetch and purges reconstructible
+memory images. It never blocks requested icons or their bounded recovery. Do not
+restore the old process-lifetime blacklist or make all icon requests depend on the
+prefetch flag. Host activation rechecks due work without bypassing backoff; normal
+termination cancels all scheduled work. No new settings, controls or icon artwork.
+
+Reference inspected: [SDWebImageManager's cancellation/cache handling](https://github.com/SDWebImage/SDWebImage/blob/master/SDWebImage/Core/SDWebImageManager.m).
+Reuse the separation of cancellation from failure and preservation of cached images,
+not its optional failed-URL blacklist or dependency stack. The repository's existing
+loader/store/normalizer are retained rather than replaced with a second image library.
+Apple's [connectivity waiting contract](https://developer.apple.com/documentation/foundation/urlsessionconfiguration/waitsforconnectivity)
+applies only to establishing connections; application backoff still handles failed
+or dropped requests. The installed Xcode 27.2 Foundation SDK exposes that public API
+from macOS 10.13, below this product's macOS 15 minimum.
+
+Acceptance: deterministic coordinator tests cover transient recovery, capped backoff,
+deduplication, concurrency/priority, pressure, promotion and stale completions;
+URLProtocol fixtures cover real candidate parsing, bad image fallback and cancellation.
+The installed signed Release must populate AI Studio's cache and display its real
+website mark in the existing launcher/activity Dock. Build/test success alone is not
+that visual evidence.
+
+Verification (2026-10-26, Xcode 27.2 / macOS 27.2): 111 host + 109 runtime
+Debug tests passed on arm64, including 17 new icon regressions. Clean universal
+Debug and Release builds and static analysis passed for both host and runtime
+(arm64 + x86_64). Complete diagnostics/result bundles are retained locally under
+`build/favicon-recovery/`; both universal executables were confirmed with `lipo`.
+No source/compiler/analyzer warning was found. The only build-tool warning was
+AppIntents metadata extraction being skipped, separately emitted for the host,
+runtime and test bundles: none declares App Intents, so no metadata-dependent
+feature is lost. Keep it visible and reassess if an App Intent is introduced.
+The first malformed-image fixture exposed an image source with zero images; the
+index-count precondition above fixed the thumbnail diagnostic and the final full
+run retained the failing input as a passing regression. WebKit sandbox/pasteboard
+shutdown messages in the first run match the existing assessment under Launch
+Flow; the final run did not emit them. Tests were not executed on Intel or macOS 15.
+
 ## Persistence
 
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。

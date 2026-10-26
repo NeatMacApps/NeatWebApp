@@ -25,6 +25,7 @@
 ## 允许做的优化
 
 - 网站图标按显示像素下采样后再解码 / 落盘；内存侧有界、可丢弃（磁盘权威）。
+- Website icon pressure handling pauses/cancels **speculative prefetch only**. User-requested or visible missing icons retain the two-load limit and capped retry cadence; pressure must not turn a temporary letter fallback into a host-lifetime failure. Existing disk images remain the offline fallback. Ownership and acceptance: [Website icon loading](../architecture.md#website-icon-loading).
 - 过渡用整窗位图不得长期挂属性；动画结束立即释放。运行时已删除从未赋值的整窗截图捕获路径，避免以后误加回全窗位图常驻。
 - 订阅 `DispatchSourceMemoryPressure`，按上列约束收缩可重建宿主缓存。
 - **压力回调隔离（硬约束）**：事件闭包跑在后台队列，禁止继承 `@MainActor`；须 `@Sendable`，清缓存再 hop 回主线程。写错会在系统一报压力时把宿主直接闪退（见 [宿主内存压力回调闪退](../troubleshooting/2026-09-05-host-memory-pressure-mainactor-crash.md)）。

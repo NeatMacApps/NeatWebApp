@@ -191,7 +191,7 @@ done
 - [../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md](../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md)：改、评审或排查签名、公证、安装包制作、应用内自更新、Homebrew 渠道时的**通用做法与踩坑速查**以此为准；本项目专有取值见下一条，两者不重复。
 - [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发布拓扑、版本与签名配置、Sparkle 行为、发布完成证据、上传失败恢复与收不到更新排查。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
-- [docs/architecture.md](docs/architecture.md)：改、评审、优化或排查应用架构、模块边界、WebKit/AppKit 协作、进程划分，或浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖）前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
+- [docs/architecture.md](docs/architecture.md)：应用架构、模块边界、WebKit/AppKit 协作、进程划分、网站图标获取/缓存/自动恢复，以及浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖）；改、评审或排查这些功能前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。
 - [docs/design/launch-cover.md](docs/design/launch-cover.md)：改、评审、优化或排查「新打开尚未运行的网页应用」的启动盖（同框白窗、揭盖时机、打开闪一下、盖子和真窗对不齐、**先全屏白屏再变成小窗**）前**必读**；含已裁定不可推翻的产品决策与已被否决的闪屏 / 假顶栏 / 淡出方案。不读会把第二套界面或交接动画再做一遍。
 - [docs/design/warm-standby-runtime.md](docs/design/warm-standby-runtime.md)：新开尚未运行的网页应用为何比浏览器慢、怎么提速——实测冷启动分段与站点服务器等待、已排除的浏览器身份 / 注入脚本 / 数据隔离、宿主常备一个预热运行时的接手流程、内存严重压力时释放与接手失败的回退启动。
