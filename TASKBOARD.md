@@ -4,7 +4,6 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| Recoverable website icon loading | 验证中 | AppModel favicon integration, WebAppFaviconLoader/ImagePreparing, new loading coordinator/tests, architecture/memory docs; Xcode 27.2 + existing MacKit/Sparkle | 22:32 | 2026-10-26 22:43 | 219 full tests passed; invalid-image fixture exposed index-zero decode precondition, now guarded with regression; repeat tests, universal Debug/Release analyze and signed local acceptance next |
 | Compact downloads continued acceptance | 验证中 | BrowserDownloadPanel/Session/Manager, runtime acceptance fixtures, browser chrome docs; conditional UI fixes and release | 2026-10-21 | 2026-10-21 | 7 download-status tests green; Clear clears records only (files intact in ~/Downloads, cleared screenshot shows capsule gone); Close only dismisses popover; expanded/progress/complete/failed shots captured; Finder click, Esc/outside, dark-page contrast still need interactive desktop |
 | Fix browser window pointer offset during cross-display dragging | 验证中 | WebAppBrowserWindow, window placement regression tests/docs, version/release | 2026-10-20 | 2026-10-20 | 187 tests + build/analyze passed; Xcode 27.2; installed mixed-display drag acceptance next |
 | Generic page scroll oscillation investigation and fix | In progress | Browser scripts/session/layout, runtime regression tests, long-page troubleshooting, release | 2026-10-17 | 2026-10-17 | Current owner request; inspect installed behavior, no site-specific compatibility logic |

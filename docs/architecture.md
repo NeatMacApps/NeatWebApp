@@ -315,6 +315,18 @@ run retained the failing input as a passing regression. WebKit sandbox/pasteboar
 shutdown messages in the first run match the existing assessment under Launch
 Flow; the final run did not emit them. Tests were not executed on Intel or macOS 15.
 
+Installed acceptance: the universal, non-notarized Release from source commit
+`02854da` replaced `/Applications/NeatWebApp.app`, using the same Developer ID
+identity as the previously installed app. Host/runtime signatures and strict bundle
+verification passed; installed and built host executable SHA-256 values matched.
+The new installed host started at 22:48:43, refreshed AI Studio's uncropped and
+launcher caches at 22:48:54–55, and its freshly captured activity Dock showed the
+actual multicolor website mark instead of A. The inspected screenshot is retained
+locally as `build/favicon-recovery/installed-activity-dock.png`. Transient-failure
+and memory-pressure recovery were fault-injected in unit tests, not by disrupting
+the user's real network or system memory. No temporary display or network-setting
+change was needed. Version/build remain 0.3.34/3052; no public release was made.
+
 ## Persistence
 
 - `CustomWebAppStore` 持久化用户管理的 app catalog，包括主窗口中对每个 app 的名称、URL 与底色编辑。
