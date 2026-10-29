@@ -114,9 +114,15 @@ The existing AppIntents metadata diagnostic remains as assessed in
 connection diagnostics occurred after successful test-host teardown, not as failed
 product assertions. No diagnostic was suppressed.
 
-Installed UI acceptance remains pending: the session is locked, capture access is
-available, and the native display initially reports inactive/asleep. There is no
-visible runtime window in the fresh window list. Right-click, editor focus,
+Source commit `681d5cd` was installed as a non-notarized Developer ID Release
+build at `/Applications/NeatWebApp.app` (0.3.34, build 3052), without changing the
+public release/version. Signature verification passed; installed host/runtime
+SHA-256 hashes match the built artifacts, and the installed host launched.
+
+Installed UI acceptance remains pending: the session is locked and capture access
+is available. A bounded wake changed the native display from inactive/asleep to
+active/awake, but Accessibility still reported zero app windows and fresh runtime
+window discovery remained empty. No virtual display was connected. Right-click, editor focus,
 Return/Escape, opened-menu appearance and English/Chinese/pseudolanguage layouts
 are not established by the tests. A separate runtime actually loading a protected
 URL using the copied cookies also remains unverified; the current cookie evidence
