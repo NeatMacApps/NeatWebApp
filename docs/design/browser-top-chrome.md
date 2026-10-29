@@ -161,6 +161,12 @@ shared [WebKit integration guide](../../../../_standards/workspace-docs/swift-do
 The first cleanup failure was a fixture-preparation failure, not an installed
 product crash; the complete handoff and native-cleanup probe now passes.
 
+Corrected source commit `19bb67a` was installed at
+`/Applications/NeatWebApp.app` as a non-notarized, same-identity Developer ID Release
+build (0.3.34, build 3052). Signature checks passed for the host and embedded runtime;
+their installed SHA-256 hashes match the verified build, and the installed host
+launched. No public version, tag or release was changed.
+
 Installed UI acceptance remains pending: the session is locked and capture access
 is available. A bounded wake changed the native display from inactive/asleep to
 active/awake, but Accessibility still reported zero app windows and fresh runtime
