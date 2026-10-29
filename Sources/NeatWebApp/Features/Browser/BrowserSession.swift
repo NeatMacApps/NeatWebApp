@@ -43,6 +43,11 @@ final class BrowserSession {
     private(set) var isCreatingBookmarkWebApp = false
     private(set) var createdBookmarkIDs: Set<UUID> = []
     private(set) var bookmarkCreationNotice: String?
+    var cookieImportFailed = false
+    @ObservationIgnored
+    private var hasPreparedInitialCookies = false
+    @ObservationIgnored
+    private var isPreparingInitialCookies = false
     @ObservationIgnored
     var registerBookmarkWebApp: ((WebAppDefinition) async -> Bool)?
     @ObservationIgnored
@@ -128,11 +133,36 @@ final class BrowserSession {
             applyUserAgent()
         }
 
-        if webView.url == nil {
+        if !hasPreparedInitialCookies {
+            if !cookieImportFailed { prepareInitialCookies() }
+        } else if webView.url == nil {
             webView.load(URLRequest(url: currentURL))
         } else if !alreadyAttached {
             syncNavigationState(from: webView)
         }
+    }
+
+    func prepareInitialCookies() {
+        guard !hasPreparedInitialCookies, !isPreparingInitialCookies else { return }
+        isPreparingInitialCookies = true
+        cookieImportFailed = false
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.isPreparingInitialCookies = false }
+            do {
+                try await BrowserCookieTransfer.restore(to: self.websiteDataStore, for: self.definition.id)
+                self.hasPreparedInitialCookies = true
+                self.webView?.load(URLRequest(url: self.currentURL))
+            } catch {
+                self.cookieImportFailed = true
+            }
+        }
+    }
+
+    func continueWithoutImportedCookies() {
+        cookieImportFailed = false
+        hasPreparedInitialCookies = true
+        webView?.load(URLRequest(url: currentURL))
     }
 
     func focusWebView() {
@@ -306,11 +336,8 @@ final class BrowserSession {
                 accentColorName: definition.accentColorName,
                 shortDescription: ""
             )
-            let destinationStore = WKWebsiteDataStore(
-                forIdentifier: Self.websiteDataStoreIdentifier(for: destination.id)
-            )
             do {
-                try await BrowserCookieTransfer.copy(from: websiteDataStore, to: destinationStore)
+                try await BrowserCookieTransfer.stage(from: websiteDataStore, for: destination.id)
             } catch {
                 bookmarkCreationNotice = String(localized: LocalizedStringResource("browser.bookmark.copy_failed"))
                 return
@@ -335,7 +362,7 @@ final class BrowserSession {
         currentURL = url
         pageTitle = bookmark.title
         isLoading = true
-        webView?.load(URLRequest(url: url))
+        loadAfterPreparingCookies(url)
     }
 
     // MARK: - 手动隐藏网页元素
@@ -641,8 +668,15 @@ final class BrowserSession {
         canGoForward = false
         isLoading = true
 
-        let request = URLRequest(url: definition.homeURL)
-        webView?.load(request)
+        loadAfterPreparingCookies(definition.homeURL)
+    }
+
+    private func loadAfterPreparingCookies(_ url: URL) {
+        if hasPreparedInitialCookies {
+            webView?.load(URLRequest(url: url))
+        } else if !cookieImportFailed {
+            prepareInitialCookies()
+        }
     }
 
     static func websiteDataStoreIdentifier(for appID: String) -> UUID {

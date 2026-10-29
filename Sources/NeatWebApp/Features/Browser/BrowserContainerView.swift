@@ -15,6 +15,15 @@ struct BrowserContainerView: View {
         }
         .background(theme.pageColor.color)
         .ignoresSafeArea(.container, edges: .top)
+        .alert("browser.bookmark.restore_failed", isPresented: Binding(
+            get: { session.cookieImportFailed },
+            set: { session.cookieImportFailed = $0 }
+        )) {
+            Button("browser.bookmark.retry", action: session.prepareInitialCookies)
+            Button("browser.bookmark.continue", action: session.continueWithoutImportedCookies)
+        } message: {
+            Text("browser.bookmark.restore_message")
+        }
     }
 }
 

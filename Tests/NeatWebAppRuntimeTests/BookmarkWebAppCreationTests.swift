@@ -45,6 +45,10 @@ final class BookmarkWebAppCreationTests: XCTestCase {
             registered = definition
             let destination = WKWebsiteDataStore(forIdentifier: BrowserSession.websiteDataStoreIdentifier(for: definition.id))
             copied = destination
+            let restored = try? await BrowserCookieTransfer.restore(to: destination, for: definition.id)
+            XCTAssertEqual(restored, true)
+            let replayed = try? await BrowserCookieTransfer.restore(to: destination, for: definition.id)
+            XCTAssertEqual(replayed, false)
             let cookies = await destination.httpCookieStore.allCookies()
             XCTAssertEqual(cookies.count, 2)
             XCTAssertTrue(cookies.contains { $0.name == "login" && $0.isHTTPOnly && $0.isSecure })
@@ -73,6 +77,30 @@ final class BookmarkWebAppCreationTests: XCTestCase {
         await clear(session.websiteDataStore)
     }
 
+    func testInitialRequestWaitsForCookieImport() async throws {
+        let (session, _) = try fixture()
+        let source = WKWebsiteDataStore.nonPersistent()
+        await source.httpCookieStore.setCookie(try cookie(name: "login", value: "fixture-only", persistent: false))
+        try await BrowserCookieTransfer.stage(from: source, for: session.definition.id)
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = session.websiteDataStore
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let requested = expectation(description: "First request after cookie import")
+        let observer = InitialCookieNavigationObserver(url: session.definition.homeURL) { requested.fulfill() }
+        webView.navigationDelegate = observer
+
+        session.attach(webView: webView)
+        XCTAssertNil(webView.url)
+        await fulfillment(of: [requested], timeout: 5)
+
+        let cookies = await session.websiteDataStore.httpCookieStore.allCookies()
+        XCTAssertTrue(cookies.contains { $0.name == "login" && $0.isHTTPOnly && $0.isSessionOnly })
+        let replayed = try await BrowserCookieTransfer.restore(to: session.websiteDataStore, for: session.definition.id)
+        XCTAssertFalse(replayed)
+        XCTAssertFalse(session.cookieImportFailed)
+        await clear(session.websiteDataStore)
+    }
+
     func testFailedAcknowledgementRetriesSameAppWithoutRecopyingCookies() async throws {
         let (session, _) = try fixture()
         session.toggleCurrentPageBookmark()
@@ -95,6 +123,8 @@ final class BookmarkWebAppCreationTests: XCTestCase {
         XCTAssertEqual(requests.first, requests.last)
         let definition = try XCTUnwrap(requests.first)
         let destination = WKWebsiteDataStore(forIdentifier: BrowserSession.websiteDataStoreIdentifier(for: definition.id))
+        let restored = try await BrowserCookieTransfer.restore(to: destination, for: definition.id)
+        XCTAssertTrue(restored)
         let cookies = await destination.httpCookieStore.allCookies()
         XCTAssertTrue(cookies.isEmpty)
         await clear(session.websiteDataStore)
@@ -114,6 +144,7 @@ final class BookmarkWebAppCreationTests: XCTestCase {
         await session.createWebApp(from: bookmark)
         XCTAssertEqual(requests.count, 1)
         let destination = try XCTUnwrap(requests.first)
+        try await BrowserCookieTransfer.discard(for: destination.id)
         await clear(WKWebsiteDataStore(forIdentifier: BrowserSession.websiteDataStoreIdentifier(for: destination.id)))
         await clear(session.websiteDataStore)
     }
@@ -188,5 +219,24 @@ final class BookmarkWebAppCreationTests: XCTestCase {
         if let id = store.identifier {
             try? await WKWebsiteDataStore.remove(forIdentifier: id)
         }
+    }
+}
+
+@MainActor
+private final class InitialCookieNavigationObserver: NSObject, WKNavigationDelegate {
+    let url: URL
+    let onRequest: () -> Void
+
+    init(url: URL, onRequest: @escaping () -> Void) {
+        self.url = url
+        self.onRequest = onRequest
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction
+    ) async -> WKNavigationActionPolicy {
+        if navigationAction.request.url == url { onRequest() }
+        return .cancel
     }
 }

@@ -76,10 +76,14 @@ whitespace-only names, and support Return to save and Escape to cancel.
 Add WebApp uses the bookmark's current title and complete saved URL without opening
 the management window or requiring the user to re-enter either value. Copy a
 one-time snapshot of the source runtime's HTTP cookies, including HttpOnly and
-session cookies, into a fresh per-app persistent WebKit store before registering
-that new app with the host catalog. Preserve cookie attributes; never serialize
-cookie values into IPC, preferences or logs. New and source apps retain separate
-store IDs and do not synchronize subsequent changes. This copies cookies, not
+session cookies, into a destination-ID-scoped Keychain item before registering
+that new app with the host catalog. The destination runtime imports this protected
+snapshot into its own fresh persistent WebKit store before its first request, then
+deletes the handoff item after verifying the imported cookies. Preserve cookie
+attributes; never serialize cookie values into IPC, preferences or logs. New and
+source apps retain separate store IDs and do not synchronize subsequent changes.
+A failed import retains the protected snapshot and offers Retry; continuing
+without the imported cookies is an explicit user choice. This copies cookies, not
 localStorage, IndexedDB, passkeys or a guarantee that every website stays signed in.
 
 Only the host writes the catalog. Registration uses a correlated acknowledgement;
@@ -93,8 +97,18 @@ SwiftUI's native `contextMenu`. Apple's [RenameButton example](https://developer
 provides `renameAction` and native text-field focus; reuse that interaction rather
 than a custom menu or editor. The installed Xcode 27.2 SDK provides these APIs for
 macOS 15. Cookie transfer uses public [`WKHTTPCookieStore`](https://developer.apple.com/documentation/webkit/wkhttpcookiestore)
-`allCookies()` and `setCookie`, awaiting each write. Do not use the newer bulk
+`allCookies()` and `setCookie`, awaiting each write. The one-time credential
+handoff uses Security's generic-password Keychain APIs, not distributed
+notifications or an unprotected cookie file. Do not use the newer bulk
 `setCookies` API, which requires macOS 26.
+
+Correction from cross-process investigation: populating the destination store in
+the source process is insufficient evidence of a usable new runtime. An unsigned
+two-process native probe (with and without attached WKWebViews) read zero cookies
+in the second process after a successful same-process copy. This observation does
+not establish an Apple persistence defect, but invalidates accepting that mechanism
+using only the original unit tests. Import the snapshot in the actual destination
+process instead; verify the handoff across processes as well as native-store isolation.
 
 Acceptance covers the opened right-click menu, rename save/cancel/blank input and
 persistence, registration acknowledgements and retries, and a new app loading a
@@ -102,31 +116,59 @@ cookie-protected fixture URL with a distinct store. Check English/Chinese and lo
 names, plus source/destination independence. Build/test evidence does not substitute
 for installed interaction and screenshots.
 
-Verification (2026-10-29): a clean Debug build, 112 host tests and 115 runtime
+Verification (2026-10-29): a clean Debug build, 112 host tests and 116 runtime
 tests, a universal (arm64/x86_64) Developer ID Release build and clean-derived-data
-Debug static analysis passed on Xcode 27.2. Native WebKit tests read the copied
-persistent/HttpOnly/secure and session cookies before registration, then deleted a
-destination cookie and verified the source remained unchanged. Tests cover rename
+Debug static analysis passed on Xcode 27.2. Native WebKit/Keychain tests stage the
+snapshot before registration, import persistent/HttpOnly/secure and session cookies,
+consume the handoff exactly once, then delete a destination cookie and verify the
+source remains unchanged. Keychain I/O runs off the main actor; the initial
+main-thread Security runtime warnings were fixed rather than retained. Tests cover rename
 identity/order/persistence, blank names, repeated submissions, missing acknowledgements,
-same-ID retries without recopying, client shutdown and host request validation.
+same-ID retries without recopying, client shutdown, host request validation and
+the initial native navigation being deferred until cookie import completes.
 The existing AppIntents metadata diagnostic remains as assessed in
-[architecture.md](../architecture.md); WebContent pasteboard/Launch Services/TCC
-connection diagnostics occurred after successful test-host teardown, not as failed
-product assertions. No diagnostic was suppressed.
+[architecture.md](../architecture.md). WebContent pasteboard/Launch Services/TCC,
+audio-service and RunningBoard connection diagnostics occurred during the
+non-presenting navigation fixture and test-host teardown, with no failed assertions.
+They do not establish installed pasteboard/audio behavior; the existing SDK-process
+diagnostic assessment in architecture.md still applies. No diagnostic was suppressed.
 
-Source commit `681d5cd` was installed as a non-notarized Developer ID Release
-build at `/Applications/NeatWebApp.app` (0.3.34, build 3052), without changing the
-public release/version. Signature verification passed; installed host/runtime
-SHA-256 hashes match the built artifacts, and the installed host launched.
+The initial source-process copy in commit `681d5cd` was installed for launch
+checking but is superseded by the protected destination-process import above.
+The signed standalone fixture `Tests/Fixtures/BookmarkCookieProcessProbe.swift`
+runs staging and importing in separate child processes. It verified both persistent
+and session cookies, HttpOnly/secure attributes, one-time consumption, unchanged
+source cookies after destination deletion, and native cleanup. This is stronger
+than the original same-process unit tests, but not a website-specific login test.
+
+Reproduce from the repository root (using the configured Developer ID identity):
+
+```sh
+mkdir -p build/bookmark-evidence
+swiftc -swift-version 6 -parse-as-library Tests/Fixtures/BookmarkCookieProcessProbe.swift \
+  Sources/NeatWebApp/Features/Browser/BrowserCookieTransfer.swift \
+  -o build/bookmark-evidence/BookmarkCookieProcessProbe
+codesign --force --sign "Developer ID Application" build/bookmark-evidence/BookmarkCookieProcessProbe
+build/bookmark-evidence/BookmarkCookieProcessProbe
+```
+
+The fixture uses only generated cookies and its own WebKit namespace; no window is
+presented and no real catalog entry is written. It cleans its generated stores
+after child processes exit. Its `cleanup` argument removes retained stores after
+an interrupted fixture run. The standalone fixture initializes a nonpersistent
+context before static cleanup, following the observed workaround recorded in the
+shared [WebKit integration guide](../../../../_standards/workspace-docs/swift-docs/webkit-integration.md#cross-process-cookie-transfer-and-native-probes).
+The first cleanup failure was a fixture-preparation failure, not an installed
+product crash; the complete handoff and native-cleanup probe now passes.
 
 Installed UI acceptance remains pending: the session is locked and capture access
 is available. A bounded wake changed the native display from inactive/asleep to
 active/awake, but Accessibility still reported zero app windows and fresh runtime
 window discovery remained empty. No virtual display was connected. Right-click, editor focus,
 Return/Escape, opened-menu appearance and English/Chinese/pseudolanguage layouts
-are not established by the tests. A separate runtime actually loading a protected
-URL using the copied cookies also remains unverified; the current cookie evidence
-covers native stores in one runtime process, not every site's login behavior.
+are not established by the tests. An installed runtime actually loading a protected
+URL using the copied cookies also remains unverified; the signed standalone probe
+establishes cross-process handoff, not every site's login behavior.
 
 ### Compact downloads (owner correction, 2026-10-21)
 

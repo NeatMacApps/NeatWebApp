@@ -93,6 +93,8 @@ xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration D
 xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex -only-testing:NeatWebAppTests/ScreenNotchGeometryTests test
 ```
 
+The signed, separate-process bookmark-cookie regression fixture and its commands are documented in [browser-top-chrome.md](docs/design/browser-top-chrome.md#bookmark-actions-owner-decision-2026-10-29); run it when changing the cookie handoff, in addition to the ordinary test suite.
+
 ### 发版
 ```bash
 scripts/publish-release.sh              # 完整发版

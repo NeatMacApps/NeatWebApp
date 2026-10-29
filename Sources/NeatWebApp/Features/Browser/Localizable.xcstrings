@@ -1,6 +1,78 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "browser.bookmark.restore_failed": {
+      "comment": "Shown in the new web app if its protected cookie handoff cannot be imported.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t Copy Cookies"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法复制 Cookie"
+          }
+        }
+      }
+    },
+    "browser.bookmark.restore_message": {
+      "comment": "Import failure choices. The protected snapshot remains available for retry.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry to keep your login, or continue without the copied cookies."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试以保留登录状态，或不使用复制的 Cookie 继续。"
+          }
+        }
+      }
+    },
+    "browser.bookmark.retry": {
+      "comment": "Retry importing the protected cookie snapshot.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
+    "browser.bookmark.continue": {
+      "comment": "Explicitly load the new app without importing its protected snapshot.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue Without Cookies"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不使用 Cookie 继续"
+          }
+        }
+      }
+    },
     "browser.bookmark.add_webapp": {
       "comment": "Context menu: create a new isolated web app from this bookmark.",
       "extractionState": "manual",
