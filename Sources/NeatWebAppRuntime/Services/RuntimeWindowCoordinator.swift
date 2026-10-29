@@ -9,6 +9,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
     private let appLock: RuntimeAppLock
     private let eventPublisher: RuntimeEventPublisher
     private let commandListener: RuntimeCommandListener
+    private let bookmarkClient: RuntimeBookmarkClient
     private let hostProcessID: Int32?
     private let preferencesStore = WebAppPreferencesStore()
     private let dockReserveStore = SideDockReserveStore()
@@ -34,6 +35,9 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             commandBus: commandBus
         )
         self.commandListener = RuntimeCommandListener(commandBus: commandBus)
+        self.bookmarkClient = RuntimeBookmarkClient(
+            instanceID: bootstrap.instanceID, sourceAppID: bootstrap.appID, commandBus: commandBus
+        )
         self.hostProcessID = hostProcessID
     }
 
@@ -66,6 +70,9 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil
         )
         windowController = controller
+        controller.session.registerBookmarkWebApp = { [weak bookmarkClient] definition in
+            await bookmarkClient?.register(definition) ?? false
+        }
         controller.applyFocusReturnTarget(bootstrap.focusReturnTarget)
         dockReserveObserver = dockReserveStore.observeChanges { [weak self] in
             guard let self else {
@@ -98,6 +105,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
         }
         hostLifecycleMonitor.stop()
         commandListener.stop()
+        bookmarkClient.stop()
         let windowFrame = windowController?.window?.frame ?? appModel.windowFrame
         let floatingIconFrame = appModel.floatingIconFrame
 

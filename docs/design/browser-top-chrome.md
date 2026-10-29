@@ -66,6 +66,62 @@ Move Bookmarks, element hiding, reload and website identity switching into More 
 
 Owner correction (2026-10-11): each menu row uses a short action label, with no more than two English words. The labels are `Bookmarks`, `Hide Element` / `Cancel Selection`, `Reload`, and `Mobile Site` / `Desktop Site`. Simplified Chinese uses `收藏夹`, `隐藏元素` / `取消选取`, `刷新`, and `移动版` / `桌面版`. Do not put behavior explanations such as "Return to Configured Address and Reload" in menu rows. Download labels obey the same limit, including `Dismiss Download` and a count followed by `Downloads`.
 
+### Bookmark actions (owner decision, 2026-10-29)
+
+Each bookmark row supports a native right-click context menu with Open, Rename,
+Add WebApp and Delete. Rename edits only that bookmark's title, preserving its ID,
+URL, creation date, order and web-app scope. Prefill the current title, reject
+whitespace-only names, and support Return to save and Escape to cancel.
+
+Add WebApp uses the bookmark's current title and complete saved URL without opening
+the management window or requiring the user to re-enter either value. Copy a
+one-time snapshot of the source runtime's HTTP cookies, including HttpOnly and
+session cookies, into a fresh per-app persistent WebKit store before registering
+that new app with the host catalog. Preserve cookie attributes; never serialize
+cookie values into IPC, preferences or logs. New and source apps retain separate
+store IDs and do not synchronize subsequent changes. This copies cookies, not
+localStorage, IndexedDB, passkeys or a guarantee that every website stays signed in.
+
+Only the host writes the catalog. Registration uses a correlated acknowledgement;
+show pending, success and failure in the bookmark panel and prevent duplicate
+submissions. A retry after a missing acknowledgement reuses the same destination
+ID rather than making another app. The original bookmark and source cookies remain.
+
+Inspected references: the existing `BrowserBookmarkListPanel` provides the anchored
+popover, title/host rows and open/delete actions; the dashboard and Side Dock use
+SwiftUI's native `contextMenu`. Apple's [RenameButton example](https://developer.apple.com/documentation/swiftui/renamebutton)
+provides `renameAction` and native text-field focus; reuse that interaction rather
+than a custom menu or editor. The installed Xcode 27.2 SDK provides these APIs for
+macOS 15. Cookie transfer uses public [`WKHTTPCookieStore`](https://developer.apple.com/documentation/webkit/wkhttpcookiestore)
+`allCookies()` and `setCookie`, awaiting each write. Do not use the newer bulk
+`setCookies` API, which requires macOS 26.
+
+Acceptance covers the opened right-click menu, rename save/cancel/blank input and
+persistence, registration acknowledgements and retries, and a new app loading a
+cookie-protected fixture URL with a distinct store. Check English/Chinese and long
+names, plus source/destination independence. Build/test evidence does not substitute
+for installed interaction and screenshots.
+
+Verification (2026-10-29): a clean Debug build, 112 host tests and 115 runtime
+tests, a universal (arm64/x86_64) Developer ID Release build and clean-derived-data
+Debug static analysis passed on Xcode 27.2. Native WebKit tests read the copied
+persistent/HttpOnly/secure and session cookies before registration, then deleted a
+destination cookie and verified the source remained unchanged. Tests cover rename
+identity/order/persistence, blank names, repeated submissions, missing acknowledgements,
+same-ID retries without recopying, client shutdown and host request validation.
+The existing AppIntents metadata diagnostic remains as assessed in
+[architecture.md](../architecture.md); WebContent pasteboard/Launch Services/TCC
+connection diagnostics occurred after successful test-host teardown, not as failed
+product assertions. No diagnostic was suppressed.
+
+Installed UI acceptance remains pending: the session is locked, capture access is
+available, and the native display initially reports inactive/asleep. There is no
+visible runtime window in the fresh window list. Right-click, editor focus,
+Return/Escape, opened-menu appearance and English/Chinese/pseudolanguage layouts
+are not established by the tests. A separate runtime actually loading a protected
+URL using the copied cookies also remains unverified; the current cookie evidence
+covers native stores in one runtime process, not every site's login behavior.
+
 ### Compact downloads (owner correction, 2026-10-21)
 
 Restore the visible download status beside More Actions. The earlier download dot and

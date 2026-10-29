@@ -91,6 +91,9 @@ final class AppModel {
         },
         onRuntimeStatesChange: { [weak self] states in
             self?.handleRuntimeStatesChange(states)
+        },
+        onBookmarkWebApp: { [weak self] definition in
+            self?.registerBookmarkWebApp(definition) ?? false
         }
     )
 

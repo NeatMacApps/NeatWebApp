@@ -1,6 +1,150 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "browser.bookmark.add_webapp": {
+      "comment": "Context menu: create a new isolated web app from this bookmark.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add WebApp"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 WebApp"
+          }
+        }
+      }
+    },
+    "browser.bookmark.adding": {
+      "comment": "Cookie transfer and catalog registration are in progress.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adding WebApp…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在添加 WebApp…"
+          }
+        }
+      }
+    },
+    "browser.bookmark.added": {
+      "comment": "The host acknowledged adding the new web app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebApp Added"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已添加 WebApp"
+          }
+        }
+      }
+    },
+    "browser.bookmark.add_failed": {
+      "comment": "Registration failed or its acknowledgement timed out; retry reuses the destination ID.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not confirm the new WebApp. Choose Add WebApp to retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确认新 WebApp。请再次选择添加 WebApp 重试。"
+          }
+        }
+      }
+    },
+    "browser.bookmark.copy_failed": {
+      "comment": "Cookie verification failed before catalog registration.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not copy cookies. Please retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法复制 Cookie，请重试。"
+          }
+        }
+      }
+    },
+    "browser.bookmark.name": {
+      "comment": "Accessible label for the inline bookmark title editor.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bookmark Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏名称"
+          }
+        }
+      }
+    },
+    "browser.bookmark.rename": {
+      "comment": "Commit the bookmark title edit.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改名"
+          }
+        }
+      }
+    },
+    "browser.bookmark.close": {
+      "comment": "Dismiss the bookmark popover.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Bookmarks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭收藏夹"
+          }
+        }
+      }
+    },
     "browser.bookmark.delete": {
       "comment": "收藏列表里删除一条收藏的按钮。",
       "extractionState": "manual",

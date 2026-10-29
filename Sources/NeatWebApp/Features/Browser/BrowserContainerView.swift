@@ -245,8 +245,17 @@ private struct BrowserBookmarkListPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("browser.chrome.bookmark.list")
-                .font(.system(size: 12, weight: .semibold))
+            HStack {
+                Text("browser.chrome.bookmark.list")
+                    .font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Button(action: dismiss) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+                .focusEffectDisabled()
+                .accessibilityLabel(Text("browser.bookmark.close"))
+            }
 
             if session.bookmarks.isEmpty {
                 Text("browser.bookmark.empty")
@@ -257,48 +266,138 @@ private struct BrowserBookmarkListPanel: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(session.bookmarks) { bookmark in
-                            HStack(spacing: 8) {
-                                Button {
-                                    session.openBookmark(bookmark)
-                                    dismiss()
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(verbatim: bookmark.title)
-                                            .font(.system(size: 11))
-                                            .lineLimit(1)
-                                            .foregroundStyle(.primary)
-
-                                        Text(verbatim: bookmark.displayHost)
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(.tertiary)
-                                            .lineLimit(1)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .focusEffectDisabled()
-                                .help(Text("browser.bookmark.open"))
-
-                                Button {
-                                    session.removeBookmark(id: bookmark.id)
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 10, weight: .semibold))
-                                }
-                                .buttonStyle(.borderless)
-                                .focusEffectDisabled()
-                                .help(Text("browser.bookmark.delete"))
-                                .accessibilityLabel(localized("browser.bookmark.delete"))
-                            }
+                            BrowserBookmarkRow(bookmark: bookmark, session: session, dismiss: dismiss)
                         }
                     }
                 }
                 .frame(maxHeight: 220)
             }
+
+            if session.isCreatingBookmarkWebApp {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("browser.bookmark.adding")
+                }
+                .font(.system(size: 11))
+            } else if let notice = session.bookmarkCreationNotice {
+                Text(verbatim: notice)
+                    .font(.system(size: 11))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
         }
         .padding(14)
         .frame(width: 260)
+    }
+}
+
+/// Native row actions and an inline title editor keep the bookmark list in place.
+private struct BrowserBookmarkRow: View {
+    let bookmark: WebAppBookmark
+    let session: BrowserSession
+    let dismiss: () -> Void
+    @State private var isRenaming = false
+    @State private var draftTitle = ""
+    @FocusState private var isNameFocused: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if isRenaming {
+                VStack(alignment: .leading, spacing: 1) {
+                    TextField("browser.bookmark.name", text: $draftTitle)
+                        .font(.system(size: 11))
+                        .textFieldStyle(.plain)
+                        .focused($isNameFocused)
+                        .task { isNameFocused = true }
+                        .focusEffectDisabled()
+                        .onSubmit { finishRename() }
+                        .onExitCommand { finishRename(cancel: true) }
+                    host
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button { finishRename() } label: {
+                    Image(systemName: "checkmark")
+                }
+                .disabled(draftTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel(Text("browser.bookmark.rename"))
+            } else {
+                Button(action: open) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: bookmark.title)
+                            .font(.system(size: 11))
+                            .lineLimit(1)
+                            .foregroundStyle(.primary)
+                        host
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .help(Text("browser.bookmark.open"))
+            }
+
+            Button {
+                if isRenaming {
+                    finishRename(cancel: true)
+                } else {
+                    session.removeBookmark(id: bookmark.id)
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .help(Text(LocalizedStringKey(isRenaming ? "common.cancel" : "browser.bookmark.delete")))
+            .accessibilityLabel(Text(LocalizedStringKey(isRenaming ? "common.cancel" : "browser.bookmark.delete")))
+        }
+        .buttonStyle(.borderless)
+        .focusEffectDisabled()
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button(action: open) {
+                Label("browser.bookmark.open", systemImage: "arrow.up.right")
+            }
+            RenameButton()
+            Button {
+                Task { await session.createWebApp(from: bookmark) }
+            } label: {
+                Label("browser.bookmark.add_webapp", systemImage: "plus.app")
+            }
+            .disabled(session.isCreatingBookmarkWebApp || session.createdBookmarkIDs.contains(bookmark.id))
+            Divider()
+            Button(role: .destructive) { session.removeBookmark(id: bookmark.id) } label: {
+                Label("browser.bookmark.delete", systemImage: "trash")
+            }
+        }
+        .renameAction {
+            draftTitle = bookmark.title
+            isRenaming = true
+            isNameFocused = true
+        }
+        .onChange(of: isNameFocused) { _, focused in
+            if !focused, isRenaming { finishRename() }
+        }
+    }
+
+    private var host: some View {
+        Text(verbatim: bookmark.displayHost)
+            .font(.system(size: 10))
+            .foregroundStyle(.tertiary)
+            .lineLimit(1)
+    }
+
+    private func open() {
+        session.openBookmark(bookmark)
+        dismiss()
+    }
+
+    private func finishRename(cancel: Bool = false) {
+        if !cancel {
+            session.renameBookmark(id: bookmark.id, title: draftTitle)
+        }
+        isRenaming = false
+        isNameFocused = false
     }
 }
 

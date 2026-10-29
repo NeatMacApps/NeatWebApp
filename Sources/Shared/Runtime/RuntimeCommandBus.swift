@@ -4,6 +4,8 @@ final class RuntimeCommandBus {
     private enum NotificationTopic {
         static let command = Notification.Name("com.geraltgraham.NeatWebApp.runtime.command")
         static let event = Notification.Name("com.geraltgraham.NeatWebApp.runtime.event")
+        static let bookmarkRequest = Notification.Name("com.geraltgraham.NeatWebApp.bookmark.request")
+        static let bookmarkResult = Notification.Name("com.geraltgraham.NeatWebApp.bookmark.result")
         static let payloadKey = "payload"
     }
 
@@ -34,6 +36,27 @@ final class RuntimeCommandBus {
         using handler: @escaping @MainActor (RuntimeEvent) -> Void
     ) -> NSObjectProtocol {
         observe(name: NotificationTopic.event, object: nil, using: handler)
+    }
+
+    func send(_ request: RuntimeBookmarkRequest) {
+        post(request, name: NotificationTopic.bookmarkRequest, object: request.instanceID.uuidString)
+    }
+
+    func send(_ result: RuntimeBookmarkResult) {
+        post(result, name: NotificationTopic.bookmarkResult, object: result.instanceID.uuidString)
+    }
+
+    func observeBookmarkRequests(
+        using handler: @escaping @MainActor (RuntimeBookmarkRequest) -> Void
+    ) -> NSObjectProtocol {
+        observe(name: NotificationTopic.bookmarkRequest, object: nil, using: handler)
+    }
+
+    func observeBookmarkResults(
+        for instanceID: UUID,
+        using handler: @escaping @MainActor (RuntimeBookmarkResult) -> Void
+    ) -> NSObjectProtocol {
+        observe(name: NotificationTopic.bookmarkResult, object: instanceID.uuidString, using: handler)
     }
 
     func removeObserver(_ observer: NSObjectProtocol) {

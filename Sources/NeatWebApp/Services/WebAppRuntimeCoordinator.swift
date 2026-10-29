@@ -38,6 +38,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private var registry: [String: RuntimeState] = [:]
     private var nextSequence = 1
     private var eventObserver: NSObjectProtocol?
+    private var bookmarkObserver: NSObjectProtocol?
+    private let onBookmarkWebApp: (WebAppDefinition) -> Bool
     private var workspaceActivationObserver: NSObjectProtocol?
     private var lastExternalApplication: NSRunningApplication?
     private var runtimeHealthCheckTask: Task<Void, Never>?
@@ -66,7 +68,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         runtimeMetricsProvider: RuntimeProcessMetricsProviding = DarwinRuntimeProcessMetricsProvider(),
         onActiveAppIDChange: @escaping (String?) -> Void,
         onDiagnosticMessage: @escaping (String) -> Void,
-        onRuntimeStatesChange: @escaping ([RuntimeState]) -> Void = { _ in }
+        onRuntimeStatesChange: @escaping ([RuntimeState]) -> Void = { _ in },
+        onBookmarkWebApp: @escaping (WebAppDefinition) -> Bool = { _ in false }
     ) {
         self.registryStore = registryStore
         self.launcher = launcher ?? RuntimeLauncher(registryStore: registryStore)
@@ -81,10 +84,14 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         self.onActiveAppIDChange = onActiveAppIDChange
         self.onDiagnosticMessage = onDiagnosticMessage
         self.onRuntimeStatesChange = onRuntimeStatesChange
+        self.onBookmarkWebApp = onBookmarkWebApp
         self.hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
         self.runtimeBuildIdentifier = (try? self.launcher.currentRuntimeBuildIdentifier()) ?? hostVersion
         self.eventObserver = commandBus.observeEvents { [weak self] event in
             self?.handle(event)
+        }
+        bookmarkObserver = commandBus.observeBookmarkRequests { [weak self] request in
+            self?.handleBookmarkRequest(request)
         }
         rememberExternalApplication()
         workspaceActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -674,6 +681,23 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         }
 
         publishRuntimeStates()
+    }
+
+    private func handleBookmarkRequest(_ request: RuntimeBookmarkRequest) {
+        guard let source = registryStore.state(forAppID: request.sourceAppID),
+              source.instanceID == request.instanceID, source.phase != .terminating else { return }
+        let destination = request.definition
+        let isValid = UUID(uuidString: destination.id) != nil
+            && destination.id != request.sourceAppID
+            && !destination.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && ["http", "https"].contains(destination.homeURL.scheme?.lowercased() ?? "")
+            && destination.homeURL.host() != nil
+        let succeeded = isValid && onBookmarkWebApp(destination)
+        commandBus.send(RuntimeBookmarkResult(
+            instanceID: request.instanceID,
+            destinationAppID: destination.id,
+            succeeded: succeeded
+        ))
     }
 
     private func publishRuntimeStates() {

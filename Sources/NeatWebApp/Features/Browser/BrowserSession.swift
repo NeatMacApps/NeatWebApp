@@ -40,6 +40,13 @@ final class BrowserSession {
     private(set) var hiddenElementRules: [HiddenElementRule]
     /// 只属于当前这个网页应用的收藏，不会出现在别的网页应用窗口。
     private(set) var bookmarks: [WebAppBookmark]
+    private(set) var isCreatingBookmarkWebApp = false
+    private(set) var createdBookmarkIDs: Set<UUID> = []
+    private(set) var bookmarkCreationNotice: String?
+    @ObservationIgnored
+    var registerBookmarkWebApp: ((WebAppDefinition) async -> Bool)?
+    @ObservationIgnored
+    private var pendingBookmarkWebApps: [UUID: WebAppDefinition] = [:]
     /// 是否正处在"点一下就隐藏"的挑选模式。
     private(set) var isPickingElement = false
     /// 挑选失败时给用户的一句话解释，展示过一次就清掉。
@@ -258,6 +265,66 @@ final class BrowserSession {
         }
 
         persistPreference()
+    }
+
+    @discardableResult
+    func renameBookmark(id: UUID, title: String) -> Bool {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let index = bookmarks.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+        guard bookmarks[index].title != trimmed else { return true }
+        bookmarks[index].title = trimmed
+        persistPreference()
+        return true
+    }
+
+    func createWebApp(from bookmark: WebAppBookmark) async {
+        guard !isCreatingBookmarkWebApp, !createdBookmarkIDs.contains(bookmark.id),
+              let current = bookmarks.first(where: { $0.id == bookmark.id }),
+              let url = current.url,
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              url.host() != nil,
+              let registerBookmarkWebApp else {
+            return
+        }
+
+        isCreatingBookmarkWebApp = true
+        bookmarkCreationNotice = nil
+        defer { isCreatingBookmarkWebApp = false }
+
+        let destination: WebAppDefinition
+        if let pending = pendingBookmarkWebApps[bookmark.id] {
+            // Registration may have succeeded even if its acknowledgement was lost.
+            // Never recopy cookies over an app that may already be in use.
+            destination = pending
+        } else {
+            destination = WebAppDefinition(
+                id: UUID().uuidString,
+                name: current.title,
+                homeURL: url,
+                accentColorName: definition.accentColorName,
+                shortDescription: ""
+            )
+            let destinationStore = WKWebsiteDataStore(
+                forIdentifier: Self.websiteDataStoreIdentifier(for: destination.id)
+            )
+            do {
+                try await BrowserCookieTransfer.copy(from: websiteDataStore, to: destinationStore)
+            } catch {
+                bookmarkCreationNotice = String(localized: LocalizedStringResource("browser.bookmark.copy_failed"))
+                return
+            }
+            pendingBookmarkWebApps[bookmark.id] = destination
+        }
+
+        if await registerBookmarkWebApp(destination) {
+            pendingBookmarkWebApps.removeValue(forKey: bookmark.id)
+            createdBookmarkIDs.insert(bookmark.id)
+            bookmarkCreationNotice = String(localized: LocalizedStringResource("browser.bookmark.added"))
+        } else {
+            bookmarkCreationNotice = String(localized: LocalizedStringResource("browser.bookmark.add_failed"))
+        }
     }
 
     func openBookmark(_ bookmark: WebAppBookmark) {
@@ -578,7 +645,7 @@ final class BrowserSession {
         webView?.load(request)
     }
 
-    private static func websiteDataStoreIdentifier(for appID: String) -> UUID {
+    static func websiteDataStoreIdentifier(for appID: String) -> UUID {
         let digest = SHA256.hash(data: Data("NeatWebApp.WebsiteDataStore.\(appID)".utf8))
         var bytes = Array(digest.prefix(16))
 

@@ -165,7 +165,53 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
         XCTAssertNil(fixture.registryStore.loadBootstrap(instanceID: standbyID))
     }
 
-    private func makeFixture(standbyPool: (any RuntimeStandbyProviding)? = nil) -> Fixture {
+    func testBookmarkRegistrationValidatesSourceAndAcknowledgesHostResult() async throws {
+        var received: [WebAppDefinition] = []
+        let fixture = makeFixture(onBookmarkWebApp: { definition in
+            received.append(definition)
+            return true
+        })
+        let instanceID = UUID()
+        try fixture.registryStore.saveState(RuntimeState(
+            instanceID: instanceID, appID: claude.id,
+            pid: ProcessInfo.processInfo.processIdentifier, phase: .windowVisible,
+            windowFrame: nil, floatingIconFrame: nil, lastUpdatedAt: .now
+        ))
+        let destination = WebAppDefinition(
+            id: UUID().uuidString, name: "Bookmarked page",
+            homeURL: try XCTUnwrap(URL(string: "https://example.com/private?view=one")),
+            accentColorName: "WebAppAccentBlue", shortDescription: ""
+        )
+        var results: [RuntimeBookmarkResult] = []
+        let observer = fixture.commandBus.observeBookmarkResults(for: instanceID) { results.append($0) }
+        defer { fixture.commandBus.removeObserver(observer) }
+        let invalid = WebAppDefinition(
+            id: claude.id, name: destination.name, homeURL: destination.homeURL,
+            accentColorName: destination.accentColorName, shortDescription: ""
+        )
+        fixture.commandBus.send(RuntimeBookmarkRequest(
+            instanceID: instanceID, sourceAppID: claude.id, definition: invalid
+        ))
+        let rejected = await waitUntil { results.count == 1 }
+        XCTAssertTrue(rejected)
+        XCTAssertFalse(results.first?.succeeded ?? true)
+        XCTAssertTrue(received.isEmpty)
+
+        fixture.commandBus.send(RuntimeBookmarkRequest(
+            instanceID: instanceID, sourceAppID: claude.id, definition: destination
+        ))
+        let accepted = await waitUntil { results.count == 2 }
+        XCTAssertTrue(accepted)
+        XCTAssertEqual(received, [destination])
+        XCTAssertEqual(results.last?.destinationAppID, destination.id)
+        XCTAssertTrue(results.last?.succeeded ?? false)
+        XCTAssertTrue(fixture.placeholder.shownAppIDs.isEmpty)
+    }
+
+    private func makeFixture(
+        standbyPool: (any RuntimeStandbyProviding)? = nil,
+        onBookmarkWebApp: @escaping (WebAppDefinition) -> Bool = { _ in false }
+    ) -> Fixture {
         let tempRoot = FileManager.default.temporaryDirectory
             .appending(path: "NeatWebAppPlaceholderTests-\(UUID().uuidString)", directoryHint: .isDirectory)
         let registryStore = RuntimeRegistryStore(rootDirectoryURL: tempRoot)
@@ -192,7 +238,8 @@ final class LaunchPlaceholderCoordinatorTests: XCTestCase {
                 physicalFootprintLimitBytes: RuntimeHealthPolicy.gibibyte
             ),
             onActiveAppIDChange: { _ in },
-            onDiagnosticMessage: { _ in }
+            onDiagnosticMessage: { _ in },
+            onBookmarkWebApp: onBookmarkWebApp
         )
         addTeardownBlock {
             try? FileManager.default.removeItem(at: tempRoot)

@@ -71,6 +71,18 @@ extension AppModel {
         runtimeCoordinator.refreshRegistry()
     }
 
+    /// A lost acknowledgement can cause a retry, but must never create a second catalog entry.
+    func registerBookmarkWebApp(_ app: WebAppDefinition) -> Bool {
+        if let existing = apps.first(where: { $0.id == app.id }) {
+            return existing == app
+        }
+        let updated = apps + [app]
+        guard customAppStore.save(updated) else { return false }
+        apps = updated
+        ensureFaviconLoaded(for: app)
+        return true
+    }
+
     func updateWebApp(
         _ app: WebAppDefinition,
         name: String,

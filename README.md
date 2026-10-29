@@ -58,6 +58,7 @@ NeatWebApp lives in the menu bar — it has no Dock icon. Hover the notch (or th
 2. Hover the notch to open the launcher, click the site to open it in its own window.
 3. Each site keeps its own cookies, local storage, zoom level and bookmarks, separate from your browser and from other sites.
 4. Drag a window mostly off-screen and it tucks into the activity Dock; click its icon there to bring it back.
+5. Open **Bookmarks** from the window's More Actions menu. Right-click a bookmark to rename it or choose **Add WebApp** to create an independent app with a copy of the current app's cookies. Other website storage is not copied, so some sites may require signing in again.
 
 ## Features
 

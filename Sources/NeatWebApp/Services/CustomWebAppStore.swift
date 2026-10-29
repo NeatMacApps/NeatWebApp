@@ -28,10 +28,12 @@ final class CustomWebAppStore {
         return (try? JSONDecoder().decode([WebAppDefinition].self, from: data)) ?? []
     }
 
-    func save(_ apps: [WebAppDefinition]) {
+    @discardableResult
+    func save(_ apps: [WebAppDefinition]) -> Bool {
         guard let data = try? JSONEncoder().encode(apps) else {
-            return
+            return false
         }
         userDefaults.set(data, forKey: Key.allApps)
+        return userDefaults.data(forKey: Key.allApps) == data
     }
 }
