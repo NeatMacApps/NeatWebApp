@@ -286,7 +286,7 @@ Overlapping pinned windows must not alternate key-window ownership: only the fro
 
 ## 验收
 
-Verify the band has three controls on the left, the web app name centered, and More Actions plus the conditional download capsule on the right. The centered name hides instead of truncating when the window is too narrow. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Exercise real downloads in the compact popover, including progress updates, concurrent active/completed records, failure, per-file Finder reveal and terminal-only clearing. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long labels must remain readable at a 423-point window width.
+Verify the band has three controls on the left, the web app name centered, and More Actions plus the conditional download capsule on the right. The centered name hides instead of truncating when the window is too narrow. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Exercise real downloads in the compact popover, including progress updates, concurrent active/completed records, failure, per-file Finder reveal and terminal-only clearing. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; menu and popover labels must remain readable at a 423-point window width (the centered web app name is exempt: it hides instead of truncating when the middle gap cannot fit it).
 
 改顶栏后至少要在**浅色页面和深色页面**各截一次图，确认：网页自身顶部导航完整可见、看不出横条与分割线、图标对比度足够、阴影没有断口。
 
