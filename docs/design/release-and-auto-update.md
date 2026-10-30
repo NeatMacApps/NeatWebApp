@@ -69,9 +69,20 @@ The exported, stapled application replaced `/Applications/NeatWebApp.app`, read 
 0.3.36 / 3054 and launched. Deep strict signature verification, `spctl`
 (`accepted, source=Notarized Developer ID`) and ticket validation passed.
 
-Installed acceptance limit (carried over): the centered title on light/dark pages and
-narrow-window hiding still need an open web app window on an interactive desktop;
-no web app window was open during this headless session.
+Installed acceptance (closed 2026-10-30 on the signed 0.3.36 build, fresh pixels via
+`winshot capture --wake`): the web app name renders centered in the top band with no
+bar or divider — `百度翻译` (523 pt, light page), `ZoomEarth` (453 pt, light page) —
+dark text on white, left controls and kebab intact. A 300 pt locked-frame probe with
+a 14-character name shows no title at all: hidden, not truncated, no overlap with the
+side controls. Narrow-hide, centering and light-page contrast are visually established.
+
+Remaining limit: the dark-page contrast flip (near-white title on dark page) is still
+not captured. WebKit page pixels never paint in this session's captures — remote
+https and local file:// probes alike stay blank, so `pageColor` never leaves its white
+fallback here. This matches the recorded 0.3.32 capture limit. Bounding evidence: the
+title reuses the chrome `foregroundColor` whose dark-page flip is unit-tested
+(`testDarkPageUsesLightForeground`), and the layout path is identical in both modes.
+Repeat on an interactive desktop with a painted dark page when available.
 
 ## 0.3.32 / 3050 (2026-10-21)
 
