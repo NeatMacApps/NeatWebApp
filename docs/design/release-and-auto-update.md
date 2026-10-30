@@ -49,6 +49,30 @@ The publisher supports `--resume-publication`: it validates retained app/DMG tic
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
+## 0.3.36 / 3054 (2026-10-30)
+
+Centered web app name in the browser top chrome band: borderless, theme-contrasted,
+hidden instead of truncated when the window is too narrow. Shipped from source
+commit `1e56731`; `publish-release.sh` exited 0 (both notarizations accepted on
+first submission, stapled). Debug build, 112 host tests and 119 runtime tests
+(including 3 new title-visibility tests) passed on arm64.
+
+Anonymous full-byte comparisons passed for the 6,018,999-byte DMG and 6,062,116-byte
+ZIP. SHA-256: DMG `f1426ffe867b88feb4738085e59743841d19afbadb8b387ea042783b16385978`;
+ZIP `00f965cce354098a9d2713618689b002f6bec8449d13f64fbedfe0de5d4861ad`.
+The signed public appcast advertises build 3054 and this ZIP (origin confirmed via
+the GitHub Contents API; the raw CDN edge briefly served the stale 3053-top copy).
+The public Cask advertises 0.3.36 and the matching DMG hash. Release assets are at
+[v0.3.36](https://github.com/NeatMacApps/NeatWebApp/releases/tag/v0.3.36).
+
+The exported, stapled application replaced `/Applications/NeatWebApp.app`, read back
+0.3.36 / 3054 and launched. Deep strict signature verification, `spctl`
+(`accepted, source=Notarized Developer ID`) and ticket validation passed.
+
+Installed acceptance limit (carried over): the centered title on light/dark pages and
+narrow-window hiding still need an open web app window on an interactive desktop;
+no web app window was open during this headless session.
+
 ## 0.3.32 / 3050 (2026-10-21)
 
 The compact download presentation shipped from source commit `f08be79`; publisher
