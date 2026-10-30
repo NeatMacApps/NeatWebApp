@@ -11,6 +11,7 @@
 - 图标**裸放**在带上；常驻入口按下文的渐进式菜单规则排列。没有胶囊底板、没有描边；圆形反馈只在悬停或已有动作选中时出现。
 - 网页内容从让位带**下方**开始，网页自己的顶部导航永远不会被盖住。
 - 让位带没有任何网页内容，整条都是窗口拖动区域，双击等同系统的窗口放大／还原。
+- 网页应用名字显示在让位带**正中间**：和图标一样裸放，不画底板、不加描边，随页面明暗翻转对比色。窗口窄到放不下时直接隐藏，不做截断；标题整块不吃点击，不影响拖动。
 
 图标前景色按页面明暗自动翻转（深色页面用近白色，浅色页面用近黑色），与渐变起始色一起构成对比度防御，不依赖任何系统材质。
 
@@ -285,7 +286,7 @@ Overlapping pinned windows must not alternate key-window ownership: only the fro
 
 ## 验收
 
-Verify the band has three controls on the left, and More Actions plus the conditional download capsule on the right. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Exercise real downloads in the compact popover, including progress updates, concurrent active/completed records, failure, per-file Finder reveal and terminal-only clearing. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long labels must remain readable at a 423-point window width.
+Verify the band has three controls on the left, the web app name centered, and More Actions plus the conditional download capsule on the right. The centered name hides instead of truncating when the window is too narrow. Open the native menu and inspect icon + label rows, the ribbon bookmark icon, both existing popovers, Escape/outside dismissal, and unchanged current-page bookmark and pin behavior. Exercise real downloads in the compact popover, including progress updates, concurrent active/completed records, failure, per-file Finder reveal and terminal-only clearing. Inspect English, Simplified Chinese, accented and double-length pseudolanguages; long labels must remain readable at a 423-point window width.
 
 改顶栏后至少要在**浅色页面和深色页面**各截一次图，确认：网页自身顶部导航完整可见、看不出横条与分割线、图标对比度足够、阴影没有断口。
 

@@ -119,6 +119,7 @@
 		C7CFB29D76DCBF3C46AF31BF /* WebAppWindowAutoCollapseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F064968ED7E8033EDBBE526F /* WebAppWindowAutoCollapseTests.swift */; };
 		C8438F83176D348E92597F40 /* BrowserChromeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */; };
 		C91EE5D52855A67FAB29DB0D /* FloatingIconSnapResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D153AAAC2CEBD9238FE58516 /* FloatingIconSnapResolverTests.swift */; };
+		CA1B1CE8F7D330F8B14CD9D4 /* BrowserChromeTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E7824589C047B85B91AD0C /* BrowserChromeTitleTests.swift */; };
 		CEF7C803632831529F7D9869 /* RuntimeAppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */; };
 		D0E01CB90464D1D11E814DA3 /* RuntimeStandby.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B659482338571EEDBF5A9D1 /* RuntimeStandby.swift */; };
 		D30327832ACF73029AA7CA9B /* LaunchPlaceholderCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57977D8DAC4B5A0185A191C /* LaunchPlaceholderCoordinatorTests.swift */; };
@@ -293,7 +294,9 @@
 		BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserContainerView.swift; sourceTree = "<group>"; };
 		BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBookmarkTests.swift; sourceTree = "<group>"; };
 		BC7EE445D7133B2C7D938035 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		BE7FF0754ABA13F6B7243A40 /* 0.3.36.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.36.md; sourceTree = "<group>"; };
 		BFADCD5F35649B381FE437C5 /* RuntimeWindowEventSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeWindowEventSink.swift; sourceTree = "<group>"; };
+		C3E7824589C047B85B91AD0C /* BrowserChromeTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeTitleTests.swift; sourceTree = "<group>"; };
 		C49E6C595618896648351FC8 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		C57977D8DAC4B5A0185A191C /* LaunchPlaceholderCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchPlaceholderCoordinatorTests.swift; sourceTree = "<group>"; };
 		C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppRuntimeCoordinator.swift; sourceTree = "<group>"; };
@@ -368,6 +371,7 @@
 				7636F418261F1B478553E97E /* BookmarkWebAppCreationTests.swift */,
 				BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */,
 				9D6A45B4921BAA3A28B06BED /* BrowserChromeThemeTests.swift */,
+				C3E7824589C047B85B91AD0C /* BrowserChromeTitleTests.swift */,
 				5251982D120DB93D8AF56428 /* BrowserDownloadDestinationResolverTests.swift */,
 				933E858C0D0EC48A37BF7938 /* BrowserDownloadStatusTests.swift */,
 				5796CBD649870F8E876FEB1E /* BrowserElementHidingTests.swift */,
@@ -534,6 +538,7 @@
 				E289709351426DD39225C62E /* 0.3.32.md */,
 				A3B883665D5AB3EF50FE13ED /* 0.3.33.md */,
 				7E3A2006A07318F7D4EDD0CE /* 0.3.35.md */,
+				BE7FF0754ABA13F6B7243A40 /* 0.3.36.md */,
 			);
 			path = "release-notes";
 			sourceTree = "<group>";
@@ -976,6 +981,7 @@
 				136E8E3AC2CED76A37B7D395 /* BookmarkWebAppCreationTests.swift in Sources */,
 				6C6E5AB34D16B9ACA3A0614F /* BrowserBookmarkTests.swift in Sources */,
 				FD91885E43AD5DCA3AAADE01 /* BrowserChromeThemeTests.swift in Sources */,
+				CA1B1CE8F7D330F8B14CD9D4 /* BrowserChromeTitleTests.swift in Sources */,
 				0BD6E80B683962E747B95377 /* BrowserDownloadDestinationResolverTests.swift in Sources */,
 				57AAD8C3620E8214942B09CB /* BrowserDownloadStatusTests.swift in Sources */,
 				F8692DD2259BE6E714D1B800 /* BrowserElementHidingTests.swift in Sources */,
@@ -1136,7 +1142,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3053;
+				CURRENT_PROJECT_VERSION = 3054;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1157,7 +1163,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.35;
+				MARKETING_VERSION = 0.3.36;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1259,7 +1265,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3053;
+				CURRENT_PROJECT_VERSION = 3054;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1274,7 +1280,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.35;
+				MARKETING_VERSION = 0.3.36;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

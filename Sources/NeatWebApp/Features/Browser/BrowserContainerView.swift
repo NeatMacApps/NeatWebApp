@@ -88,6 +88,20 @@ private struct BrowserChromeBand: View {
                 }
             }
             .padding(.horizontal, BrowserChromeLayout.windowMargin)
+
+            // 网页应用名字：顶部正中间，不画底板不加描边，和图标一样裸放在让位带上。
+            // 放不下时直接隐藏，不截断；整块不吃点击，拖动窗口不受影响。
+            ViewThatFits(in: .horizontal) {
+                Text(verbatim: session.definition.name)
+                    .font(.system(size: BrowserChromeLayout.titleFontSize, weight: .semibold))
+                    .lineLimit(1)
+                Color.clear
+                    .frame(width: 0, height: 0)
+            }
+            .padding(.horizontal, BrowserChromeLayout.titleSideReserve(hasDownload: session.downloadIndicatorItem != nil))
+            .frame(maxWidth: .infinity, alignment: .center)
+            .foregroundStyle(theme.foregroundColor.color.opacity(0.75))
+            .allowsHitTesting(false)
         }
         .frame(height: BrowserChromeLayout.bandHeight)
     }
