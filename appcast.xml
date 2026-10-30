@@ -6,6 +6,23 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatWebApp</title>
         <item>
+            <title>0.3.36</title>
+            <pubDate>Fri, 30 Oct 2026 13:54:02 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatWebApp</link>
+            <sparkle:version>3054</sparkle:version>
+            <sparkle:shortVersionString>0.3.36</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## English
+
+- Each web app window now shows the app's name centered in the top chrome band, with the same borderless treatment as the surrounding icons. The title hides instead of truncating when the window is too narrow to fit it.
+
+## 简体中文
+
+- 每个网页应用窗口顶部正中间显示该应用的名字，和两侧图标一样不画底板、不加描边；窗口窄到放不下时直接隐藏，不截断。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.36/NeatWebApp-0.3.36.zip" length="6062116" type="application/octet-stream" sparkle:edSignature="CE9Gvg5dBy8QmY2zpUS45tjy9FVealQ2BypvEihDpWA3w58rS7NCUlo4RhKy/m/GxryvB3r+bWa++/u+QTSYAw=="/>
+        </item>
+        <item>
             <title>0.3.35</title>
             <pubDate>Thu, 29 Oct 2026 20:29:10 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatWebApp</link>
@@ -164,25 +181,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.26/NeatWebApp-0.3.26.zip" length="5800411" type="application/octet-stream" sparkle:edSignature="2MWXp9m3G+JaUZwJgKShosNAMNyhUTrfL54Du4TWZQFRKkpQM7ZESttAGEDZEQs74buArRiBQVZQiO0udRBYAA=="/>
         </item>
-        <item>
-            <title>0.3.25</title>
-            <pubDate>Mon, 12 Oct 2026 22:50:27 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatWebApp</link>
-            <sparkle:version>3043</sparkle:version>
-            <sparkle:shortVersionString>0.3.25</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[NeatWebApp macOS 0.3.25
-
-- 把常用网站装成独立的 macOS 应用，从刘海位置的启动器一键唤出。
-- 支持应用内自动检查、下载并安装更新。
-- 安装包经过 Developer ID 签名与苹果公证，更新包另有 EdDSA 签名。
-- 下载版双击即可打开，不需要执行任何解除限制命令。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatWebApp/releases/download/v0.3.25/NeatWebApp-0.3.25.zip" length="5790542" type="application/octet-stream" sparkle:edSignature="ZdBEr1jXDrSquxkewyG5MZSIwbKRH1bz7EQ8xckdQFBKM+bVmxjJbWXo+cQSsxOGG7R49FepTWFVcQNsylx3BQ=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: 46NGGt5X8pLTrEhLZp4whQ0rpd4aPHLN8/GQXEDI27arIkAxJuLxQXi8k4twyjqYzSfa23CEV28GaGt8BeduBA==
-length: 13739
+edSignature: 6sD5a7sbiw9iLc2NXCpDXhyA3aE9i82EsfEnqWZIZRTqd+ZL5DWexhwAAq8fSiq39RjnZHKf/xLxzWGgze20CQ==
+length: 13825
 -->
