@@ -82,6 +82,11 @@ NeatWebApp icon. This supersedes the earlier single-host-entry implementation.
 The host remains an accessory menu-bar app; only helpers assigned to real web apps
 become regular applications. Warm standby helpers stay hidden until adoption.
 
+Public storefront copy must not claim the product has no Dock presence. The
+accessory policy belongs to the host; every running web app is deliberately a
+regular app with its own Dock and Command-Tab entry, so describe the launcher as
+living outside the Dock rather than the running apps.
+
 A runtime uses native `NSApplication.setActivationPolicy(.regular)` and
 `applicationIconImage`, loading the existing per-web-app favicon cache and updating
 it when the website icon becomes available. Owner correction (2026-10-24): all
