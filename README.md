@@ -1,45 +1,73 @@
 **Languages:** English | [简体中文](README.zh-CN.md)
 
-# NeatWebApp
-
 <p align="center">
-  <img src="docs/images/app-icon.png" width="128" height="128" alt="NeatWebApp app icon">
+  <img src="docs/images/app-icon.png" width="112" height="112" alt="NeatWebApp app icon">
 </p>
 
-**Turn websites into focused macOS apps.** Pin a site as its own window with its own cookies and data, then open it from a launcher at the notch — no tabs, no browser chrome in the way.
+<h1 align="center">NeatWebApp</h1>
 
-**Requires macOS 15 or later, Apple silicon or Intel.** Open source under the MIT License. Your sites and their data stay on your Mac — there is no account and no sync.
+<p align="center">
+  <strong>Turn websites into focused macOS apps, launched from the notch.</strong>
+</p>
 
-<!-- Screenshots: capture the launcher, a browser window and the dashboard into docs/images/, then uncomment
 <p align="center">
-  <img src="docs/images/launcher.png" width="360" alt="NeatWebApp notch launcher with pinned web apps">
-  <img src="docs/images/browser.png" width="360" alt="NeatWebApp browser window showing a pinned site">
+  <a href="https://github.com/NeatMacApps/NeatWebApp/releases/latest"><img src="https://img.shields.io/github/v/release/NeatMacApps/NeatWebApp?color=blue" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2015%2B-lightgrey" alt="Platform: macOS 15 or later">
 </p>
-<p align="center">
-  <img src="docs/images/dashboard.png" width="480" alt="NeatWebApp dashboard managing web apps and settings">
-</p>
--->
+
+Browser tabs bury your everyday tools. Safari's **Add to Dock** is convenient, but each saved web app adds another icon to your Dock.
+
+**NeatWebApp** gives your sites a separate notch launcher and lets mostly hidden windows tuck themselves into a floating glass activity Dock. Every app has its own website data, so separate instances can keep work and personal accounts apart.
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="docs/images/launcher.png" width="520" alt="NeatWebApp notch launcher showing the built-in example websites"><br>
+      <sub><b>Notch launcher</b> · your sites, one hover away</sub>
+    </td>
+    <td align="center">
+      <img src="docs/images/activity-dock-dark.png" width="180" alt="NeatWebApp floating glass activity Dock with an app icon"><br>
+      <sub><b>Activity Dock</b> · collapsed sites stay within reach</sub>
+    </td>
+  </tr>
+</table>
+
+## Why NeatWebApp?
+
+| Feature | What it does |
+| :--- | :--- |
+| **Notch launcher** | Hover the MacBook notch—or the top-center hot zone on other displays—to reveal your sites. The launcher lives outside the system Dock; no account or cloud sync is required. |
+| **Edge-tucking activity Dock** | Drag a window mostly off-screen and it tucks into the floating glass activity Dock. Click its icon to bring the same window back; right-click to quit that web app. |
+| **Separate website data** | Each app instance has a persistent, isolated WebKit data store for cookies and website storage. Zoom and bookmarks are also saved per app instance. |
+| **Per-site element hiding** | Hide distracting banners, sidebars, or navigation elements on individual websites without changing other apps. |
+| **Create an app from a bookmark** | Right-click an in-app bookmark and choose **Add WebApp**. The new app gets its own data store and a one-time copy of the current app's cookies. |
+| **Native WebKit essentials** | Clean WebKit windows, Finder download management, file uploads, camera and microphone support, and automatic Sparkle updates. |
+
+Like Safari's web apps, running NeatWebApp sites can use their own site icons in the macOS Dock and ⌘Tab. NeatWebApp's distinction is the separate notch launcher, automatic edge tucking, built-in element hiding, and bookmark-based app creation—not a claim that Safari lacks website-data isolation.
 
 ## Install
 
-### Homebrew (recommended)
+**Requires macOS 15 or later; Apple silicon and Intel are supported.** Sites and their data stay on your Mac. NeatWebApp has no account, cloud sync, or telemetry service.
 
-```sh
-brew tap x0c/tap
-brew install --cask neatwebapp
+### Homebrew
+
+```bash
+brew install --cask x0c/tap/neatwebapp
 ```
 
 ### Direct download
 
-Grab the latest **signed and notarized** `NeatWebApp-x.y.z.dmg` from the [releases](https://github.com/NeatMacApps/NeatWebApp/releases/latest) page, then drag NeatWebApp to `/Applications`.
+Download the latest **signed and notarized** `NeatWebApp-x.y.z.dmg` from [Releases](https://github.com/NeatMacApps/NeatWebApp/releases/latest) and drag **NeatWebApp** to **Applications**.
 
-NeatWebApp checks for updates automatically (via [Sparkle](https://sparkle-project.org)); there is also a **Check for Updates…** item in the menu bar menu.
+Automatic updates are built in via [Sparkle](https://sparkle-project.org). You can also choose **Check for Updates…** from the menu bar or **General** settings.
 
-### Build from source
+<details>
+<summary><strong>Build from source</strong></summary>
 
 Requires Xcode 16.2+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
-```sh
+```bash
 git clone https://github.com/NeatMacApps/NeatWebApp.git
 cd NeatWebApp
 xcodegen generate
@@ -50,31 +78,25 @@ ditto build/DerivedData/Build/Products/Release/NeatWebApp.app /Applications/Neat
 open /Applications/NeatWebApp.app
 ```
 
-NeatWebApp lives in the menu bar — it has no Dock icon. Hover the notch (or the top-center hot zone on displays without a notch) to open the launcher.
+</details>
 
-## Usage
+## Quick Start
 
-1. Open the dashboard from the launcher's **+** button and add a site: name plus URL.
-2. Hover the notch to open the launcher, click the site to open it in its own window.
-3. Each site keeps its own cookies, local storage, zoom level and bookmarks, separate from your browser and from other sites.
-4. Drag a window mostly off-screen and it tucks into the activity Dock; click its icon there to bring it back.
-5. Open **Bookmarks** from the window's More Actions menu. Right-click a bookmark to rename it or choose **Add WebApp** to create an independent app with a copy of the current app's cookies. Other website storage is not copied, so some sites may require signing in again.
+1. **Reveal the launcher:** Move your pointer to the MacBook notch, or to the top-center edge on a display without a notch.
+2. **Add a site:** Click **+** in the launcher, then enter a name and URL in **Web Apps**.
+3. **Tuck and restore:** Drag a window mostly off-screen to park it in the activity Dock. Click its icon to restore the same window, or right-click to quit that web app.
+4. **Create a separate instance:** Open **Bookmarks** from a window's **More Actions** menu. Right-click a bookmark and choose **Add WebApp** to create another app with a copy of the current cookies.
 
-## Features
+The bookmark action copies cookies only—not localStorage, IndexedDB, or passkeys. The two apps keep separate data afterward, and some websites may still ask you to sign in.
 
-- Notch launcher: hover to reveal, click to open, plus a top-center hot zone on notch-less displays
-- Isolated browser windows: per-site cookies, storage, zoom and bookmarks via separate data stores
-- Floating clear-glass activity Dock: visible dotted drag grip, free dragging, remembered position, and right-click an icon to quit the app
-- Per-site element hiding, download saving with reveal in Finder, file upload and camera/microphone prompts
-- Menu-bar presence with automatic Sparkle updates, no Dock icon
+## More Native macOS & Developer Tools
 
-## Supported platforms
-
-macOS 15 or later, Apple silicon or Intel. There is no Windows, Linux, iOS or web version — NeatWebApp is built on WebKit and AppKit APIs that only exist on the Mac.
-
-## Not in scope
-
-Tab browsing, extensions, profiles, cloud sync, shared browsing sessions, an App Store build, or an import/export format for site catalogs (the catalog currently lives in the app's local storage).
+| Project | Description |
+| :--- | :--- |
+| **[NeatEditor](https://github.com/NeatMacApps/NeatEditor)** | Fast-launching, distraction-free native plain-text editor with multi-tab autosave. |
+| **[NeatPaste](https://github.com/NeatMacApps/NeatPaste)** | Local-first clipboard history in the menu bar, one shortcut away. |
+| **[HandySwitch](https://github.com/x0c/HandySwitch)** & **[MacResourceMonitor](https://github.com/x0c/MacResourceMonitor)** | Everyday menu-bar toggles and a one-click CPU process monitor. |
+| **[Corral](https://github.com/corral-dev/corral-apple)** | Run Claude Code, Codex, and Cursor side by side, with native Mac and iPhone clients. |
 
 ## License
 
