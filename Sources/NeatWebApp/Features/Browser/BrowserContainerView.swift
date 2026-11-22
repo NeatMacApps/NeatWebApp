@@ -3,26 +3,15 @@ import SwiftUI
 
 struct BrowserContainerView: View {
     let session: BrowserSession
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let theme = session.loadError != nil
-            ? BrowserChromeTheme.systemWindowSurface(for: colorScheme)
-            : session.chromeTheme
+        let theme = session.chromeTheme
 
         VStack(spacing: 0) {
-            BrowserChromeBand(session: session, theme: theme)
+            BrowserChromeBand(session: session)
 
-            ZStack {
-                BrowserWebView(session: session)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if let loadError = session.loadError {
-                    BrowserLoadErrorView(session: session, error: loadError, theme: theme)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            BrowserWebView(session: session)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(theme.pageColor.color)
         .ignoresSafeArea(.container, edges: .top)
@@ -38,47 +27,16 @@ struct BrowserContainerView: View {
     }
 }
 
-private struct BrowserLoadErrorView: View {
-    let session: BrowserSession
-    let error: BrowserLoadError
-    let theme: BrowserChromeTheme
-
-    var body: some View {
-        ContentUnavailableView {
-            Label("browser.load_error.title", systemImage: "exclamationmark.triangle")
-        } description: {
-            VStack(spacing: 4) {
-                if let host = error.displayHost, !host.isEmpty {
-                    Text(verbatim: host)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.primary)
-                }
-                Text(verbatim: error.message)
-            }
-        } actions: {
-            Button("browser.load_error.retry", action: session.reload)
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-
-            Button("browser.load_error.open_browser") {
-                NSWorkspace.shared.open(error.url)
-            }
-            .buttonStyle(.bordered)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.pageColor.color)
-    }
-}
-
 private typealias BrowserChromeLayout = BrowserChromeMetrics
 
 /// 顶部让位带：整条只铺网页自己的背景色、不画分割线，所以看不出是一条独立的横条；
 /// 网页内容从带子下方开始，永远不会被两组悬浮按钮盖住。
 private struct BrowserChromeBand: View {
     let session: BrowserSession
-    let theme: BrowserChromeTheme
 
     var body: some View {
+        let theme = session.chromeTheme
+
         ZStack {
             // 让位带里没有任何网页内容，整条都可以拿来拖动窗口。
             WindowDragHandle()

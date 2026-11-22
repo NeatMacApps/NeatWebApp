@@ -10,23 +10,6 @@ struct BrowserChromeTheme: Equatable {
 
     static let fallback = BrowserChromeTheme(pageColor: .fallbackBackground)
 
-    @MainActor
-    static func systemWindowSurface(for colorScheme: ColorScheme) -> BrowserChromeTheme {
-        let appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
-        var resolved = BrowserThemeColor.fallbackBackground
-        appearance?.performAsCurrentDrawingAppearance {
-            if let srgb = NSColor.windowBackgroundColor.usingColorSpace(.sRGB) {
-                resolved = BrowserThemeColor(
-                    red: Double(srgb.redComponent),
-                    green: Double(srgb.greenComponent),
-                    blue: Double(srgb.blueComponent),
-                    alpha: Double(srgb.alphaComponent)
-                )
-            }
-        }
-        return BrowserChromeTheme(pageColor: resolved)
-    }
-
     init(pageColor: BrowserThemeColor) {
         let resolvedPageColor = pageColor.resolved(over: .fallbackBackground)
         let usesLightForeground = resolvedPageColor.relativeLuminance < 0.5

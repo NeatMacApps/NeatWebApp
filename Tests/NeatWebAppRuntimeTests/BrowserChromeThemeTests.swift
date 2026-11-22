@@ -1,4 +1,3 @@
-import SwiftUI
 import XCTest
 @testable import NeatWebAppRuntime
 
@@ -52,16 +51,5 @@ final class BrowserChromeThemeTests: XCTestCase {
         ])
 
         XCTAssertEqual(color, BrowserThemeColor(red: 0.25, green: 0.5, blue: 0.75, alpha: 0.6))
-    }
-
-    @MainActor
-    func testSystemWindowSurfaceMatchesLightAndDarkForegroundContrast() {
-        let light = BrowserChromeTheme.systemWindowSurface(for: .light)
-        XCTAssertGreaterThan(light.pageColor.relativeLuminance, 0.7)
-        XCTAssertLessThan(light.foregroundColor.relativeLuminance, 0.05)
-
-        let dark = BrowserChromeTheme.systemWindowSurface(for: .dark)
-        XCTAssertLessThan(dark.pageColor.relativeLuminance, 0.2)
-        XCTAssertGreaterThan(dark.foregroundColor.relativeLuminance, 0.9)
     }
 }

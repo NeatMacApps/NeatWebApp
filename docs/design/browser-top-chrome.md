@@ -243,18 +243,6 @@ or the blank page as visual acceptance.
 
 Overlapping pinned windows must not alternate key-window ownership: only the frontmost opaque window at the pointer in the same window layer may take focus. Convert AppKit pointer coordinates into the Core Graphics window-list coordinate system before testing coverage. If the window list or target ID is unavailable, keep the current focus. Higher-layer system overlays remain excluded under the existing coverage policy.
 
-## Load failure and WebContent recovery
-
-Non-cancelled main-frame navigation failures (`didFailProvisionalNavigation` / `didFail`, excluding `NSURLErrorCancelled` `-999` and `WebKitErrorDomain` `102`/`204` policy/plugin interruptions) show a native `ContentUnavailableView` overlay instead of lifting the launch cover onto a blank white page:
-
-- **Surface & contrast:** Both the top band and the error overlay adopt `BrowserChromeTheme.systemWindowSurface(for:)` so Light and Dark Mode remain seamless without a border or contrast inversion.
-- **Contents:** SF Symbol `exclamationmark.triangle`, localized title (`browser.load_error.title`), the failing host plus the system `error.localizedDescription` (no filler troubleshooting prose), a prominent `Retry` primary button (`keyboardShortcut(.defaultAction)`), and a bordered `Open in Browser` secondary button.
-- **Uncommitted reload fallback:** When `loadError != nil` or `webView.url == nil` (when `WKWebView.reload()` / `reloadFromOrigin()` returns `nil` after a provisional failure), `reload()` and `reloadIgnoringCache()` load the failed URL (or `currentURL`) directly so `⌘R`, More Actions `Reload`, and `toggleUA()` work reliably.
-- **WebContent termination recovery:** `webViewWebContentProcessDidTerminate(_:)` logs a warning and silently reloads once; a second termination within 15 seconds shows the recovery overlay (`browser.load_error.process_terminated`) instead of looping.
-- **Navigation diagnostics:** Main-frame failures and process terminations log host, domain, and code via `os.Logger` (`com.geraltgraham.NeatWebAppRuntime`, category `BrowserNavigation`) without query strings or credentials.
-
-Reference & API record: inspected local SwiftUI references `ProxyAgentMac/LeakCheckView.swift` and `Corral/MacTerminalPane.swift`; public SwiftUI `ContentUnavailableView(label:description:actions:)` (macOS 14+) verified in the installed macOS SDK; AppKit/WebKit `WKNavigationDelegate` (`didFailProvisionalNavigation`, `didFail`, `webViewWebContentProcessDidTerminate`).
-
 ## 被否决的方案
 
 ### 悬浮胶囊 + 系统液态玻璃（已实现后推翻）

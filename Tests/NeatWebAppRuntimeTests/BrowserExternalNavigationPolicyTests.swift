@@ -42,77 +42,41 @@ final class BrowserExternalNavigationPolicyTests: XCTestCase {
 
 @MainActor
 final class BrowserLoadRecoveryTests: XCTestCase {
-    func testShouldPresentLoadErrorFiltersCancelledAndPolicyInterruptions() {
+    func testShouldLogLoadErrorFiltersCancelledAndPolicyInterruptions() {
         XCTAssertFalse(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
             )
         )
         XCTAssertFalse(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: "WebKitErrorDomain", code: 102)
             )
         )
         XCTAssertFalse(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: "WebKitErrorDomain", code: 204)
             )
         )
 
         XCTAssertTrue(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: NSURLErrorDomain, code: NSURLErrorNetworkConnectionLost)
             )
         )
         XCTAssertTrue(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed)
             )
         )
         XCTAssertTrue(
-            BrowserSession.shouldPresentLoadError(
+            BrowserSession.shouldLogLoadError(
                 NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
             )
         )
     }
 
-    func testNavigationFailureSetsAndClearsLoadError() throws {
-        let (session, homeURL) = try makeSession()
-        let error = NSError(
-            domain: NSURLErrorDomain,
-            code: NSURLErrorNetworkConnectionLost,
-            userInfo: [
-                NSLocalizedDescriptionKey: "The network connection was lost.",
-                NSURLErrorFailingURLErrorKey: homeURL
-            ]
-        )
-
-        session.isLoading = true
-        session.handleNavigationFailure(error, failingURL: homeURL)
-
-        XCTAssertFalse(session.isLoading)
-        XCTAssertEqual(
-            session.loadError,
-            BrowserLoadError(
-                url: homeURL,
-                message: "The network connection was lost.",
-                domain: NSURLErrorDomain,
-                code: NSURLErrorNetworkConnectionLost
-            )
-        )
-        XCTAssertEqual(session.loadError?.displayHost, "chatgpt.com")
-
-        session.handleNavigationStarted()
-        XCTAssertNil(session.loadError)
-
-        session.handleNavigationFailure(error, failingURL: nil)
-        XCTAssertNotNil(session.loadError)
-
-        session.handleNavigationCommitted()
-        XCTAssertNil(session.loadError)
-    }
-
-    func testReloadAndReloadIgnoringCacheFallBackWhenWebViewURLIsNil() throws {
+    func testReloadAndReloadIgnoringCacheFallBackToFailedOrHomeURLWhenWebViewURLIsNil() throws {
         let (session, homeURL) = try makeSession()
         let webView = SpyLoadWebView()
         session.continueWithoutImportedCookies()
@@ -125,12 +89,13 @@ final class BrowserLoadRecoveryTests: XCTestCase {
             userInfo: [NSLocalizedDescriptionKey: "The network connection was lost."]
         )
         let failedURL = try XCTUnwrap(URL(string: "https://chatgpt.com/chat"))
+        session.isLoading = true
         session.handleNavigationFailure(error, failingURL: failedURL)
 
+        XCTAssertFalse(session.isLoading)
         XCTAssertNil(webView.url)
 
         session.reload()
-        XCTAssertNil(session.loadError)
         XCTAssertTrue(session.isLoading)
         XCTAssertEqual(webView.recordedRequests.map(\.url), [failedURL])
 
@@ -138,9 +103,26 @@ final class BrowserLoadRecoveryTests: XCTestCase {
         session.reloadIgnoringCache()
         XCTAssertEqual(webView.recordedRequests.map(\.url), [homeURL])
         XCTAssertEqual(webView.recordedRequests.first?.cachePolicy, .reloadIgnoringLocalCacheData)
+
+        session.handleNavigationFailure(error, failingURL: failedURL)
+        session.handleNavigationCommitted()
+        webView.recordedRequests.removeAll()
+        session.reload()
+        XCTAssertEqual(webView.recordedRequests.map(\.url), [homeURL])
     }
 
-    func testWebContentProcessTerminationReloadsOnceThenShowsRecoveryError() throws {
+    func testReattachingSameWebViewDoesNotLoopLoadWhenURLIsNil() throws {
+        let (session, homeURL) = try makeSession()
+        let webView = SpyLoadWebView()
+        session.continueWithoutImportedCookies()
+        session.attach(webView: webView)
+        XCTAssertEqual(webView.recordedRequests.map(\.url), [homeURL])
+
+        session.attach(webView: webView)
+        XCTAssertEqual(webView.recordedRequests.count, 1)
+    }
+
+    func testWebContentProcessTerminationReloadsOnceThenStopsLoop() throws {
         let (session, _) = try makeSession()
         let webView = SpyLoadWebView()
         session.continueWithoutImportedCookies()
@@ -149,13 +131,10 @@ final class BrowserLoadRecoveryTests: XCTestCase {
 
         let start = Date(timeIntervalSince1970: 1_000)
         session.handleWebContentProcessDidTerminate(now: start)
-        XCTAssertNil(session.loadError)
         XCTAssertEqual(webView.recordedRequests.count, 1)
 
         session.handleWebContentProcessDidTerminate(now: start.addingTimeInterval(5))
-        XCTAssertNotNil(session.loadError)
         XCTAssertFalse(session.isLoading)
-        XCTAssertEqual(session.loadError?.domain, "WebKitErrorDomain")
         XCTAssertEqual(webView.recordedRequests.count, 1)
     }
 

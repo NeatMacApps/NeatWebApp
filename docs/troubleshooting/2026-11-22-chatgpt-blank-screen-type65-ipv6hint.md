@@ -2,7 +2,7 @@
 
 ## Symptom
 
-Opening `https://chatgpt.com` in NeatWebApp (`WKWebView`), Safari, or `URLSession` fails with `NSURLErrorDomain` code `-1005` (`NSPOSIXErrorDomain` code `54`: `Connection reset by peer`), while Chrome and `curl` open `chatgpt.com` normally. Previously, NeatWebApp swallowed the provisional navigation failure, showed a blank white `about:blank` window, and `⌘R` / Reload was a no-op because `webView.url` remained `nil`.
+Opening `https://chatgpt.com` in NeatWebApp (`WKWebView`), Safari, or `URLSession` fails with `NSURLErrorDomain` code `-1005` (`NSPOSIXErrorDomain` code `54`: `Connection reset by peer`), while Chrome and `curl` open `chatgpt.com` normally. Previously, NeatWebApp swallowed the provisional navigation failure silently, and `⌘R` / Reload was a no-op because `webView.url` remained `nil`.
 
 ## Root Cause
 
@@ -14,8 +14,8 @@ Opening `https://chatgpt.com` in NeatWebApp (`WKWebView`), Safari, or `URLSessio
 
 ## Resolution
 
-- **NeatWebApp container fixes:**
-  1. Surface a native `ContentUnavailableView` error overlay with `Retry` and `Open in Browser` actions on non-cancelled main-frame navigation failures, plus `os.Logger` diagnostics (`BrowserNavigation`).
-  2. Fix `reload()` and `reloadIgnoringCache()` to fall back to `load(_:)` when `loadError != nil` or `webView.url == nil` after a provisional failure.
+- **NeatWebApp container fixes (non-UI only; no custom error view UI):**
+  1. Log non-cancelled main-frame navigation failures and WebContent terminations via `os.Logger` (`com.geraltgraham.NeatWebAppRuntime`, category `BrowserNavigation`) without query strings or credentials.
+  2. Fix `reload()` and `reloadIgnoringCache()` to fall back to `load(_:)` when `lastFailedURL != nil` or `webView.url == nil` after an uncommitted provisional failure.
   3. Recover from `webViewWebContentProcessDidTerminate(_:)` with a single automatic reload and a 15-second loop guard.
 - **Host proxy/DNS requirement:** To let `WKWebView` / `URLSession` / Safari connect to dual-stack hosts through an IPv4-only TUN, suppress DNS `TYPE65` (`HTTPS`) / enable strict IPv6 protection in the proxy configuration (`proxy-agent leak set strictIpv6 on`).

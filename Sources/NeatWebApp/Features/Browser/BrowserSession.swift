@@ -5,17 +5,6 @@ import OSLog
 import AppKit
 import WebKit
 
-struct BrowserLoadError: Equatable, Sendable {
-    let url: URL
-    let message: String
-    let domain: String
-    let code: Int
-
-    var displayHost: String? {
-        url.host(percentEncoded: false)
-    }
-}
-
 @MainActor
 protocol BrowserSessionCommandHandling: AnyObject {
     func browserSessionDidRequestClose(_ session: BrowserSession)
@@ -56,7 +45,8 @@ final class BrowserSession {
     private(set) var createdBookmarkIDs: Set<UUID> = []
     private(set) var bookmarkCreationNotice: String?
     var cookieImportFailed = false
-    var loadError: BrowserLoadError?
+    @ObservationIgnored
+    private var lastFailedURL: URL?
     @ObservationIgnored
     private var lastWebContentTerminationAt: Date?
     @ObservationIgnored
@@ -155,7 +145,7 @@ final class BrowserSession {
 
         if !hasPreparedInitialCookies {
             if !cookieImportFailed { prepareInitialCookies() }
-        } else if webView.url == nil, loadError == nil, !alreadyAttached {
+        } else if webView.url == nil, !alreadyAttached {
             webView.load(URLRequest(url: currentURL))
         } else if !alreadyAttached {
             syncNavigationState(from: webView)
@@ -216,8 +206,8 @@ final class BrowserSession {
     }
 
     func reload() {
-        let failedURL = loadError?.url
-        loadError = nil
+        let failedURL = lastFailedURL
+        lastFailedURL = nil
         if let failedURL {
             isLoading = true
             loadAfterPreparingCookies(failedURL)
@@ -234,8 +224,8 @@ final class BrowserSession {
 
     /// 绕过缓存重新拉取，对应浏览器里的"硬刷新"。
     func reloadIgnoringCache() {
-        let failedURL = loadError?.url
-        loadError = nil
+        let failedURL = lastFailedURL
+        lastFailedURL = nil
         if let failedURL {
             isLoading = true
             loadIgnoringCacheAfterPreparingCookies(failedURL)
@@ -250,7 +240,7 @@ final class BrowserSession {
         loadIgnoringCacheAfterPreparingCookies(currentURL)
     }
 
-    static func shouldPresentLoadError(_ error: Error) -> Bool {
+    static func shouldLogLoadError(_ error: Error) -> Bool {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
             return false
@@ -262,15 +252,15 @@ final class BrowserSession {
     }
 
     func handleNavigationStarted() {
-        loadError = nil
+        lastFailedURL = nil
     }
 
     func handleNavigationCommitted() {
-        loadError = nil
+        lastFailedURL = nil
     }
 
     func handleNavigationFailure(_ error: Error, failingURL: URL?) {
-        guard Self.shouldPresentLoadError(error) else {
+        guard Self.shouldLogLoadError(error) else {
             return
         }
 
@@ -282,12 +272,7 @@ final class BrowserSession {
         )
 
         isLoading = false
-        loadError = BrowserLoadError(
-            url: targetURL,
-            message: error.localizedDescription,
-            domain: nsError.domain,
-            code: nsError.code
-        )
+        lastFailedURL = targetURL
     }
 
     func handleWebContentProcessDidTerminate(now: Date = Date()) {
@@ -297,12 +282,6 @@ final class BrowserSession {
         if let last = lastWebContentTerminationAt,
            now.timeIntervalSince(last) < Self.processTerminationLoopWindow {
             isLoading = false
-            loadError = BrowserLoadError(
-                url: currentURL,
-                message: String(localized: "browser.load_error.process_terminated"),
-                domain: "WebKitErrorDomain",
-                code: -1
-            )
             return
         }
 
@@ -467,7 +446,7 @@ final class BrowserSession {
 
         currentURL = url
         pageTitle = bookmark.title
-        loadError = nil
+        lastFailedURL = nil
         isLoading = true
         loadAfterPreparingCookies(url)
     }
@@ -771,7 +750,7 @@ final class BrowserSession {
     private func loadConfiguredHomePage() {
         currentURL = definition.homeURL
         pageTitle = definition.name
-        loadError = nil
+        lastFailedURL = nil
         canGoBack = false
         canGoForward = false
         isLoading = true
