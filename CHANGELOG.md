@@ -8,6 +8,18 @@ the named acceptance is done.
 
 ## Unreleased
 
+## 0.3.37
+
+### English
+
+- Smooth the launcher transition when it attaches to the edge of the screen.
+- Fix Reload and Reload Without Cache after a page's first load fails before WebKit assigns a current URL. Retrying opens the intended page again.
+
+### 简体中文
+
+- 让启动器贴到屏幕边缘时的过渡更平滑。
+- 修复网页首次加载失败、WebKit 尚未记录当前地址时「重新加载」和「不使用缓存重新加载」无效的问题。重试会再次打开原页面。
+
 ## 0.3.36
 
 English:
