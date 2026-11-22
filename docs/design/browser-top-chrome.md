@@ -245,6 +245,10 @@ Overlapping pinned windows must not alternate key-window ownership: only the fro
 
 ## 被否决的方案
 
+### 自定义加载失败占位页（2026-11-22 已否决）
+
+用户在界面验收时明确否决在 `WKWebView` 上覆盖自绘错误占位页（`BrowserLoadErrorView`，含 `Couldn't Open Page` / `Retry` / `Open in Browser`）。主导航失败维持无额外 UI 干预；容器侧仅保留非界面能力（导航失败日志、`webView.url == nil` 未提交失败时的刷新兜底、以及 `WebContent` 进程终止防循环重载），见 [2026-11-22-chatgpt-blank-screen-type65-ipv6hint.md](../troubleshooting/2026-11-22-chatgpt-blank-screen-type65-ipv6hint.md)。
+
 ### 悬浮胶囊 + 系统液态玻璃（已实现后推翻）
 
 按侧边 Dock 的做法给左右两组按钮套液态玻璃胶囊，实测有两个硬伤：

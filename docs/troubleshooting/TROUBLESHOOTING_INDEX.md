@@ -14,6 +14,6 @@
 | [2026-09-18 长页面把窗口卡死](2026-09-18-long-page-webview-jank.md) | 排查「网页应用内容一多就打字卡、滚动卡、窗口不可用」（对话、信息流都算），或准备给容器加显示/GPU/卸页/「长列表卸屏」之前。不读会做成某个网站的定点补丁、用卸页破坏秒开，或把已否决的屏外跳过绘制脚本加回去。 |
 | [2026-10-07 新开网页应用加载慢（预热运行时）](../design/warm-standby-runtime.md) | 排查「新打开还没运行的网页应用比浏览器慢很多」。含实测分段（冷启动约 2 秒、站点服务器等待）、已排除的浏览器身份/注入脚本/数据隔离，以及预热运行时的取舍。不读会去改浏览器身份或注入脚本，白忙。 |
 | [2026-10-30 无交互桌面开窗截图验收](2026-10-30-headless-webapp-window-verification.md) | 显示器睡眠/锁屏时验证浏览器真窗像素：合成点击到不了应用时用自举 bootstrap 拉窗、`CGRect` 的 `[[x,y],[w,h]]` 形状、锁框做窄窗、探针清理清单。WebKit 页面空白是环境限制不是回归。 |
-| [2026-11-22 ChatGPT 白屏（TYPE65 ipv6hint 与未提交重载修复）](2026-11-22-chatgpt-blank-screen-type65-ipv6hint.md) | 排查「浏览器能打开某双栈站点（如 ChatGPT），但 NeatWebApp / Safari 白屏报 `-1005 / ECONNRESET`」：IPv4-only TUN 未拦截 DNS `TYPE65` `ipv6hint` 导致 `Network.framework` 直连 IPv6 被重置，以及容器层导航错误日志、未提交重载兜底与进程崩溃防循环恢复。 |
+| [2026-11-22 ChatGPT 白屏（TYPE65 ipv6hint 与未提交重载修复）](2026-11-22-chatgpt-blank-screen-type65-ipv6hint.md) | 排查「浏览器能打开某双栈站点（如 ChatGPT），但 NeatWebApp / Safari 白屏报 `-1005 / ECONNRESET`」：IPv4-only TUN 未拦截 DNS `TYPE65` `ipv6hint` 导致 `Network.framework` 直连 IPv6 被重置（已验证开启宿主 DNS `TYPE65` 抑制后恢复 `HTTP 200`）；容器侧保留无 UI 诊断日志、未提交重载兜底与进程崩溃防循环恢复，已否决自定义错误页 UI。 |
 
 <!-- 该文档整理/压缩于 2026-09-05 -->
