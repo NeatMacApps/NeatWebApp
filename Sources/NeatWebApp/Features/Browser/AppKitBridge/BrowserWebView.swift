@@ -106,26 +106,38 @@ struct BrowserWebView: NSViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            session.handleNavigationStarted()
             session.syncNavigationState(from: webView)
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            session.handleNavigationCommitted()
             session.syncNavigationState(from: webView)
             notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            session.handleNavigationCommitted()
             session.syncNavigationState(from: webView)
             notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            let failingURL = (error as NSError).userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? webView.url
+            session.handleNavigationFailure(error, failingURL: failingURL)
             session.syncNavigationState(from: webView)
             notifyFirstContentPaint(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            let failingURL = (error as NSError).userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? webView.url
+            session.handleNavigationFailure(error, failingURL: failingURL)
             session.syncNavigationState(from: webView)
+            notifyFirstContentPaint(from: webView)
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            session.handleWebContentProcessDidTerminate()
             notifyFirstContentPaint(from: webView)
         }
 

@@ -1,8 +1,20 @@
 import Foundation
 import CryptoKit
 import Observation
+import OSLog
 import AppKit
 import WebKit
+
+struct BrowserLoadError: Equatable, Sendable {
+    let url: URL
+    let message: String
+    let domain: String
+    let code: Int
+
+    var displayHost: String? {
+        url.host(percentEncoded: false)
+    }
+}
 
 @MainActor
 protocol BrowserSessionCommandHandling: AnyObject {
@@ -44,6 +56,9 @@ final class BrowserSession {
     private(set) var createdBookmarkIDs: Set<UUID> = []
     private(set) var bookmarkCreationNotice: String?
     var cookieImportFailed = false
+    var loadError: BrowserLoadError?
+    @ObservationIgnored
+    private var lastWebContentTerminationAt: Date?
     @ObservationIgnored
     private var hasPreparedInitialCookies = false
     @ObservationIgnored
@@ -58,6 +73,11 @@ final class BrowserSession {
     var elementHidingNotice: String?
 
     private static let mobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    static let processTerminationLoopWindow: TimeInterval = 15
+    private static let navigationLogger = Logger(
+        subsystem: "com.geraltgraham.NeatWebAppRuntime",
+        category: "BrowserNavigation"
+    )
 
     @ObservationIgnored
     private let preferencesStore: WebAppPreferencesStore
@@ -135,7 +155,7 @@ final class BrowserSession {
 
         if !hasPreparedInitialCookies {
             if !cookieImportFailed { prepareInitialCookies() }
-        } else if webView.url == nil {
+        } else if webView.url == nil, loadError == nil, !alreadyAttached {
             webView.load(URLRequest(url: currentURL))
         } else if !alreadyAttached {
             syncNavigationState(from: webView)
@@ -196,12 +216,98 @@ final class BrowserSession {
     }
 
     func reload() {
-        webView?.reload()
+        let failedURL = loadError?.url
+        loadError = nil
+        if let failedURL {
+            isLoading = true
+            loadAfterPreparingCookies(failedURL)
+            return
+        }
+
+        if let webView, webView.url != nil, webView.reload() != nil {
+            return
+        }
+
+        isLoading = true
+        loadAfterPreparingCookies(currentURL)
     }
 
     /// 绕过缓存重新拉取，对应浏览器里的"硬刷新"。
     func reloadIgnoringCache() {
-        webView?.reloadFromOrigin()
+        let failedURL = loadError?.url
+        loadError = nil
+        if let failedURL {
+            isLoading = true
+            loadIgnoringCacheAfterPreparingCookies(failedURL)
+            return
+        }
+
+        if let webView, webView.url != nil, webView.reloadFromOrigin() != nil {
+            return
+        }
+
+        isLoading = true
+        loadIgnoringCacheAfterPreparingCookies(currentURL)
+    }
+
+    static func shouldPresentLoadError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            return false
+        }
+        if nsError.domain == "WebKitErrorDomain", nsError.code == 102 || nsError.code == 204 {
+            return false
+        }
+        return true
+    }
+
+    func handleNavigationStarted() {
+        loadError = nil
+    }
+
+    func handleNavigationCommitted() {
+        loadError = nil
+    }
+
+    func handleNavigationFailure(_ error: Error, failingURL: URL?) {
+        guard Self.shouldPresentLoadError(error) else {
+            return
+        }
+
+        let nsError = error as NSError
+        let targetURL = failingURL ?? currentURL
+        let host = targetURL.host(percentEncoded: false) ?? "unknown"
+        Self.navigationLogger.error(
+            "Navigation failed for host=\(host, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code)"
+        )
+
+        isLoading = false
+        loadError = BrowserLoadError(
+            url: targetURL,
+            message: error.localizedDescription,
+            domain: nsError.domain,
+            code: nsError.code
+        )
+    }
+
+    func handleWebContentProcessDidTerminate(now: Date = Date()) {
+        let host = currentURL.host(percentEncoded: false) ?? "unknown"
+        Self.navigationLogger.warning("WebContent process terminated for host=\(host, privacy: .public)")
+
+        if let last = lastWebContentTerminationAt,
+           now.timeIntervalSince(last) < Self.processTerminationLoopWindow {
+            isLoading = false
+            loadError = BrowserLoadError(
+                url: currentURL,
+                message: String(localized: "browser.load_error.process_terminated"),
+                domain: "WebKitErrorDomain",
+                code: -1
+            )
+            return
+        }
+
+        lastWebContentTerminationAt = now
+        reload()
     }
 
     func printPage() {
@@ -361,6 +467,7 @@ final class BrowserSession {
 
         currentURL = url
         pageTitle = bookmark.title
+        loadError = nil
         isLoading = true
         loadAfterPreparingCookies(url)
     }
@@ -664,6 +771,7 @@ final class BrowserSession {
     private func loadConfiguredHomePage() {
         currentURL = definition.homeURL
         pageTitle = definition.name
+        loadError = nil
         canGoBack = false
         canGoForward = false
         isLoading = true
@@ -674,6 +782,14 @@ final class BrowserSession {
     private func loadAfterPreparingCookies(_ url: URL) {
         if hasPreparedInitialCookies {
             webView?.load(URLRequest(url: url))
+        } else if !cookieImportFailed {
+            prepareInitialCookies()
+        }
+    }
+
+    private func loadIgnoringCacheAfterPreparingCookies(_ url: URL) {
+        if hasPreparedInitialCookies {
+            webView?.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData))
         } else if !cookieImportFailed {
             prepareInitialCookies()
         }
