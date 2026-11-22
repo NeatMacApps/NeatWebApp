@@ -49,6 +49,12 @@ The publisher supports `--resume-publication`: it validates retained app/DMG tic
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
 
+## 0.3.37 / 3055 (2026-11-22)
+
+Source: `1a2cc23`. The Debug build, 113 host tests, 123 runtime tests (including provisional-load retry), static analysis, and Developer ID archive/export passed on arm64. Xcode 27.2 reports `Metadata extraction skipped, no AppIntents.framework dependency found` for the host and runtime, which do not implement App Intents. The warning does not affect their bundles; revisit it if either target adopts the framework rather than adding an unused dependency.
+
+Both app and DMG notarizations were accepted. Anonymous DMG/ZIP downloads matched the notarized artifacts, the exact client feed served signed build 3055, and the Cask SHA-256 matched the public DMG. The first final check stopped on a stale edge after publishing; a separate readback of the actual client feed and matching signed assets closed the release without rebuilding. The signed app was installed as 0.3.37 (3055) and launched. Code signatures and tickets passed independently; this Mac's Gatekeeper output includes `override=security disabled`, so it does not establish default policy enforcement. The launcher animation was not recaptured for this packaging run.
+
 ## 0.3.36 / 3054 (2026-10-30)
 
 Centered web app name in the browser top chrome band: borderless, theme-contrasted,
