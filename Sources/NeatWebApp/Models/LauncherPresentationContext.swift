@@ -14,10 +14,11 @@ struct LauncherPresentationContext: Equatable, Sendable {
         let iconFontSize: CGFloat
         let panelBottomPadding: CGFloat
         let backgroundCornerRadius: CGFloat
+        let topConnectionDepth: CGFloat
 
         var panelSize: CGSize {
             CGSize(
-                width: barSize.width,
+                width: barSize.width + 2 * topConnectionDepth,
                 height: barSize.height + panelBottomPadding
             )
         }
@@ -51,6 +52,9 @@ struct LauncherPresentationContext: Equatable, Sendable {
         let iconRowHeight = iconSize + iconBottomPadding
         let barHeight = notchHeight + iconRowHeight
         let panelBottomPadding: CGFloat = 0
+        let leftClearance = geometry.notchRect.minX - geometry.screenFrame.minX
+        let rightClearance = geometry.screenFrame.maxX - geometry.notchRect.maxX
+        let topConnectionDepth = min(10, notchHeight / 2, max(0, min(leftClearance, rightClearance)))
 
         return Layout(
             barSize: CGSize(width: notchWidth, height: barHeight),
@@ -64,7 +68,8 @@ struct LauncherPresentationContext: Equatable, Sendable {
             iconHorizontalPadding: minimumSpacing,
             iconFontSize: max(iconSize * 0.42, 14),
             panelBottomPadding: panelBottomPadding,
-            backgroundCornerRadius: min(iconRowHeight * 0.5, 24)
+            backgroundCornerRadius: min(iconRowHeight * 0.5, 24),
+            topConnectionDepth: topConnectionDepth
         )
     }
 
@@ -73,10 +78,11 @@ struct LauncherPresentationContext: Equatable, Sendable {
     }
 
     var panelFrame: CGRect {
-        let size = panelSize
+        let layout = self.layout
+        let size = layout.panelSize
 
         return CGRect(
-            x: geometry.notchRect.minX,
+            x: geometry.notchRect.minX - layout.topConnectionDepth,
             y: geometry.screenFrame.maxY - size.height,
             width: size.width,
             height: size.height

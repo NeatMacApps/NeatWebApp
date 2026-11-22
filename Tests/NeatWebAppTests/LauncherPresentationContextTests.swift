@@ -3,13 +3,39 @@ import XCTest
 @testable import NeatWebApp
 
 final class LauncherPresentationContextTests: XCTestCase {
-    func testMatchesBarWidthToNotchRect() {
+    func testShouldersExtendThePanelWithoutWideningTheIconRow() {
         let geometry = makeGeometry()
         let context = LauncherPresentationContext(geometry: geometry, apps: WebAppDefinition.examples)
+        let layout = context.layout
 
-        XCTAssertEqual(context.layout.barSize.width, geometry.notchRect.width)
-        XCTAssertEqual(context.panelSize.width, geometry.notchRect.width)
-        XCTAssertEqual(context.panelFrame.minX, geometry.notchRect.minX)
+        XCTAssertGreaterThan(layout.topConnectionDepth, 0)
+        XCTAssertEqual(layout.barSize.width, geometry.notchRect.width)
+        XCTAssertEqual(context.panelSize.width, geometry.notchRect.width + 2 * layout.topConnectionDepth)
+        XCTAssertEqual(context.panelFrame.minX + layout.topConnectionDepth, geometry.notchRect.minX)
+        XCTAssertEqual(context.panelFrame.maxX - layout.topConnectionDepth, geometry.notchRect.maxX)
+    }
+
+    func testShouldersFlareOnlyAtTheScreenEdge() {
+        let context = LauncherPresentationContext(geometry: makeGeometry(), apps: WebAppDefinition.examples)
+        let layout = context.layout
+        let depth = layout.topConnectionDepth
+        let bounds = CGRect(origin: .zero, size: layout.panelSize)
+        let path = EdgeAttachedShape(edge: .top, cornerRadius: layout.backgroundCornerRadius, topConnectionDepth: depth)
+            .path(in: bounds)
+
+        let pathBounds = path.boundingRect
+        XCTAssertEqual(pathBounds.minX, bounds.minX, accuracy: 0.001)
+        XCTAssertEqual(pathBounds.minY, bounds.minY, accuracy: 0.001)
+        XCTAssertEqual(pathBounds.maxX, bounds.maxX, accuracy: 0.001)
+        XCTAssertEqual(pathBounds.maxY, bounds.maxY, accuracy: 0.001)
+        for x in [depth * 0.75, bounds.maxX - depth * 0.75] {
+            XCTAssertTrue(path.contains(CGPoint(x: x, y: depth * 0.1)))
+            XCTAssertFalse(path.contains(CGPoint(x: x, y: depth + 1)))
+        }
+
+        let nearBottom = bounds.maxY - 1
+        XCTAssertFalse(path.contains(CGPoint(x: depth + 1, y: nearBottom)))
+        XCTAssertTrue(path.contains(CGPoint(x: bounds.midX, y: nearBottom)))
     }
 
     func testLeavesNotchAreaEmptyAndAlignsPanelToScreenTop() {

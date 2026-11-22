@@ -34,7 +34,7 @@ struct LauncherOverlayRootView: View {
         VStack(spacing: 0) {
             attachedLauncher(layout: layout)
                 .frame(
-                    width: layout.barSize.width,
+                    width: layout.panelSize.width,
                     height: isExpanded ? layout.barSize.height : layout.topInsetHeight,
                     alignment: .top
                 )
@@ -66,12 +66,15 @@ struct LauncherOverlayRootView: View {
     }
 
     private func attachedLauncher(layout: LauncherPresentationContext.Layout) -> some View {
-        ZStack(alignment: .top) {
-            EdgeAttachedShape(edge: .top, cornerRadius: layout.backgroundCornerRadius)
-                .fill(islandFill)
+        let shape = EdgeAttachedShape(
+            edge: .top,
+            cornerRadius: layout.backgroundCornerRadius,
+            topConnectionDepth: layout.topConnectionDepth
+        )
 
-            EdgeAttachedShape(edge: .top, cornerRadius: layout.backgroundCornerRadius)
-                .stroke(.white.opacity(0.06), lineWidth: 1)
+        return ZStack(alignment: .top) {
+            shape.fill(islandFill)
+            shape.stroke(.white.opacity(0.06), lineWidth: 1)
 
             VStack(spacing: 0) {
                 Color.clear
@@ -79,8 +82,9 @@ struct LauncherOverlayRootView: View {
 
                 iconRow(layout: layout)
             }
+            .frame(width: layout.barSize.width)
         }
-        .frame(width: layout.barSize.width, height: layout.barSize.height, alignment: .top)
+        .frame(width: layout.panelSize.width, height: layout.barSize.height, alignment: .top)
         // Keep the launcher body flat against the page content.
         // A drop shadow here reads as an extra translucent strip under the bar.
     }

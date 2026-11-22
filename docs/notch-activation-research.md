@@ -19,6 +19,12 @@ Together they provide enough information to infer the occupied top-center notch 
 
 That derived geometry is then expanded into an activation region and a launcher-retention region.
 
+## Launcher silhouette at the screen edge
+
+On both hardware and virtual notches, the expanded launcher flares outward at its two top corners. Each concave shoulder meets the screen edge horizontally and the launcher side vertically. The panel makes room for the shoulders; the body and icon row stay the width of the notch. Keep the existing bottom corners, hover zone, and icon interactions.
+
+The [Boring Notch silhouette](https://github.com/TheBoredTeam/boring.notch/blob/b7611bb/boringNotch/components/Notch/NotchShape.swift) is the visual reference for the concave join. Reuse NeatWebApp's existing screen-attachment curve with the public [SwiftUI `Path`](https://developer.apple.com/documentation/swiftui/path) API; do not import the reference's code, panel, or animation.
+
 ## 无刘海屏幕的虚拟刘海（2026-08-01 落地）
 
 外接显示器、Mac mini / Studio、旧款 MacBook 都没有硬件刘海，此前整条唤出链路对这些屏幕直接失效。现在由 `ScreenNotchGeometry.virtual(...)` 在这类屏幕顶部中央合成一块虚拟刘海。

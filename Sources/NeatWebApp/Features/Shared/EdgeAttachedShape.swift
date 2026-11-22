@@ -11,9 +11,12 @@ struct EdgeAttachedShape: InsettableShape {
     var edge: ScreenAttachedEdge
     var cornerRadius: CGFloat
     var insetAmount: CGFloat = 0
+    var topConnectionDepth: CGFloat = 0
 
     func inset(by amount: CGFloat) -> EdgeAttachedShape {
-        EdgeAttachedShape(edge: edge, cornerRadius: cornerRadius, insetAmount: insetAmount + amount)
+        var shape = self
+        shape.insetAmount += amount
+        return shape
     }
 
     func path(in rect: CGRect) -> Path {
@@ -24,50 +27,39 @@ struct EdgeAttachedShape: InsettableShape {
         var path = Path()
 
         switch edge {
-        case .top:
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.maxX - radius, y: rect.maxY),
-                control: CGPoint(x: rect.maxX, y: rect.maxY)
-            )
-            path.addLine(to: CGPoint(x: rect.minX + radius, y: rect.maxY))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.minX, y: rect.maxY - radius),
-                control: CGPoint(x: rect.minX, y: rect.maxY)
-            )
-        case .bottom:
-            // 底部形状是左侧贴边形状旋转后的镜像：顶部两角保持外侧圆角，
-            // 底部两角沿用贴边收束弧，因此能平滑过渡到屏幕边缘而不会变成药丸。
-            let bottomRadius = min(
-                cornerRadius,
-                rect.height / 2,
-                max(rect.width - (connectionDepth * 2), 0) / 2
-            )
+        case .top, .bottom:
+            let isTop = edge == .top
+            let depth = isTop ? min(topConnectionDepth, rect.width / 2, rect.height / 2) : connectionDepth
+            let left = rect.minX + depth
+            let right = rect.maxX - depth
+            let outerRadius = min(isTop ? radius : cornerRadius, (right - left) / 2, rect.height / 2)
 
-            path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+            // The shoulder is tangent to the screen edge and to the straight side.
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
             path.addCurve(
-                to: CGPoint(x: rect.minX + connectionDepth, y: rect.maxY - connectionDepth),
-                control1: CGPoint(x: rect.minX + (connectionDepth * 0.65), y: rect.maxY),
-                control2: CGPoint(x: rect.minX + connectionDepth, y: rect.maxY - (connectionDepth * 0.35))
+                to: CGPoint(x: left, y: rect.minY + depth),
+                control1: CGPoint(x: rect.minX + depth * 0.65, y: rect.minY),
+                control2: CGPoint(x: left, y: rect.minY + depth * 0.35)
             )
-            path.addLine(to: CGPoint(x: rect.minX + connectionDepth, y: rect.minY + bottomRadius))
+            path.addLine(to: CGPoint(x: left, y: rect.maxY - outerRadius))
             path.addQuadCurve(
-                to: CGPoint(x: rect.minX + connectionDepth + bottomRadius, y: rect.minY),
-                control: CGPoint(x: rect.minX + connectionDepth, y: rect.minY)
+                to: CGPoint(x: left + outerRadius, y: rect.maxY),
+                control: CGPoint(x: left, y: rect.maxY)
             )
-            path.addLine(to: CGPoint(x: rect.maxX - connectionDepth - bottomRadius, y: rect.minY))
+            path.addLine(to: CGPoint(x: right - outerRadius, y: rect.maxY))
             path.addQuadCurve(
-                to: CGPoint(x: rect.maxX - connectionDepth, y: rect.minY + bottomRadius),
-                control: CGPoint(x: rect.maxX - connectionDepth, y: rect.minY)
+                to: CGPoint(x: right, y: rect.maxY - outerRadius),
+                control: CGPoint(x: right, y: rect.maxY)
             )
-            path.addLine(to: CGPoint(x: rect.maxX - connectionDepth, y: rect.maxY - connectionDepth))
+            path.addLine(to: CGPoint(x: right, y: rect.minY + depth))
             path.addCurve(
-                to: CGPoint(x: rect.maxX, y: rect.maxY),
-                control1: CGPoint(x: rect.maxX - connectionDepth, y: rect.maxY - (connectionDepth * 0.35)),
-                control2: CGPoint(x: rect.maxX - (connectionDepth * 0.65), y: rect.maxY)
+                to: CGPoint(x: rect.maxX, y: rect.minY),
+                control1: CGPoint(x: right, y: rect.minY + depth * 0.35),
+                control2: CGPoint(x: rect.maxX - depth * 0.65, y: rect.minY)
             )
+            if !isTop {
+                path = path.applying(CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: rect.minY + rect.maxY))
+            }
         case .left:
             path.move(to: CGPoint(x: rect.minX, y: rect.minY))
             path.addCurve(
