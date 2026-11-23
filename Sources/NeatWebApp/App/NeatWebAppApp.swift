@@ -1,4 +1,5 @@
 import AppKit
+import MacKitUpdater
 import SwiftUI
 
 @MainActor
@@ -80,10 +81,9 @@ struct NeatWebAppApp: App {
                 appModel.setMenuBarIconVisible(false)
             }
 
-            Button(updateButtonTitle) {
+            MenuBarUpdateButton(availability: appUpdater.availability) {
                 appUpdater.updater.checkForUpdates()
             }
-            .disabled(!appUpdater.canCheckForUpdates)
 
             Divider()
 
@@ -99,9 +99,18 @@ struct NeatWebAppApp: App {
     private func openMainWindow() {
         ManagementWindowPresenter.present()
     }
+}
 
-    private var updateButtonTitle: String {
-        if let availableVersion = appUpdater.availableVersion {
+private struct MenuBarUpdateButton: View {
+    let availability: UpdateAvailabilityState
+    let action: () -> Void
+
+    var body: some View {
+        Button(title, action: action)
+    }
+
+    private var title: String {
+        if let availableVersion = availability.availableVersion {
             return String(
                 format: String(localized: "settings.update.install_format"),
                 availableVersion

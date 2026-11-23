@@ -9,9 +9,7 @@ import SwiftUI
 /// 还负责在更新覆盖安装之前把所有 WebApp 运行时收掉——运行时是从应用包内部
 /// 启动的独立进程，更新会把整个应用包整体换掉，留着它们会继续跑在旧代码上。
 @MainActor
-final class AppUpdater: NSObject, ObservableObject,
-    SPUUpdaterDelegate,
-    @preconcurrency SPUStandardUserDriverDelegate {
+final class AppUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
     /// 后台已发现、但还没让用户处理的版本号；没有待处理更新时为 nil。
     @Published private(set) var availableVersion: String?
     /// 跟随 Sparkle 的真实状态；值没变不写。菜单按钮不要观察本对象。
@@ -23,13 +21,17 @@ final class AppUpdater: NSObject, ObservableObject,
 
     private lazy var controller = SparkleUpdateChecker(
         updaterDelegate: self,
-        userDriverDelegate: self
+        gentleReminderMode: .menuBarOnly
     )
 
     init(onWillInstallUpdate: @escaping @MainActor () -> Void) {
         self.onWillInstallUpdate = onWillInstallUpdate
         super.init()
         _ = controller
+        controller.onAvailableVersionChange = { [weak self] version in
+            guard let self, self.availableVersion != version else { return }
+            self.availableVersion = version
+        }
         canCheckForUpdatesCancellable = updater.publisher(for: \.canCheckForUpdates)
             .removeDuplicates()
             .receive(on: RunLoop.main)
@@ -37,6 +39,10 @@ final class AppUpdater: NSObject, ObservableObject,
                 guard let self, self.canCheckForUpdates != canCheck else { return }
                 self.canCheckForUpdates = canCheck
             }
+    }
+
+    var availability: UpdateAvailabilityState {
+        controller.availability
     }
 
     var updater: SPUUpdater {
@@ -61,36 +67,5 @@ final class AppUpdater: NSObject, ObservableObject,
 
         hasPreparedForInstall = true
         onWillInstallUpdate()
-    }
-
-    // MARK: - 菜单栏应用的温和提醒
-
-    /// 本应用常驻菜单栏、没有主窗口，后台发现更新时直接弹窗会打断用户手上的事，
-    /// 所以只有用户主动触发时才让 Sparkle 抢焦点，其余情况把入口挂回菜单里。
-    var supportsGentleScheduledUpdateReminders: Bool {
-        true
-    }
-
-    func standardUserDriverShouldHandleShowingScheduledUpdate(
-        _ update: SUAppcastItem,
-        andInImmediateFocus immediateFocus: Bool
-    ) -> Bool {
-        immediateFocus
-    }
-
-    func standardUserDriverWillHandleShowingUpdate(
-        _ handleShowingUpdate: Bool,
-        forUpdate update: SUAppcastItem,
-        state: SPUUserUpdateState
-    ) {
-        availableVersion = handleShowingUpdate ? nil : update.displayVersionString
-    }
-
-    func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
-        availableVersion = nil
-    }
-
-    func standardUserDriverWillFinishUpdateSession() {
-        availableVersion = nil
     }
 }

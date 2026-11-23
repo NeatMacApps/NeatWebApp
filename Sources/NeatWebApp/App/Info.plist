@@ -43,7 +43,7 @@
     <key>SUEnableAutomaticChecks</key>
     <true/>
     <key>SUAutomaticallyUpdate</key>
-    <true/>
+    <false/>
     <key>SUScheduledCheckInterval</key>
     <integer>86400</integer>
     <!-- 这两项必须成对开启：更新清单本身与版本说明也要验签，不只验安装包。
