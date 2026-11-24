@@ -113,7 +113,9 @@ private struct BrowserMoreActionsControl: View {
 
     private enum Panel: String, Identifiable {
         case bookmarks
+        #if !APP_STORE
         case elementHiding
+        #endif
 
         var id: String { rawValue }
     }
@@ -131,6 +133,7 @@ private struct BrowserMoreActionsControl: View {
             }
             .onHover { isHovered = $0 }
             .animation(accessibilityReduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
+            #if !APP_STORE
             .overlay(alignment: .topTrailing) {
                 if session.isPickingElement {
                     Circle()
@@ -139,17 +142,28 @@ private struct BrowserMoreActionsControl: View {
                         .allowsHitTesting(false)
                 }
             }
+            #endif
         .popover(item: $presentedPanel, arrowEdge: .bottom) { panel in
             switch panel {
             case .bookmarks:
                 BrowserBookmarkListPanel(session: session) { presentedPanel = nil }
+            #if !APP_STORE
             case .elementHiding:
                 BrowserElementHidingPanel(session: session) { presentedPanel = nil }
+            #endif
             }
         }
     }
 
     private var entries: [BrowserMenuEntry] {
+        #if APP_STORE
+        [
+            .action(localized("browser.chrome.bookmark.list"), "bookmark", true, { presentedPanel = .bookmarks }),
+            .separator,
+            .action(localized("browser.chrome.reload"), "arrow.clockwise", true, session.reload),
+            .action(localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"), session.isMobileUA ? "laptopcomputer" : "iphone", true, session.toggleUA)
+        ]
+        #else
         [
             .action(localized("browser.chrome.bookmark.list"), "bookmark", true, { presentedPanel = .bookmarks }),
             .action(localized(session.isPickingElement ? "browser.element_hiding.exit" : "browser.element_hiding.enter"), "wand.and.sparkles", true, toggleElementHiding),
@@ -157,8 +171,10 @@ private struct BrowserMoreActionsControl: View {
             .action(localized("browser.chrome.reload"), "arrow.clockwise", true, session.reload),
             .action(localized(session.isMobileUA ? "browser.chrome.user_agent.desktop" : "browser.chrome.user_agent.mobile"), session.isMobileUA ? "laptopcomputer" : "iphone", true, session.toggleUA)
         ]
+        #endif
     }
 
+    #if !APP_STORE
     private func toggleElementHiding() {
         if session.isPickingElement {
             session.cancelElementPicking()
@@ -168,6 +184,7 @@ private struct BrowserMoreActionsControl: View {
         session.elementHidingNotice = nil
         presentedPanel = .elementHiding
     }
+    #endif
 }
 
 private enum BrowserMenuEntry {
@@ -424,6 +441,7 @@ private struct BrowserBookmarkRow: View {
     }
 }
 
+#if !APP_STORE
 /// 魔法棒：进入"点一下就隐藏"的挑选模式，以及还原这个网页应用已经隐藏掉的元素。
 private struct BrowserElementHidingPanel: View {
     let session: BrowserSession
@@ -516,6 +534,7 @@ private struct BrowserElementHidingPanel: View {
         session.beginElementPicking()
     }
 }
+#endif
 
 private func localized(_ key: String) -> String {
     String(localized: LocalizedStringResource(stringLiteral: key))

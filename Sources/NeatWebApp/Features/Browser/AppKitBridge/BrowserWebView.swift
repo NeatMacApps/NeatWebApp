@@ -17,11 +17,15 @@ struct BrowserWebView: NSViewRepresentable {
         configuration.userContentController = WKUserContentController()
         configuration.userContentController.add(context.coordinator, name: BrowserThemeObserver.messageHandlerName)
         configuration.userContentController.add(context.coordinator, name: BrowserPasskeySupport.messageHandlerName)
+        #if APP_STORE
+        BrowserUserScripts.install(into: configuration.userContentController)
+        #else
         configuration.userContentController.add(context.coordinator, name: BrowserElementHidingScript.messageHandlerName)
         BrowserUserScripts.install(
             into: configuration.userContentController,
             hiddenElementRules: session.hiddenElementRules
         )
+        #endif
 
         let webView = BrowserKeyCommandWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -74,12 +78,14 @@ struct BrowserWebView: NSViewRepresentable {
                 session.updateChromeThemeColor(pageColor)
             case BrowserPasskeySupport.messageHandlerName:
                 explainPasskeyLimitation(pageURL: message.webView?.url)
+            #if !APP_STORE
             case BrowserElementHidingScript.messageHandlerName:
                 guard let incoming = BrowserElementHidingScript.IncomingMessage(body: message.body) else {
                     return
                 }
 
                 session.handleElementHidingMessage(incoming)
+            #endif
             default:
                 break
             }
@@ -514,6 +520,14 @@ final class BrowserKeyCommandWebView: WKWebView {
 /// WebKit 只允许整批清空用户脚本、不能单独摘掉某一条，所以隐藏规则一变就得把整套重装一遍；
 /// 装配顺序集中在这里，免得漏掉其中一条。
 enum BrowserUserScripts {
+    #if APP_STORE
+    @MainActor
+    static func install(into controller: WKUserContentController) {
+        controller.removeAllUserScripts()
+        controller.addUserScript(BrowserThemeObserver.makeUserScript())
+        controller.addUserScript(BrowserPasskeySupport.makeUserScript())
+    }
+    #else
     @MainActor
     static func install(into controller: WKUserContentController, hiddenElementRules: [HiddenElementRule]) {
         controller.removeAllUserScripts()
@@ -521,6 +535,7 @@ enum BrowserUserScripts {
         controller.addUserScript(BrowserPasskeySupport.makeUserScript())
         controller.addUserScript(BrowserElementHidingScript.makeUserScript(rules: hiddenElementRules))
     }
+    #endif
 }
 
 private enum BrowserThemeObserver {

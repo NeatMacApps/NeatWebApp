@@ -37,8 +37,10 @@ final class BrowserSession {
         }
     }
 
+    #if !APP_STORE
     /// 用户手动隐藏掉的元素，按站点归属，跨页面生效。
     private(set) var hiddenElementRules: [HiddenElementRule]
+    #endif
     /// 只属于当前这个网页应用的收藏，不会出现在别的网页应用窗口。
     private(set) var bookmarks: [WebAppBookmark]
     private(set) var isCreatingBookmarkWebApp = false
@@ -57,15 +59,23 @@ final class BrowserSession {
     var registerBookmarkWebApp: ((WebAppDefinition) async -> Bool)?
     @ObservationIgnored
     private var pendingBookmarkWebApps: [UUID: WebAppDefinition] = [:]
+    #if !APP_STORE
     /// 是否正处在"点一下就隐藏"的挑选模式。
     private(set) var isPickingElement = false
     /// 挑选失败时给用户的一句话解释，展示过一次就清掉。
     var elementHidingNotice: String?
+    #endif
 
     private static let mobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
     static let processTerminationLoopWindow: TimeInterval = 15
     private static let navigationLogger = Logger(
-        subsystem: "com.geraltgraham.NeatWebAppRuntime",
+        subsystem: {
+            #if APP_STORE
+            "com.caozc.NeatWebApp"
+            #else
+            "com.geraltgraham.NeatWebAppRuntime"
+            #endif
+        }(),
         category: "BrowserNavigation"
     )
 
@@ -118,7 +128,9 @@ final class BrowserSession {
         self.pageZoom = preference.pageZoom
         self.isPinned = preference.isPinned
         self.isMobileUA = preference.isMobileUA
+        #if !APP_STORE
         self.hiddenElementRules = preference.resolvedHiddenElements
+        #endif
         self.bookmarks = preference.resolvedBookmarks.sorted { $0.createdAt > $1.createdAt }
         self.preferencesStore = preferencesStore
         self.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.websiteDataStoreIdentifier(for: definition.id))
@@ -451,6 +463,7 @@ final class BrowserSession {
         loadAfterPreparingCookies(url)
     }
 
+    #if !APP_STORE
     // MARK: - 手动隐藏网页元素
 
     var currentSiteHost: String {
@@ -577,6 +590,7 @@ final class BrowserSession {
             )
         }
     }
+    #endif
 
     func closeWindow() {
         commandHandler?.browserSessionDidRequestClose(self)
@@ -694,11 +708,13 @@ final class BrowserSession {
     }
 
     func syncNavigationState(from webView: WKWebView) {
+        #if !APP_STORE
         // 页面一换，注入到旧文档里的挑选模式就跟着没了，按钮状态必须复位，
         // 否则魔法棒会一直亮着、再点一次只是"取消"，用户按不出挑选来。
         if isPickingElement, let url = webView.url, url != currentURL {
             isPickingElement = false
         }
+        #endif
 
         pageTitle = webView.title?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty ?? definition.name
         currentURL = webView.url ?? currentURL
@@ -730,7 +746,9 @@ final class BrowserSession {
         preference.pageZoom = pageZoom
         preference.isPinned = isPinned
         preference.isMobileUA = isMobileUA
+        #if !APP_STORE
         preference.hiddenElements = hiddenElementRules
+        #endif
         preference.bookmarks = bookmarks
         if let windowPlacement {
             preference.windowPlacement = windowPlacement

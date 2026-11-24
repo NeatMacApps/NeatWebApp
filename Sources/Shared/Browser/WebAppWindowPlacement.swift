@@ -15,7 +15,11 @@ struct SideDockScreenReserve: Equatable, Sendable, Codable {
 
 /// 网页窗口不得压住本应用侧边 Dock：在系统 `visibleFrame` 上再扣掉 Dock 所在边的整条厚度。
 enum SideDockWindowAvoidance {
+    #if APP_STORE
+    static let didChangeNotification = Notification.Name("com.caozc.NeatWebApp.sideDock.reserveDidChange")
+    #else
     static let didChangeNotification = Notification.Name("com.geraltgraham.NeatWebApp.sideDock.reserveDidChange")
+    #endif
 
     static func usableFrame(
         visibleFrame: CGRect,

@@ -555,7 +555,12 @@ private struct AppDropDelegate: DropDelegate {
 }
 
 #Preview {
+    #if DIRECT_DISTRIBUTION
     DashboardView()
         .environment(AppModel())
         .environmentObject(AppUpdater {})
+    #else
+    DashboardView()
+        .environment(AppModel())
+    #endif
 }

@@ -4,7 +4,11 @@ import WebKit
 
 @MainActor
 enum BrowserCookieTransfer {
+    #if APP_STORE
+    private nonisolated static let service = "com.caozc.NeatWebApp.bookmark-cookie-handoff"
+    #else
     private nonisolated static let service = "com.geraltgraham.NeatWebApp.bookmark-cookie-handoff"
+    #endif
 
     /// Stage credentials in Keychain, never in distributed notifications or catalog preferences.
     static func stage(from source: WKWebsiteDataStore, for appID: String) async throws {

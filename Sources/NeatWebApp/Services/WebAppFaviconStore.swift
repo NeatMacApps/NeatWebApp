@@ -3,7 +3,11 @@ import AppKit
 
 @MainActor
 final class WebAppFaviconStore {
+    #if APP_STORE
+    private static let changedNotification = Notification.Name("com.caozc.NeatWebApp.favicon.changed")
+    #else
     private static let changedNotification = Notification.Name("com.geraltgraham.NeatWebApp.favicon.changed")
+    #endif
     private let fileManager: FileManager
     private let directoryURL: URL
     private let dockSourceDirectoryURL: URL
@@ -19,17 +23,23 @@ final class WebAppFaviconStore {
             self.directoryURL = directoryURL
             self.dockSourceDirectoryURL = directoryURL.appending(path: "DockSources", directoryHint: .isDirectory)
         } else {
+            let applicationSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? fileManager.homeDirectoryForCurrentUser.appending(path: "Library/Application Support", directoryHint: .isDirectory)
+            self.directoryURL = applicationSupportURL
+                .appending(path: supportBundleIdentifier, directoryHint: .isDirectory)
+                .appending(path: "Favicons", directoryHint: .isDirectory)
+            #if APP_STORE
+            self.dockSourceDirectoryURL = applicationSupportURL
+                .appending(path: supportBundleIdentifier, directoryHint: .isDirectory)
+                .appending(path: "DockSources", directoryHint: .isDirectory)
+            #else
             let configHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"]
                 .flatMap { $0.hasPrefix("/") ? URL(fileURLWithPath: $0, isDirectory: true) : nil }
                 ?? fileManager.homeDirectoryForCurrentUser.appending(path: ".config", directoryHint: .isDirectory)
             self.dockSourceDirectoryURL = configHome
                 .appending(path: supportBundleIdentifier, directoryHint: .isDirectory)
                 .appending(path: "DockSources", directoryHint: .isDirectory)
-            let applicationSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-                ?? fileManager.homeDirectoryForCurrentUser.appending(path: "Library/Application Support", directoryHint: .isDirectory)
-            self.directoryURL = applicationSupportURL
-                .appending(path: supportBundleIdentifier, directoryHint: .isDirectory)
-                .appending(path: "Favicons", directoryHint: .isDirectory)
+            #endif
         }
     }
 

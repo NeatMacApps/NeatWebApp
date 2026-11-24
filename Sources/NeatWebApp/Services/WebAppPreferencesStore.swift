@@ -264,6 +264,7 @@ final class WebAppPreferencesStore {
 
     private func mergedDefaultsStorage() -> [String: StoredWebAppPreference] {
         var merged: [String: StoredWebAppPreference] = [:]
+        #if !APP_STORE
         if sharedFileURL != nil {
             for bundleID in Self.siblingBundleIDs {
                 guard let domain = UserDefaults.standard.persistentDomain(forName: bundleID),
@@ -277,6 +278,7 @@ final class WebAppPreferencesStore {
                 }
             }
         }
+        #endif
 
         if let data = userDefaults.data(forKey: Key.preferences),
            let decoded = try? decoder.decode([String: StoredWebAppPreference].self, from: data) {

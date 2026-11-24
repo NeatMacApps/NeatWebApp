@@ -1,5 +1,7 @@
 import AppKit
+#if DIRECT_DISTRIBUTION
 import MacKitUpdater
+#endif
 import SwiftUI
 
 @MainActor
@@ -7,28 +9,42 @@ import SwiftUI
 struct NeatWebAppApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let appModel: AppModel
+    #if DIRECT_DISTRIBUTION
     private let appUpdater: AppUpdater
+    #endif
 
     init() {
         let appModel = AppModel()
         appModel.startIfNeeded()
+        #if DIRECT_DISTRIBUTION
         let updater = AppUpdater {
             appModel.prepareForApplicationUpdate()
         }
+        #endif
         self.appModel = appModel
+        #if DIRECT_DISTRIBUTION
         self.appUpdater = updater
+        #endif
         appDelegate.prepareForTermination = { [weak appModel] in
             appModel?.prepareForApplicationTermination()
         }
+        #if DIRECT_DISTRIBUTION
         appDelegate.isUpdateSessionInProgress = { [weak updater] in
             updater?.updater.sessionInProgress ?? false
         }
+        #endif
+        #if APP_STORE
+        appDelegate.restoreWebAppOnReopen = { [weak appModel] in
+            appModel?.restoreWebAppOnReopen() ?? false
+        }
+        #endif
     }
 
     var body: some Scene {
         // The single management window (catalog + settings) is the Settings scene,
         // which gives its panes native icon + label toolbar tabs. There is no second window.
         Settings {
+            #if DIRECT_DISTRIBUTION
             DashboardView()
                 .environment(appModel)
                 .environmentObject(appUpdater)
@@ -40,6 +56,15 @@ struct NeatWebAppApp: App {
                         appUpdater.updater.sessionInProgress
                     }
                 }
+            #else
+            DashboardView()
+                .environment(appModel)
+                .onAppear {
+                    appDelegate.isMenuBarIconVisible = { [appModel] in
+                        appModel.isMenuBarIconVisible
+                    }
+                }
+            #endif
         }
         .defaultLaunchBehavior(.suppressed)
         .restorationBehavior(.disabled)
@@ -81,9 +106,11 @@ struct NeatWebAppApp: App {
                 appModel.setMenuBarIconVisible(false)
             }
 
+            #if DIRECT_DISTRIBUTION
             MenuBarUpdateButton(availability: appUpdater.availability) {
                 appUpdater.updater.checkForUpdates()
             }
+            #endif
 
             Divider()
 
@@ -101,6 +128,7 @@ struct NeatWebAppApp: App {
     }
 }
 
+#if DIRECT_DISTRIBUTION
 private struct MenuBarUpdateButton: View {
     let availability: UpdateAvailabilityState
     let action: () -> Void
@@ -119,3 +147,4 @@ private struct MenuBarUpdateButton: View {
         return String(localized: "settings.check_for_updates")
     }
 }
+#endif

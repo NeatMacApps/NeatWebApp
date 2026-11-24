@@ -169,11 +169,755 @@ enum BrowserElementHidingScript {
             // 但不能一路吞掉整个页面，超过半个视口就停。
             const MAX_VIEWPORT_RATIO = 0.5;
 
+            const GENERIC_ROOT_IDS = new Set([
+                'app', 'root', '__next', '__nuxt', 'main', 'page',
+                'container', 'wrapper', 'content', 'article-content-container'
+            ]);
+            const STATE_OR_THEME_CLASSES = new Set([
+                'light', 'dark', 'active', 'selected', 'current', 'open', 'closed',
+                'show', 'hide', 'hidden', 'visible', 'focus', 'focused', 'hover',
+                'disabled', 'loading', 'expanded', 'collapsed', 'checked', 'on', 'off',
+                'init', 'ready', 'mobile', 'desktop', 'pc', 'android', 'ios',
+                'white', 'black', 'small', 'medium', 'large', 'fixed', 'sticky'
+            ]);
+            const STATE_PREFIX_RE = /^(?:is|has|js|state|theme|mode|layer|v-enter|v-leave|fade|slide|animate|anim|transition)[-_]/i;
+            const GENERIC_CLASSES = new Set([
+                'box', 'main', 'page', 'app', 'root', 'layout', 'container', 'wrapper', 'wrap',
+                'content', 'inner', 'outer', 'body', 'head', 'header', 'footer', 'nav', 'navbar',
+                'sidebar', 'aside', 'section', 'panel', 'card', 'item', 'items', 'list', 'row', 'rows',
+                'col', 'cols', 'grid', 'flex', 'group', 'controls', 'control', 'actions', 'action',
+                'btn', 'btns', 'button', 'buttons', 'icon', 'icons', 'iconfont', 'img', 'image',
+                'pic', 'picture', 'photo', 'avatar', 'title', 'subtitle', 'heading', 'text', 'txt',
+                'label', 'desc', 'description', 'info', 'meta', 'mask', 'modal', 'dialog', 'popup',
+                'overlay', 'drawer', 'menu', 'dropdown', 'tab', 'tabs', 'bar', 'toolbar',
+                'top', 'bottom', 'left', 'right', 'center', 'middle', 'badge', 'tag', 'tags',
+                'tip', 'tips', 'dot', 'dots', 'line', 'divider', 'bg', 'link', 'input', 'form',
+                'search', 'close', 'logo', 'banner', 'ad', 'ads', 'placeholder',
+                'content-wrapper', 'main-wrapper'
+            ]);
+            const UTILITY_CLASS_RE = /^(?:p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|-m|-mx|-my|-mt|-mr|-mb|-ml|w|h|min-w|max-w|min-h|max-h|size|gap|gap-x|gap-y|space-x|space-y|text|bg|border|rounded|shadow|opacity|z|top|bottom|left|right|inset|overflow|cursor|items|justify|self|content|place|flex|grow|shrink|basis|grid|col|row|font|leading|tracking|transition|duration|ease|delay|scale|rotate|translate|skew|ring|outline|divide|fill|stroke|sr|select|pointer|appearance|whitespace|break|truncate|align|object|aspect|order)-/i;
+            const SINGLETON_UTILITY_RE = /^(?:flex|inline-flex|grid|inline-grid|block|inline-block|inline|hidden|relative|absolute|fixed|sticky|static|truncate|uppercase|lowercase|capitalize|underline|italic|antialiased|clearfix|sr-only|pointer-events-none|pointer-events-auto|select-none|overflow-hidden|overflow-auto|whitespace-nowrap)$/i;
+            const CSS_IN_JS_HASH_RE = /^(?:css|sc|emotion|svelte|jsx)-[a-z0-9]{4,}$/i;
+            const COMMON_SHORT_WORDS = new Set([
+                'length', 'strength', 'widths', 'depths', 'months', 'eighth', 'fifths', 'sixths', 'ninths', 'twelfth'
+            ]);
+            const TIER1_ATTRS = [
+                'data-testid', 'data-test', 'data-cy', 'data-qa',
+                'data-component', 'data-module', 'data-slot', 'data-section',
+                'data-name', 'data-widget', 'data-block', 'data-region'
+            ];
+            const TIER1_ATTR_SET = new Set(TIER1_ATTRS);
+            const TIER2_ATTRS = ['aria-label', 'title', 'alt', 'name'];
+            const LANDMARK_ROLES = new Set([
+                'banner', 'complementary', 'contentinfo', 'navigation', 'search', 'dialog', 'alertdialog', 'status'
+            ]);
+            const SEMANTIC_LANDMARK_TAGS = new Set(['header', 'nav', 'aside', 'footer']);
+
             let rules = Array.isArray(rulesFromNative) ? rulesFromNative : [];
             let picking = false;
             let hoverTarget = null;
             let ui = null;
             let toastTimer = 0;
+
+            const escapeAttrValue = (value) => String(value)
+                .replace(/\\/g, '\\\\')
+                .replace(/"/g, '\\"');
+
+            const looksLikeHash = (token) => {
+                if (!token || token.length < 4 || token.length > 10) {
+                    return false;
+                }
+                if (/[^A-Za-z0-9_-]/.test(token)) {
+                    return false;
+                }
+                if (/[0-9]/.test(token)) {
+                    return true;
+                }
+                if (/^[a-z]+$/.test(token)) {
+                    return token.length >= 5 && /[^aeiouy]{4,}/i.test(token) && !COMMON_SHORT_WORDS.has(token);
+                }
+                if (/^[A-Z]+$/.test(token)) {
+                    return token.length >= 5 && /[^AEIOUY]{4,}/.test(token);
+                }
+                if (/^[A-Z][a-z]+$/.test(token)) {
+                    return false;
+                }
+                if (/^[a-z]+[A-Z][a-z]{2,}$/.test(token) && !/[^aeiouy]{4,}/i.test(token)) {
+                    return false;
+                }
+                return /[A-Z]/.test(token) && /[a-z]/.test(token);
+            };
+
+            const isDynamicID = (id) => {
+                if (typeof id !== 'string') {
+                    return true;
+                }
+                const trimmed = id.trim();
+                if (!trimmed || trimmed.length > 80 || /\s|[{}]/.test(trimmed)) {
+                    return true;
+                }
+                if (/^\d+$/.test(trimmed)) {
+                    return true;
+                }
+                if (/^[:«]r[a-z0-9_-]*[:»]?$/i.test(trimmed)) {
+                    return true;
+                }
+                if (/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(trimmed)) {
+                    return true;
+                }
+                if (/^[0-9a-f]{12,}$/i.test(trimmed) || /[-_][0-9a-f]{8,}$/i.test(trimmed)) {
+                    return true;
+                }
+                if (/^(?:ember|react|mui|radix|headlessui|rc-tabs|el-id|el-popper|tippy)(?:[-_:\d]|$)/i.test(trimmed)) {
+                    return true;
+                }
+                if (/^aria-[a-z-]*\d/i.test(trimmed)) {
+                    return true;
+                }
+                if (/[-_]\d{4,}$/.test(trimmed)) {
+                    return true;
+                }
+                const parts = trimmed.split(/[-_]/);
+                if (parts.length >= 2 && looksLikeHash(parts[parts.length - 1])) {
+                    return true;
+                }
+                return false;
+            };
+
+            const isSpecificID = (id) => (
+                !isDynamicID(id) && !GENERIC_ROOT_IDS.has(id.trim().toLowerCase())
+            );
+
+            const isStateOrThemeToken = (name) => {
+                if (!name) {
+                    return false;
+                }
+                return STATE_OR_THEME_CLASSES.has(name.toLowerCase()) || STATE_PREFIX_RE.test(name);
+            };
+
+            const isUtilityClass = (name) => (
+                !name || /[:[\]/!]/.test(name) || UTILITY_CLASS_RE.test(name) || SINGLETON_UTILITY_RE.test(name)
+            );
+
+            const extractCSSModulePrefix = (name) => {
+                if (!name || typeof name !== 'string' || /[{}]/.test(name)) {
+                    return null;
+                }
+                const viteMatch = name.match(/^(_[A-Za-z][A-Za-z0-9-]{2,}_)([a-z0-9]{5,8})_\d+$/);
+                if (viteMatch) {
+                    const local = viteMatch[1].slice(1, -1);
+                    if (!isStateOrThemeToken(local) && !GENERIC_CLASSES.has(local.toLowerCase())) {
+                        return viteMatch[1];
+                    }
+                    return null;
+                }
+                const wpMatch = name.match(/^([A-Za-z][A-Za-z0-9-]*(?:_{1,2}[A-Za-z][A-Za-z0-9-]*)*_{1,3})([A-Za-z0-9_-]{4,10})$/);
+                if (!wpMatch) {
+                    return null;
+                }
+                const prefix = wpMatch[1];
+                const hash = wpMatch[2];
+                if (!looksLikeHash(hash)) {
+                    return null;
+                }
+                const segments = prefix.replace(/_+$/, '').split(/_+/).filter(Boolean);
+                if (segments.length === 0) {
+                    return null;
+                }
+                const lastSeg = segments[segments.length - 1];
+                if (isStateOrThemeToken(lastSeg)) {
+                    return null;
+                }
+                if (segments.length === 1 && GENERIC_CLASSES.has(lastSeg.toLowerCase())) {
+                    return null;
+                }
+                if (segments.length >= 2 && isStateOrThemeToken(segments[0])) {
+                    return null;
+                }
+                return prefix;
+            };
+
+            const cssModulePrefixSelector = (prefix) => {
+                const escaped = escapeAttrValue(prefix);
+                return `:is([class^="${escaped}"],[class*=" ${escaped}"])`;
+            };
+
+            const isStableClassName = (name) => {
+                if (typeof name !== 'string' || !name || name.length > 80 || /\s|[{}]/.test(name)) {
+                    return false;
+                }
+                if (!/^[A-Za-z_-][A-Za-z0-9_-]*$/.test(name)) {
+                    return false;
+                }
+                if (/^v-(?:enter|leave|move|bind)/i.test(name) || /^ng-/i.test(name)) {
+                    return false;
+                }
+                if (CSS_IN_JS_HASH_RE.test(name) || /^jss\d+$/i.test(name)) {
+                    return false;
+                }
+                if (isUtilityClass(name) || isStateOrThemeToken(name)) {
+                    return false;
+                }
+                if (extractCSSModulePrefix(name)) {
+                    return false;
+                }
+                if (looksLikeHash(name)) {
+                    return false;
+                }
+                return true;
+            };
+
+            const isSpecificClassName = (name) => (
+                isStableClassName(name) && !GENERIC_CLASSES.has(name.toLowerCase())
+            );
+
+            const isStableTier1Value = (value) => {
+                if (typeof value !== 'string') {
+                    return false;
+                }
+                const trimmed = value.trim();
+                return trimmed.length > 0
+                    && trimmed.length <= 60
+                    && !/[{}\n\r]/.test(trimmed)
+                    && !/^\d+$/.test(trimmed)
+                    && !/[0-9a-f]{8}-[0-9a-f]{4}-/i.test(trimmed);
+            };
+
+            const isStableSemanticAttrValue = (value) => {
+                if (typeof value !== 'string') {
+                    return false;
+                }
+                const trimmed = value.trim();
+                if (!trimmed || trimmed.length > 50 || /[{}\n\r]/.test(trimmed)) {
+                    return false;
+                }
+                if (/\d{1,2}:\d{2}/.test(trimmed) || /[¥$€£]\s*\d/.test(trimmed) || /^\d+$/.test(trimmed)) {
+                    return false;
+                }
+                if (/(?:^|\D)\d{2,}(?:\D|$)/.test(trimmed)) {
+                    return false;
+                }
+                return true;
+            };
+
+            const isCleanStaticHref = (href) => {
+                if (typeof href !== 'string') {
+                    return false;
+                }
+                const trimmed = href.trim();
+                if (trimmed.length < 2 || trimmed.length > 60 || /[{}\n\r?#]/.test(trimmed)) {
+                    return false;
+                }
+                if (!((trimmed.startsWith('/') && !trimmed.startsWith('//')) || /^https?:\/\//i.test(trimmed))) {
+                    return false;
+                }
+                if (/\d{4,}/.test(trimmed)) {
+                    return false;
+                }
+                return true;
+            };
+
+            const extractStableAttributes = (element) => {
+                const tier1 = [];
+                const tier2 = [];
+                const vueScopes = [];
+                let staticHref = null;
+                const tag = element.tagName.toLowerCase();
+
+                for (const name of TIER1_ATTRS) {
+                    const value = element.getAttribute(name);
+                    if (isStableTier1Value(value)) {
+                        tier1.push(`[${CSS.escape(name)}="${escapeAttrValue(value.trim())}"]`);
+                    }
+                }
+
+                for (const name of TIER2_ATTRS) {
+                    const value = element.getAttribute(name);
+                    if (isStableSemanticAttrValue(value)) {
+                        tier2.push(`[${CSS.escape(name)}="${escapeAttrValue(value.trim())}"]`);
+                    }
+                }
+
+                const role = element.getAttribute('role');
+                if (role && LANDMARK_ROLES.has(role.trim().toLowerCase())) {
+                    tier2.push(`[role="${escapeAttrValue(role.trim().toLowerCase())}"]`);
+                }
+
+                if (tag === 'a') {
+                    const href = element.getAttribute('href');
+                    if (isCleanStaticHref(href)) {
+                        staticHref = `a[href="${escapeAttrValue(href.trim())}"]`;
+                    }
+                }
+
+                for (let i = 0; i < element.attributes.length; i++) {
+                    const attr = element.attributes[i];
+                    if (/^data-v-[a-f0-9]{6,12}$/i.test(attr.name)) {
+                        vueScopes.push(`[${CSS.escape(attr.name)}]`);
+                    }
+                }
+
+                return { tier1, tier2, staticHref, vueScopes };
+            };
+
+            const isStableFinderAttr = (name, value) => {
+                if (TIER1_ATTR_SET.has(name)) {
+                    return isStableTier1Value(value);
+                }
+                if (name === 'aria-label' || name === 'title' || name === 'alt' || name === 'name') {
+                    return isStableSemanticAttrValue(value);
+                }
+                if (name === 'role') {
+                    return typeof value === 'string' && LANDMARK_ROLES.has(value.trim().toLowerCase());
+                }
+                if (name === 'href') {
+                    return isCleanStaticHref(value);
+                }
+                return false;
+            };
+
+            const splitSelectorParts = (sel) => {
+                const parts = [];
+                let current = '';
+                let bracketDepth = 0;
+                let parenDepth = 0;
+                let quote = null;
+
+                for (let i = 0; i < sel.length; i++) {
+                    const ch = sel[i];
+                    if (quote) {
+                        current += ch;
+                        if (ch === '\\' && i + 1 < sel.length) {
+                            current += sel[++i];
+                        } else if (ch === quote) {
+                            quote = null;
+                        }
+                        continue;
+                    }
+                    if (ch === '"' || ch === "'") {
+                        quote = ch;
+                        current += ch;
+                        continue;
+                    }
+                    if (ch === '[') {
+                        bracketDepth++;
+                        current += ch;
+                        continue;
+                    }
+                    if (ch === ']') {
+                        bracketDepth = Math.max(0, bracketDepth - 1);
+                        current += ch;
+                        continue;
+                    }
+                    if (ch === '(') {
+                        parenDepth++;
+                        current += ch;
+                        continue;
+                    }
+                    if (ch === ')') {
+                        parenDepth = Math.max(0, parenDepth - 1);
+                        current += ch;
+                        continue;
+                    }
+                    if (bracketDepth === 0 && parenDepth === 0 && /[\s>+~]/.test(ch)) {
+                        if (current.trim()) {
+                            parts.push(current.trim());
+                            current = '';
+                        }
+                        continue;
+                    }
+                    current += ch;
+                }
+                if (current.trim()) {
+                    parts.push(current.trim());
+                }
+                return parts;
+            };
+
+            const extractSimpleIdentifiersOutsideBrackets = (segment) => {
+                let stripped = '';
+                let bracketDepth = 0;
+                let parenDepth = 0;
+                let quote = null;
+
+                for (let i = 0; i < segment.length; i++) {
+                    const ch = segment[i];
+                    if (quote) {
+                        if (ch === '\\' && i + 1 < segment.length) {
+                            i++;
+                        } else if (ch === quote) {
+                            quote = null;
+                        }
+                        continue;
+                    }
+                    if (ch === '"' || ch === "'") {
+                        quote = ch;
+                        continue;
+                    }
+                    if (ch === '[') {
+                        bracketDepth++;
+                        continue;
+                    }
+                    if (ch === ']') {
+                        bracketDepth = Math.max(0, bracketDepth - 1);
+                        continue;
+                    }
+                    if (ch === '(') {
+                        parenDepth++;
+                        continue;
+                    }
+                    if (ch === ')') {
+                        parenDepth = Math.max(0, parenDepth - 1);
+                        continue;
+                    }
+                    if (bracketDepth === 0 && parenDepth === 0) {
+                        stripped += ch;
+                    }
+                }
+
+                const ids = [];
+                const classes = [];
+                const tokenRe = /([#.])((?:\\.|[A-Za-z0-9_-])+)/g;
+                let m;
+                while ((m = tokenRe.exec(stripped)) !== null) {
+                    const raw = m[2].replace(/\\(.)/g, '$1');
+                    if (m[1] === '#') {
+                        ids.push(raw);
+                    } else {
+                        classes.push(raw);
+                    }
+                }
+                return { ids, classes };
+            };
+
+            const segmentHasSpecificToken = (segment) => {
+                if (!segment) {
+                    return false;
+                }
+                if (/\[class\^="[^"]+"\]/.test(segment)) {
+                    return true;
+                }
+                for (const name of TIER1_ATTRS) {
+                    if (segment.includes(`[${name}=`)) {
+                        return true;
+                    }
+                }
+                for (const name of TIER2_ATTRS) {
+                    if (segment.includes(`[${name}=`)) {
+                        return true;
+                    }
+                }
+                if (/\[role="/.test(segment) || /\[href="/.test(segment)) {
+                    return true;
+                }
+                const { ids, classes } = extractSimpleIdentifiersOutsideBrackets(segment);
+                if (ids.some(isSpecificID)) {
+                    return true;
+                }
+                if (classes.some(isSpecificClassName)) {
+                    return true;
+                }
+                if (classes.some(isStableClassName) && /\[data-v-[a-f0-9]+\]/i.test(segment)) {
+                    return true;
+                }
+                const hasIndex = segment.indexOf(':has(');
+                if (hasIndex !== -1) {
+                    const inner = segment.slice(hasIndex + 5, -1);
+                    if (splitSelectorParts(inner).some(segmentHasSpecificToken)) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            const isUniqueMatch = (selector, target) => {
+                if (!selector || typeof selector !== 'string' || /[{}\n\r]/.test(selector)) {
+                    return false;
+                }
+                try {
+                    const matches = document.querySelectorAll(selector);
+                    return matches.length === 1 && matches[0] === target;
+                } catch (_) {
+                    return false;
+                }
+            };
+
+            const isSafeSelector = (selector, target) => {
+                if (!isUniqueMatch(selector, target)) {
+                    return false;
+                }
+                const nthMatches = selector.match(/:nth-(?:of-type|child)\(/g);
+                if (nthMatches && nthMatches.length > 1) {
+                    return false;
+                }
+                const parts = splitSelectorParts(selector);
+                if (parts.length === 0) {
+                    return false;
+                }
+                const nonPositionalSpecific = parts.some(
+                    (part) => !/:nth-(?:of-type|child)\(/.test(part) && segmentHasSpecificToken(part)
+                );
+                if (nthMatches && nthMatches.length === 1) {
+                    return nonPositionalSpecific;
+                }
+                return parts.some(segmentHasSpecificToken);
+            };
+
+            const directIdentityCandidates = (element, allowGenericClasses = false) => {
+                const candidates = [];
+                const tag = element.tagName.toLowerCase();
+                const id = element.getAttribute('id');
+                if (id && isSpecificID(id)) {
+                    candidates.push('#' + CSS.escape(id.trim()));
+                }
+
+                const attrs = extractStableAttributes(element);
+                for (const attrSel of attrs.tier1) {
+                    candidates.push(attrSel);
+                }
+
+                const modulePrefixes = [];
+                const specificClasses = [];
+                const genericStableClasses = [];
+                for (let i = 0; i < element.classList.length; i++) {
+                    const cls = element.classList[i];
+                    const prefix = extractCSSModulePrefix(cls);
+                    if (prefix && !modulePrefixes.includes(prefix)) {
+                        modulePrefixes.push(prefix);
+                    } else if (isSpecificClassName(cls)) {
+                        specificClasses.push('.' + CSS.escape(cls));
+                    } else if (isStableClassName(cls)) {
+                        genericStableClasses.push('.' + CSS.escape(cls));
+                    }
+                }
+
+                for (const prefix of modulePrefixes) {
+                    candidates.push(cssModulePrefixSelector(prefix));
+                }
+                for (const clsSel of specificClasses) {
+                    candidates.push(clsSel);
+                }
+                if (specificClasses.length >= 2) {
+                    candidates.push(specificClasses[0] + specificClasses[1]);
+                }
+                for (const attrSel of attrs.tier2) {
+                    candidates.push(tag + attrSel);
+                    candidates.push(attrSel);
+                }
+                if (attrs.staticHref) {
+                    candidates.push(attrs.staticHref);
+                }
+
+                if (allowGenericClasses) {
+                    for (const clsSel of genericStableClasses) {
+                        candidates.push(clsSel);
+                    }
+                }
+
+                if (attrs.vueScopes.length > 0) {
+                    const scope = attrs.vueScopes[0];
+                    for (const clsSel of specificClasses) {
+                        candidates.push(clsSel + scope);
+                    }
+                    for (const clsSel of genericStableClasses) {
+                        candidates.push(clsSel + scope);
+                    }
+                }
+
+                return Array.from(new Set(candidates));
+            };
+
+            const anchorTokensForElement = (element) => {
+                const tokens = [];
+                const tag = element.tagName.toLowerCase();
+                const id = element.getAttribute('id');
+                if (id && isSpecificID(id)) {
+                    tokens.push('#' + CSS.escape(id.trim()));
+                }
+                const attrs = extractStableAttributes(element);
+                tokens.push(...attrs.tier1);
+                for (let i = 0; i < element.classList.length; i++) {
+                    const cls = element.classList[i];
+                    const prefix = extractCSSModulePrefix(cls);
+                    if (prefix) {
+                        tokens.push(cssModulePrefixSelector(prefix));
+                    } else if (isSpecificClassName(cls)) {
+                        tokens.push('.' + CSS.escape(cls));
+                    }
+                }
+                tokens.push(...attrs.tier2);
+                if (SEMANTIC_LANDMARK_TAGS.has(tag)) {
+                    tokens.push(tag);
+                }
+                if (attrs.vueScopes.length > 0) {
+                    for (let i = 0; i < element.classList.length; i++) {
+                        const cls = element.classList[i];
+                        if (isStableClassName(cls)) {
+                            tokens.push('.' + CSS.escape(cls) + attrs.vueScopes[0]);
+                        }
+                    }
+                }
+                return Array.from(new Set(tokens));
+            };
+
+            const descendantFingerprintCandidates = (target) => {
+                const results = [];
+                const queue = [];
+                for (const child of target.children) {
+                    if (!isOwnUI(child)) {
+                        queue.push({ node: child, depth: 1, chain: [child.tagName.toLowerCase()] });
+                    }
+                }
+
+                let visited = 0;
+                while (queue.length > 0 && visited < 60) {
+                    const current = queue.shift();
+                    visited++;
+                    const { node, depth, chain } = current;
+                    const ids = directIdentityCandidates(node, false);
+                    for (const descSel of ids) {
+                        results.push({ descSel, chain, depth });
+                    }
+                    if (depth < 4) {
+                        for (const child of node.children) {
+                            if (!isOwnUI(child)) {
+                                queue.push({
+                                    node: child,
+                                    depth: depth + 1,
+                                    chain: chain.concat(child.tagName.toLowerCase())
+                                });
+                            }
+                        }
+                    }
+                }
+                return results;
+            };
+
+            const buildStableSelector = (target) => {
+                if (
+                    !target
+                    || target.nodeType !== Node.ELEMENT_NODE
+                    || !document.body
+                    || target === document.body
+                    || target === document.documentElement
+                    || !document.body.contains(target)
+                ) {
+                    return '';
+                }
+
+                // Strategy 1: Direct semantic identity on target
+                for (const candidate of directIdentityCandidates(target, false)) {
+                    if (isSafeSelector(candidate, target)) {
+                        return candidate;
+                    }
+                }
+
+                // Collect up to 8 ancestors inside document.body
+                const ancestors = [];
+                let cursor = target.parentElement;
+                while (cursor && cursor !== document.body && ancestors.length < 8) {
+                    const anchorTokens = anchorTokensForElement(cursor);
+                    if (anchorTokens.length > 0) {
+                        ancestors.push({
+                            element: cursor,
+                            isDirectParent: cursor === target.parentElement,
+                            tokens: anchorTokens
+                        });
+                    }
+                    cursor = cursor.parentElement;
+                }
+
+                // Strategy 2: Semantic ancestor-anchored non-positional chain
+                const targetTag = target.tagName.toLowerCase();
+                const targetTokens = directIdentityCandidates(target, true);
+                if (!targetTokens.includes(targetTag)) {
+                    targetTokens.push(targetTag);
+                }
+
+                // 2a: Single strong ancestor + target token (prefer direct parent combinator when applicable)
+                for (const ancestor of ancestors) {
+                    for (const anchor of ancestor.tokens) {
+                        for (const tToken of targetTokens) {
+                            const combinators = ancestor.isDirectParent ? [' > ', ' '] : [' '];
+                            for (const comb of combinators) {
+                                const candidate = anchor + comb + tToken;
+                                if (isSafeSelector(candidate, target)) {
+                                    return candidate;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2b: Two semantic ancestors + target token
+                for (let i = 0; i < ancestors.length; i++) {
+                    for (let j = i + 1; j < ancestors.length; j++) {
+                        const near = ancestors[i];
+                        const far = ancestors[j];
+                        const nearComb = near.isDirectParent ? ' > ' : ' ';
+                        for (const farTok of far.tokens.slice(0, 2)) {
+                            for (const nearTok of near.tokens.slice(0, 2)) {
+                                for (const tToken of targetTokens.slice(0, 4)) {
+                                    const candidate = farTok + ' ' + nearTok + nearComb + tToken;
+                                    if (isSafeSelector(candidate, target)) {
+                                        return candidate;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Strategy 3: :has(...) descendant fingerprint for anonymous wrapper blocks
+                const fingerprints = descendantFingerprintCandidates(target);
+                const parentEl = target.parentElement;
+                const parentAnchors = parentEl && parentEl !== document.body ? anchorTokensForElement(parentEl) : [];
+
+                for (const fp of fingerprints) {
+                    const directPath = fp.chain.slice(0, -1).map((tag) => `${tag} > `).join('');
+                    const directCandidate = `${targetTag}:has(> ${directPath}${fp.descSel})`;
+                    if (isSafeSelector(directCandidate, target)) {
+                        return directCandidate;
+                    }
+
+                    for (const pAnchor of parentAnchors) {
+                        const parentAnchored = `${pAnchor} > ${targetTag}:has(${fp.descSel})`;
+                        if (isSafeSelector(parentAnchored, target)) {
+                            return parentAnchored;
+                        }
+                    }
+
+                    for (const ancestor of ancestors) {
+                        for (const anchor of ancestor.tokens) {
+                            const comb = ancestor.isDirectParent ? ' > ' : ' ';
+                            const anchored = `${anchor}${comb}${targetTag}:has(${fp.descSel})`;
+                            if (isSafeSelector(anchored, target)) {
+                                return anchored;
+                            }
+                        }
+                    }
+                }
+
+                // Strategy 4: Configured finder fallback gated by strict safety validator
+                try {
+                    const fallbackSelector = finder(target, {
+                        root: document.body,
+                        idName: isSpecificID,
+                        className: isSpecificClassName,
+                        attr: isStableFinderAttr,
+                        seedMinLength: 3,
+                        optimizedMinLength: 2,
+                        timeoutMs: 600
+                    });
+                    if (isSafeSelector(fallbackSelector, target)) {
+                        return fallbackSelector;
+                    }
+                } catch (_) {
+                    return '';
+                }
+
+                return '';
+            };
 
             const normalizeHost = (value) => {
                 const lower = (value || '').toLowerCase();
@@ -405,7 +1149,7 @@ enum BrowserElementHidingScript {
                 const label = describe(target);
                 let selector = '';
                 try {
-                    selector = finder(target, { root: document.body, timeoutMs: 600 });
+                    selector = buildStableSelector(target);
                 } catch (error) {
                     handler?.postMessage({ type: 'failed', reason: '这个元素没法被稳定定位，换一块试试' });
                     return;
@@ -523,6 +1267,7 @@ enum BrowserElementHidingScript {
                     rules = Array.isArray(next) ? next : [];
                     applyRules();
                 },
+                generateSelector: (target) => buildStableSelector(target),
                 startPicking,
                 stopPicking,
                 showUndoToast,

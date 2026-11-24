@@ -72,8 +72,9 @@ xcodegen generate
 ### 构建
 ```bash
 xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex build
+xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebAppAppStore" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex build
 ```
-- 这是当前仓库最可靠的编译检查方式。
+- 这是当前仓库最可靠的编译检查方式；Mac App Store 单进程沙盒渠道使用 `NeatWebAppAppStore` scheme（不含 Sparkle 与元素隐藏）。
 - 固定使用 `build/DerivedData.noindex`，便于后续启动 App 和排查产物，同时避免编译副本被 Spotlight 元数据索引。
 - `.noindex` 不能代替 LaunchServices 清理；共享 Scheme 的构建后动作必须继续注销主程序、独立 Runtime 和内嵌 Runtime 三个编译产物。改 Scheme、安装流程或应用标识时先读 [系统搜索重复 App 与图标缓存排查记录](docs/troubleshooting/2026-07-26-spotlight-duplicate-app-and-icon-cache.md)。
 
@@ -81,6 +82,7 @@ xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration D
 全量测试：
 ```bash
 xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebApp" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex test
+xcodebuild -project "NeatWebApp.xcodeproj" -scheme "NeatWebAppAppStore" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData.noindex test
 ```
 
 构建并测试：
@@ -192,6 +194,8 @@ done
 - [../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改、评审或排查本应用任何位置的玻璃与半透明材质前必读；本项目两条玻璃裁定（顶栏不用玻璃、侧边 Dock 底板用玻璃）的通用部分已上收至此，其中还记录了非激活窗口玻璃变暗所依赖的私有方法风险。
 - [../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md](../../_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md)：改、评审或排查签名、公证、安装包制作、应用内自更新、Homebrew 渠道时的**通用做法与踩坑速查**以此为准；本项目专有取值见下一条，两者不重复。
 - [docs/design/release-and-auto-update.md](docs/design/release-and-auto-update.md)：发布拓扑、版本与签名配置、Sparkle 行为、发布完成证据、上传失败恢复与收不到更新排查。
+- [docs/app-store/SUBMISSION_GUIDE.md](docs/app-store/SUBMISSION_GUIDE.md)：Mac App Store 单进程沙盒渠道（`NeatWebAppAppStore`、`com.caozc.NeatWebApp`）的标识、商店文案、审核说明、归档上传与 `asc` 提审命令。
+- [docs/app-store/PRIVACY_POLICY.md](docs/app-store/PRIVACY_POLICY.md)：中英双语隐私政策（作为 App Store Connect Privacy Policy URL 指向源）。
 - [../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标与菜单栏图标前必读；含分层图标新格式的迁移裁定、母版规格、存放约定、模板图硬性要求与验收清单。**本项目的图标成品包与工程内资源目前是同一份资产的两个副本，按该文档应删掉成品包副本。**
 - [docs/architecture.md](docs/architecture.md)：应用架构、模块边界、WebKit/AppKit 协作、进程划分、网站图标获取/缓存/自动恢复、浏览器窗口生命周期（关闭 / 隐藏 / 侧边 Dock / 跨桌面 / 启动盖），以及对外文案不得声称「运行中的网页应用不占 Dock」；改、评审或排查这些功能前**必读**。不读会把宿主与运行时职责拆错，或把窗口生命周期动作当成结束进程。
 - [docs/design/memory-footprint.md](docs/design/memory-footprint.md)：改、评审、优化或排查宿主 / 运行时内存占用、收起后仍偏胖、系统压力下的缓存收缩前**必读**。不读会把卸页 / 关保活进程或自研整页压缩重新做进来，破坏收起秒开与会话保留；压力回调隔离写错还会整进程闪退（见排查索引）。

@@ -7,9 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0077588745CA190FB423FE88 /* SideDockOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4358833521E486B408BC9DBC /* SideDockOverlayRootView.swift */; };
 		0086BDE5E84A48A18FB533AB /* WebAppFaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6535023594466573F6BD745C /* WebAppFaviconLoader.swift */; };
 		00E501563DF79AD51D160A17 /* WebAppOrderMoveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0011E17EDD9036A8B2067077 /* WebAppOrderMoveTests.swift */; };
+		01B1059A480FB3F6B330AFBD /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
 		01E935DAB3406150276C32A2 /* EdgeAttachedShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1220370641773E0765018F0B /* EdgeAttachedShape.swift */; };
+		023A0AB2C6395DDFC8EC82BB /* RuntimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0EC99CC12C2CF75E76E9D5 /* RuntimeModels.swift */; };
 		03481D66238425AD38A2B5D6 /* WebAppFaviconLoadCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75322C9C00373142A9EB8B86 /* WebAppFaviconLoadCoordinatorTests.swift */; };
 		03DC0D096D237AE010145EDE /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
 		053608AFD602E78D14D150F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
@@ -17,38 +20,59 @@
 		09C9B7EEC567342F88910471 /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		0A038C6B5FD86944B36705DC /* MacKitUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = 15A2F506E8CA2097B82F9F36 /* MacKitUpdater */; };
 		0BD6E80B683962E747B95377 /* BrowserDownloadDestinationResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5251982D120DB93D8AF56428 /* BrowserDownloadDestinationResolverTests.swift */; };
+		0DDCDA47ED47B370B9BD2334 /* BrowserDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC891DBB5C3E7A9AF43B963D /* BrowserDownloadManager.swift */; };
 		0ECAB78372A0A9CB81E8B068 /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B6E6D82411C62C8C81826 /* BrowserWebView.swift */; };
+		0F0518CC8F100BBDEE50E152 /* AppStoreChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC3B67AF23F8D23B1565A6F /* AppStoreChannelTests.swift */; };
 		10CEDA335E08D5DDCFD2A49A /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49E6C595618896648351FC8 /* AppUpdater.swift */; };
 		11F5F79C56256DD9DAFACF9E /* LauncherOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */; };
 		136E8E3AC2CED76A37B7D395 /* BookmarkWebAppCreationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7636F418261F1B478553E97E /* BookmarkWebAppCreationTests.swift */; };
 		15AFD1FED676491F3D4094EA /* NeatWebAppRuntimeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598C296D366948C8346E36D6 /* NeatWebAppRuntimeApp.swift */; };
+		16C7B3837C9C689DB1F76784 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D060C4D3DD8DC88849971C39 /* DashboardView.swift */; };
 		173CA1F547E8310731440DE9 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AA0ABD4338F057DC89950485 /* Sparkle */; };
+		1894D1C62FB02E53CA2B4135 /* BrowserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4439DB55CDCD672746B164E7 /* BrowserSession.swift */; };
+		1C75E340118ECD38FE4A2EAB /* MacKitLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = F6A4B22F6E70D8C27901AD7F /* MacKitLifecycle */; };
 		1CDF8DC2F1C5EF9ED3EEFD58 /* BrowserKeyCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7BE1250B6C8CE2B61ADCA7 /* BrowserKeyCommandTests.swift */; };
 		1D2646E8877B83829EC704E9 /* WindowVisibleCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D655A12D149676C1882C6B87 /* WindowVisibleCoverage.swift */; };
+		1DDE4CF8BF1C0AAD47E240F3 /* BrowserChromeMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */; };
 		1E605FE456B399F6831022C9 /* NeatWebAppRuntime.app in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1F6EC11A3CE75541363B1B2A /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
 		1F93E4EAA678A4DF5C5D6E41 /* RuntimeHostLifecycleMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7262991AE7B7C2E52DB06C /* RuntimeHostLifecycleMonitor.swift */; };
 		1FB2A9FDAC6C02C2A8AB783F /* BrowserDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC891DBB5C3E7A9AF43B963D /* BrowserDownloadManager.swift */; };
 		21042A7DD039F33193D58EA3 /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
+		2167B695F0C8E4F01A97592F /* AppModel+WebApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C084ACC3797AB50289A4CE2 /* AppModel+WebApps.swift */; };
 		22423776B9700255C6834E20 /* RuntimeStandbyPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AA6211F3FBF76DA13F4AB1C /* RuntimeStandbyPool.swift */; };
 		22DCA8705DF9D2457DA0BB16 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FA8E0636DDA9544F89A1DF07 /* InfoPlist.xcstrings */; };
 		2424A93CD84E461F797C6730 /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
+		2492DCB4DDAA18FF4ECE383C /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B6E6D82411C62C8C81826 /* BrowserWebView.swift */; };
+		2571E2D93CB927BDBA7A4EB4 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
+		277A42DBAB0D35E57BE7DC12 /* BrowserKeyCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D23996E32BE971B55D6AED5 /* BrowserKeyCommand.swift */; };
 		28B8CFA8A8A98A83B1740F3E /* WebAppURLInputResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92C202F3DBD60B884B83F07 /* WebAppURLInputResolverTests.swift */; };
 		28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BF76706370BC0E8430900 /* WebAppWindowMetrics.swift */; };
+		2AB93153E460AADC21C60EAE /* WebAppFaviconMemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E28942D2F0EEBAC320D914 /* WebAppFaviconMemoryCache.swift */; };
+		2CADF8372B171CA4CE60D67F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FFE4B104ABA4E8607074BDA1 /* PrivacyInfo.xcprivacy */; };
 		2E76E497BEC0B2A99B1354D3 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
 		2F608A187B13024EB8D438F4 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
+		2F7DFBEBFB42BCC6BDC8CB91 /* WebAppWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */; };
 		2FD276B0431BABBAD93435EB /* SideDockPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */; };
+		30DDC9521150DDA3428FD9C9 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
 		316732268B23ECEAA72742A2 /* WebAppWindowController+FloatingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */; };
 		32E635883E95496DBB468FEC /* RuntimeBookmarkRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC0479BB2D03048F13080AE /* RuntimeBookmarkRequest.swift */; };
 		343FF56DC8E71E15167B67B9 /* WebAppFaviconLoadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE582360B288EB39EC9ED78E /* WebAppFaviconLoadCoordinator.swift */; };
+		36A9C724B95CB87135E8C0BA /* WebAppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */; };
 		373BE697BAAF5EEAE348500B /* HostMemoryPressureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33922B59A6A520EBF73E69D /* HostMemoryPressureMonitor.swift */; };
+		3888C112AA4BEBC8581FC0C4 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
 		38CDA3B1E1182BF7F8B70EA2 /* RuntimeHealthMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AF2EF3073DEBCB1658B445 /* RuntimeHealthMonitorTests.swift */; };
 		39AD98562A2F730ED9F173E0 /* RuntimeRegistryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A914E86F1ECA2915BA025350 /* RuntimeRegistryStore.swift */; };
 		3F55DE9DA94A02B25FAD683E /* WebAppWindowLaunchFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF732394FEB42B01E110C5DB /* WebAppWindowLaunchFrameTests.swift */; };
 		42BB40148402990AFA14688D /* LauncherPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */; };
 		4384F6169C196F6F52958A24 /* BrowserExternalNavigationPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E4BB2F4C92B1295A9ABB38 /* BrowserExternalNavigationPolicyTests.swift */; };
+		447D4134934808701925611B /* AppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAACF7514AACDFED1FCC44F /* AppPreferencesStore.swift */; };
 		4493182F44AAD82381CE5F32 /* BrowserChromeMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */; };
+		46A8F2ACA451113A922CC2D1 /* WebAppRuntimeCoordinating.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC1284D5182277CF9F990B0 /* WebAppRuntimeCoordinating.swift */; };
 		47614C209C570D5A5504EC6A /* BrowserPasskeySupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC03737ED14842B918B3908A /* BrowserPasskeySupport.swift */; };
 		47A598ACC19577AD9FC0F184 /* WebAppFaviconMemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E28942D2F0EEBAC320D914 /* WebAppFaviconMemoryCache.swift */; };
+		48049DA127BF2313030CC9E0 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
+		4892AFC8694D4F0347195527 /* WebAppBrowserWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA3AF66651F1FBC5BAF31CA /* WebAppBrowserWindow.swift */; };
 		4D8AE8BC2D0DC061419D5565 /* Lucide-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */; };
 		4DB7B687E99F419879173091 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		4EB5CD6DB5738575F6F05DCB /* LauncherRowReorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D4EECA16C7190F742BB7C4 /* LauncherRowReorderTests.swift */; };
@@ -60,31 +84,45 @@
 		5DAA0E1AAC254E3AA6650D89 /* BrowserDownloadPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */; };
 		5DF911FC96D21F0E575F2146 /* LauncherOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249468F78ECB158EF76D893C /* LauncherOverlayController.swift */; };
 		5F4410B4386D010AE8CDA0F0 /* RuntimeSupportDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D2259F0A936D72B79F370 /* RuntimeSupportDirectory.swift */; };
+		5F4E0D9E470DFAC182F4903D /* WebAppWindowController+FloatingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F2B28BE94172BF15D94BD4 /* WebAppWindowController+FloatingIcon.swift */; };
 		60CE1016D049876F3849958F /* RuntimeEventPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC89CB73A4690FD61F43D63C /* RuntimeEventPublisher.swift */; };
+		61FE83CFE5791053C15854E6 /* SideDockOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4E7683C0CD075DD5F6B3AD /* SideDockOverlayController.swift */; };
+		6247DBB400BBC825CCF1870E /* Lucide-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = AD19E933FF868AC5F1494243 /* Lucide-LICENSE.txt */; };
 		62A03E5BBF4DA98830BD7735 /* RuntimeWindowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30FF2F672DE51BE72D9EDBC5 /* RuntimeWindowCoordinator.swift */; };
 		63AD3C45FA8BB7FB529986E6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
 		64E4056FA14F0ECB93F3EAF5 /* BrowserSelectorFinderScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB10AA221B5D6084CE21715 /* BrowserSelectorFinderScript.swift */; };
+		651EA3CF67B11736E9D4674F /* MacKitLaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = CB21E026B1217F6262EC4F09 /* MacKitLaunchAtLogin */; };
 		667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */; };
 		6921020C87F48CD71F445EC7 /* BrowserChromeMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */; };
 		6936D1598B016139645685BE /* RuntimeHealthMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E2516F5B243B824826C4EB /* RuntimeHealthMonitor.swift */; };
+		6A0AB3206EEF61FFF89182D1 /* WebAppWindowController+FramePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = D691F7D5920B1A802329B73C /* WebAppWindowController+FramePlacement.swift */; };
+		6B356F6AC1672BB5CEFDE642 /* HostMemoryPressureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33922B59A6A520EBF73E69D /* HostMemoryPressureMonitor.swift */; };
 		6C6E5AB34D16B9ACA3A0614F /* BrowserBookmarkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */; };
 		6C91A519FFB072AF843A9F3C /* RuntimeCommandBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B239093AFEBF2974ED7349 /* RuntimeCommandBus.swift */; };
 		6C94CC55D95577FE7CDDA210 /* WebAppRuntimeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */; };
+		6E30D6426935BD3DCE9CCD33 /* MacKitGlass in Frameworks */ = {isa = PBXBuildFile; productRef = AC0259882AD99381A481F189 /* MacKitGlass */; };
 		74CA6CEF02CC7A7472803574 /* RuntimeBootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE823187BD8E760027A23AEA /* RuntimeBootstrapLoader.swift */; };
 		74DD7835E63C246981247E38 /* WebAppFaviconMemoryCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AFE6A6F3C32A0BD7C7B607 /* WebAppFaviconMemoryCacheTests.swift */; };
 		7708C8387BBDDD99B1A8844B /* ScreenNotchGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257582CB762D9D88BF321BAE /* ScreenNotchGeometryTests.swift */; };
+		77F2A01507F061AB249D6680 /* BrowserChromeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */; };
+		7804428584E2274112B67F52 /* ScreenNotchGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */; };
+		7906A228077EEFAD87343AE7 /* CustomWebAppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7BC742F636A67853E2AE7F /* CustomWebAppStore.swift */; };
 		7926F5A4E94CB1F40F4A3DCD /* WebAppWindowController+FramePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = D691F7D5920B1A802329B73C /* WebAppWindowController+FramePlacement.swift */; };
 		7A401271595A05A09F1D59EF /* BrowserCookieTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4EF4AA1D2E87D3B1DE3663 /* BrowserCookieTransfer.swift */; };
 		7BB48B2FEC53B70D80028CBA /* RuntimeAppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */; };
 		7CFE57CB21221A0D83D84E4E /* RuntimeBookmarkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE3D7D6E9434DBA835D694A /* RuntimeBookmarkClient.swift */; };
 		7DBCE8A0EDCC24FFB29928D2 /* ManagementWindowPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC78B5910D7223B29C28FC50 /* ManagementWindowPresenter.swift */; };
+		7EBB5C0486139D4124D38020 /* NotchActivationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC815CF6E78E43385C81D /* NotchActivationMonitor.swift */; };
+		7EC6ED7CCCAE9C773C4395AD /* BrowserContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA171A0F1CA54F7B60F770FC /* BrowserContainerView.swift */; };
 		817BF40EA1083A9C3112C4B0 /* SideDockOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4358833521E486B408BC9DBC /* SideDockOverlayRootView.swift */; };
 		81D743A4C462116F8795445A /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		8349B3FEAC8836442C9AF58C /* NotchDebugOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */; };
 		83648ADE128F1195E698B820 /* WebAppFaviconImagePreparing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7651A8811C098F15EC555632 /* WebAppFaviconImagePreparing.swift */; };
+		83FC0FD841A77B41531D7432 /* AppModel+Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A392F9E150F784FD9B0CF7D /* AppModel+Preferences.swift */; };
 		841A0DC1EABE5B409CE32E32 /* BrowserElementHidingScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D1874DBD1A50BF2D4449 /* BrowserElementHidingScript.swift */; };
 		845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */ = {isa = PBXBuildFile; productRef = FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */; };
 		898824A26C5D682CE7DBF77E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F92FAFEBB2F65CE0F330E8 /* AppModel.swift */; };
+		8FACC843717521108EC3AB5E /* WebAppRuntimeCoordinating.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC1284D5182277CF9F990B0 /* WebAppRuntimeCoordinating.swift */; };
 		958F48D31F36B3218AE09DF6 /* WebAppWindowPlacementLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */; };
 		95CE927752E483EA23997DF8 /* BrowserUserScriptsInstallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521CA5D23D659D716BBF1F96 /* BrowserUserScriptsInstallTests.swift */; };
 		975833919EE8C49A5F5EB1A3 /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
@@ -96,16 +134,32 @@
 		9B0877DF32DA630BAE907157 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC457812D675337401F6B7A6 /* AppDelegate.swift */; };
 		9CB10D290A5C7F84E183BF00 /* RuntimeBookmarkRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC0479BB2D03048F13080AE /* RuntimeBookmarkRequest.swift */; };
 		9D0B050EE850F82D133D25EF /* AppModel+WebApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C084ACC3797AB50289A4CE2 /* AppModel+WebApps.swift */; };
+		9D8550E1AB4B2C40D15164A4 /* LauncherOverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */; };
 		9FF27453AFFFB3E16AA2E8AA /* RuntimeFocusReturnTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F56ADEC781C6E0204CEF3C8 /* RuntimeFocusReturnTargetTests.swift */; };
+		A1C0682467B5F3C250F78AE5 /* WebAppFaviconLoadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE582360B288EB39EC9ED78E /* WebAppFaviconLoadCoordinator.swift */; };
 		A2E13446DACEC8A5009DE4B8 /* WindowVisibleCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91EA688FCF891D0DB8CCF1D5 /* WindowVisibleCoverageTests.swift */; };
+		A30EE1068B3850B6425DCDDF /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AB86B7F555EAF061B89125 /* AppCommands.swift */; };
+		A372359B797F3C4BFFD7F535 /* WebAppWindowController+AutoCollapse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C08C578E84A6D6B91AD0989 /* WebAppWindowController+AutoCollapse.swift */; };
+		A69847B4CF9DDE3B202BD8F7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 3B301E99A6EA2F46952C2D37 /* Localizable.xcstrings */; };
 		A7243172079700FAA6172130 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 26C080DE9BFB192B813F8AF3 /* Localizable.xcstrings */; };
+		A7687CF2857D18969D5AEB91 /* WebAppFaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6535023594466573F6BD745C /* WebAppFaviconLoader.swift */; };
+		A7B318921E80E3F4A02B9181 /* WebAppFaviconImagePreparing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7651A8811C098F15EC555632 /* WebAppFaviconImagePreparing.swift */; };
+		A7DFA2B95E18D66B5CB6FE57 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC457812D675337401F6B7A6 /* AppDelegate.swift */; };
 		A99EDC06F81B9C12BFDB2EA6 /* WebAppDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D78768CFFDF415F11384B4F /* WebAppDefinition.swift */; };
 		AD06431C7701196DCF5485E2 /* RuntimeWindowEventSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFADCD5F35649B381FE437C5 /* RuntimeWindowEventSink.swift */; };
+		AD886E01DE8D2CF63C7B4228 /* BrowserDownloadDestinationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3117F16F6830A5EFCBDB74C0 /* BrowserDownloadDestinationResolver.swift */; };
+		AEFCFE3DE58AFC5FD8E610D2 /* SettingsPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEB6122DE91D59416E21F9A2 /* SettingsPanes.swift */; };
+		AFB559F1E44D8FFF575EC854 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 29BC2D17085F4E2C023173F9 /* InfoPlist.xcstrings */; };
 		B0894FF652F3B43C49A0FA7E /* WebAppWindowController+AutoCollapse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C08C578E84A6D6B91AD0989 /* WebAppWindowController+AutoCollapse.swift */; };
 		B0C402224827E36022AB2A7A /* WebAppFaviconStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */; };
 		B22E00514FCD745321704093 /* BrowserExternalNavigationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */; };
+		B26FBC8869EB25CDD2FBD9B5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2E26CB1D77219F87EEEC70 /* Assets.xcassets */; };
+		B5CBC263D2210B7F0038A737 /* NeatWebAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */; };
 		BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104516AB0D614875D050B34D /* WebAppIconView.swift */; };
 		BB96BE8598BE043C6F554DF0 /* RuntimeCommandListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F27201C35EE84004BEEE965 /* RuntimeCommandListener.swift */; };
+		BC34F1010FF85FA80FBF77C8 /* BrowserExternalNavigationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CC724AEB6EDB311FE068EF /* BrowserExternalNavigationPolicy.swift */; };
+		BC6F963D41540541A38592D8 /* WindowVisibleCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D655A12D149676C1882C6B87 /* WindowVisibleCoverage.swift */; };
+		BDAE8C4BA9331EC4C9C2F641 /* ManagementWindowPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC78B5910D7223B29C28FC50 /* ManagementWindowPresenter.swift */; };
 		BE66CDB1B23FC1F90CAEF500 /* RuntimeDockIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF818EEBC5F317893E7452 /* RuntimeDockIdentity.swift */; };
 		BE9B43F23AE7130A54EB71D6 /* RuntimeBootstrapLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E982F70F601CE4E968D7F1 /* RuntimeBootstrapLoaderTests.swift */; };
 		BED783E45515854457B5BEEE /* SideDockOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4E7683C0CD075DD5F6B3AD /* SideDockOverlayController.swift */; };
@@ -120,17 +174,28 @@
 		C8438F83176D348E92597F40 /* BrowserChromeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8F22A5E992C6968559C1A0 /* BrowserChromeTheme.swift */; };
 		C91EE5D52855A67FAB29DB0D /* FloatingIconSnapResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D153AAAC2CEBD9238FE58516 /* FloatingIconSnapResolverTests.swift */; };
 		CA1B1CE8F7D330F8B14CD9D4 /* BrowserChromeTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E7824589C047B85B91AD0C /* BrowserChromeTitleTests.swift */; };
+		CD8BE7DF95F136D90B05BB48 /* LauncherPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74C37C51A6E878F1EBB10F8 /* LauncherPresentationContext.swift */; };
 		CEF7C803632831529F7D9869 /* RuntimeAppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D58A33C3AB4593FEB6B6A6 /* RuntimeAppLock.swift */; };
+		D0C272E53ADF45DF5A711689 /* WebAppIconNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */; };
 		D0E01CB90464D1D11E814DA3 /* RuntimeStandby.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B659482338571EEDBF5A9D1 /* RuntimeStandby.swift */; };
+		D22FD3EB24DF6C3287B67129 /* BrowserDownloadPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */; };
 		D30327832ACF73029AA7CA9B /* LaunchPlaceholderCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57977D8DAC4B5A0185A191C /* LaunchPlaceholderCoordinatorTests.swift */; };
+		D5146554C0112CC06B876D65 /* BrowserPasskeySupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC03737ED14842B918B3908A /* BrowserPasskeySupport.swift */; };
+		D7D4B5CB5E37DD66D6083E64 /* AppModel+Favicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4861301F7FFE176E95BA505 /* AppModel+Favicon.swift */; };
+		D88243D90C0DD0C2162984DA /* SideDockPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99DF162F766071E7C75979E /* SideDockPresentationContext.swift */; };
 		DA2F86395CCCBF1CF6C3F27B /* MacKitLaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 2D9B2A868187A831F2C1C3BA /* MacKitLaunchAtLogin */; };
+		DAACDFD720DCB7F1EAC1F094 /* WebAppFloatingIconSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */; };
 		DCA3181CDF072445655F313D /* WebAppFaviconImagePreparing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7651A8811C098F15EC555632 /* WebAppFaviconImagePreparing.swift */; };
 		E1AF795E7A911E19CCC35BD2 /* SideDockPresentationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99DF162F766071E7C75979E /* SideDockPresentationContext.swift */; };
+		E3036A6236E1103FD88C022B /* AppModel+Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470B4F909E0E810D718B3B98 /* AppModel+Launcher.swift */; };
+		E30AC698A161BA2280D254F6 /* NotchDebugOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FD8328846416C483CD639B /* NotchDebugOverlayController.swift */; };
+		E37F9831892B7A29A8A9564D /* EdgeAttachedShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1220370641773E0765018F0B /* EdgeAttachedShape.swift */; };
 		E785257BD4C3D661B97F5472 /* NeatWebAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */; };
 		E94BA4C2883BA0A5A5AA1A41 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AB86B7F555EAF061B89125 /* AppCommands.swift */; };
 		E9BBF2D6C6D137F79010EB7E /* BrowserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4439DB55CDCD672746B164E7 /* BrowserSession.swift */; };
 		ECCD030047980CEB3EC5EE5B /* WebAppBrowserWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA3AF66651F1FBC5BAF31CA /* WebAppBrowserWindow.swift */; };
 		EDB3ADFDB1A47F94A4B018C9 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D060C4D3DD8DC88849971C39 /* DashboardView.swift */; };
+		EDE402D28535B644A1A48B79 /* RuntimeWindowEventSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFADCD5F35649B381FE437C5 /* RuntimeWindowEventSink.swift */; };
 		EDF6064356A37537C2EE5BA0 /* WebAppFaviconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75036857DC21F2F2EAE824D4 /* WebAppFaviconStore.swift */; };
 		EE10CEDD2CCD3C778298619F /* BrowserKeyCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D23996E32BE971B55D6AED5 /* BrowserKeyCommand.swift */; };
 		EE4F2B621478883EAB76EA5F /* AppModel+Favicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4861301F7FFE176E95BA505 /* AppModel+Favicon.swift */; };
@@ -138,15 +203,20 @@
 		F1BD83BD5A7CB1F9F7CF514D /* AppModel+Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470B4F909E0E810D718B3B98 /* AppModel+Launcher.swift */; };
 		F1ECF8A7EFDFC91290F01450 /* BrowserDownloadDestinationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3117F16F6830A5EFCBDB74C0 /* BrowserDownloadDestinationResolver.swift */; };
 		F54C74DDA69ADB8F6EACF447 /* RuntimeAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444290C186B94D63848D4F55 /* RuntimeAppModel.swift */; };
+		F7E248AD72E20431E7140F5A /* WebAppWindowPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */; };
 		F8692DD2259BE6E714D1B800 /* BrowserElementHidingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5796CBD649870F8E876FEB1E /* BrowserElementHidingTests.swift */; };
+		FA4609896281DC12174B6691 /* InProcessWebAppRuntimeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AAEF1A62B94EB022C1DA8E9 /* InProcessWebAppRuntimeCoordinator.swift */; };
 		FA4E6C07277ABCD961245304 /* LaunchPlaceholderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79539E73EF39352B35A55B6C /* LaunchPlaceholderController.swift */; };
 		FAF7FBAF8D6E3369A3705DF2 /* MacKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4432EC9595E47AAEBDF6385C /* MacKitCore */; };
+		FB2A9D4DE77A939C40326216 /* BrowserCookieTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4EF4AA1D2E87D3B1DE3663 /* BrowserCookieTransfer.swift */; };
 		FD177764B8FA812F38A6F9F0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D01470053B576991060F122F /* Localizable.xcstrings */; };
 		FD76CA0544941177620ADCF0 /* RuntimeRegistryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A914E86F1ECA2915BA025350 /* RuntimeRegistryStore.swift */; };
 		FD91885E43AD5DCA3AAADE01 /* BrowserChromeThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D6A45B4921BAA3A28B06BED /* BrowserChromeThemeTests.swift */; };
 		FF351FCB373414DD5C663EA7 /* RuntimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0EC99CC12C2CF75E76E9D5 /* RuntimeModels.swift */; };
+		FF57E9BA146129C38A8C9494 /* MacKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 82C5CBEC58B1509032D1DD49 /* MacKitCore */; };
 		FF83C2338E69D5313467C47E /* LauncherPresentationContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328823D85B1C5AD54D457E25 /* LauncherPresentationContextTests.swift */; };
 		FFB3A7624E8DC565D4EC7D75 /* WebAppPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */; };
+		FFE8536D165538A67A0D5FD8 /* WebAppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104516AB0D614875D050B34D /* WebAppIconView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -170,6 +240,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = FB04F29A1BD3B13B73302B10;
 			remoteInfo = NeatWebApp;
+		};
+		D85D88C7EFD33CF992763CA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5D4339875356890C6F82C180 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F9E860532CAF1370E2DF0894;
+			remoteInfo = NeatWebAppAppStore;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -224,6 +301,7 @@
 		34536C862027508BBA1363F6 /* WebAppFaviconStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconStoreTests.swift; sourceTree = "<group>"; };
 		3A7262991AE7B7C2E52DB06C /* RuntimeHostLifecycleMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeHostLifecycleMonitor.swift; sourceTree = "<group>"; };
 		3AC0479BB2D03048F13080AE /* RuntimeBookmarkRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeBookmarkRequest.swift; sourceTree = "<group>"; };
+		3B301E99A6EA2F46952C2D37 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		3EE3D7D6E9434DBA835D694A /* RuntimeBookmarkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeBookmarkClient.swift; sourceTree = "<group>"; };
 		3F07BEE185914D85B8B405A5 /* NeatWebAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatWebAppApp.swift; sourceTree = "<group>"; };
 		40CE1A2238B2472919270AA7 /* publish-local.env.example */ = {isa = PBXFileReference; path = "publish-local.env.example"; sourceTree = "<group>"; };
@@ -235,6 +313,7 @@
 		470B4F909E0E810D718B3B98 /* AppModel+Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Launcher.swift"; sourceTree = "<group>"; };
 		47F1CBA9CC3053593AB4F506 /* 0.3.27.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.27.md; sourceTree = "<group>"; };
 		481847E8EDFBD506DF2371D6 /* 0.3.31.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.31.md; sourceTree = "<group>"; };
+		4AAEF1A62B94EB022C1DA8E9 /* InProcessWebAppRuntimeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InProcessWebAppRuntimeCoordinator.swift; sourceTree = "<group>"; };
 		4C084ACC3797AB50289A4CE2 /* AppModel+WebApps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+WebApps.swift"; sourceTree = "<group>"; };
 		4C168513923E317D80AEDF8A /* 0.3.10.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.10.md; sourceTree = "<group>"; };
 		4E81A643E0AC051FB57F3B7B /* BrowserChromeMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeMetrics.swift; sourceTree = "<group>"; };
@@ -268,6 +347,7 @@
 		80B48173EF6202C4AFC2C0CC /* 0.3.8.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.8.md; sourceTree = "<group>"; };
 		8106973949153CBDFD5868DA /* 0.3.37.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.37.md; sourceTree = "<group>"; };
 		849B0F6F38FBDE8583D3B1FD /* 0.3.1.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.1.md; sourceTree = "<group>"; };
+		8561E0FE77BFC29781759F66 /* NeatWebAppAppStoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatWebAppAppStoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		87C3CC6D21E25D48603009E3 /* ScreenNotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenNotchGeometry.swift; sourceTree = "<group>"; };
 		88EC8D00E538C11AEE9087EC /* WebAppWindowPlacementLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowPlacementLaunchTests.swift; sourceTree = "<group>"; };
 		8F56ADEC781C6E0204CEF3C8 /* RuntimeFocusReturnTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeFocusReturnTargetTests.swift; sourceTree = "<group>"; };
@@ -296,6 +376,7 @@
 		BA34B0B97F4B266F3C68F392 /* BrowserBookmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBookmarkTests.swift; sourceTree = "<group>"; };
 		BC7EE445D7133B2C7D938035 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		BE7FF0754ABA13F6B7243A40 /* 0.3.36.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.36.md; sourceTree = "<group>"; };
+		BEC3B67AF23F8D23B1565A6F /* AppStoreChannelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreChannelTests.swift; sourceTree = "<group>"; };
 		BFADCD5F35649B381FE437C5 /* RuntimeWindowEventSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeWindowEventSink.swift; sourceTree = "<group>"; };
 		C3E7824589C047B85B91AD0C /* BrowserChromeTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChromeTitleTests.swift; sourceTree = "<group>"; };
 		C49E6C595618896648351FC8 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
@@ -325,10 +406,12 @@
 		E5CCC3AE22EB5530C71B5058 /* SideDockPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideDockPlacementTests.swift; sourceTree = "<group>"; };
 		E99EC881717F8D1FB6B86741 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		E9A3256E002132D68C68D6C6 /* BrowserDownloadPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDownloadPanel.swift; sourceTree = "<group>"; };
+		EB6E5294C85C12F368F0FB80 /* NeatWebAppAppStore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatWebAppAppStore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC457812D675337401F6B7A6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		ECC909AF939C06BEA4512768 /* 0.3.17.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.17.md; sourceTree = "<group>"; };
 		ED7BC742F636A67853E2AE7F /* CustomWebAppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWebAppStore.swift; sourceTree = "<group>"; };
 		EDAACF7514AACDFED1FCC44F /* AppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferencesStore.swift; sourceTree = "<group>"; };
+		EEC1284D5182277CF9F990B0 /* WebAppRuntimeCoordinating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppRuntimeCoordinating.swift; sourceTree = "<group>"; };
 		EEDB5E9EE24785458D0F91D5 /* 0.3.30.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 0.3.30.md; sourceTree = "<group>"; };
 		EF732394FEB42B01E110C5DB /* WebAppWindowLaunchFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppWindowLaunchFrameTests.swift; sourceTree = "<group>"; };
 		EFB69C041590CEFEA4AF732C /* RuntimeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeLauncher.swift; sourceTree = "<group>"; };
@@ -347,6 +430,7 @@
 		FE582360B288EB39EC9ED78E /* WebAppFaviconLoadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppFaviconLoadCoordinator.swift; sourceTree = "<group>"; };
 		FE60801E69B416C54C5B0F2C /* LauncherOverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOverlayRootView.swift; sourceTree = "<group>"; };
 		FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppIconNormalizer.swift; sourceTree = "<group>"; };
+		FFE4B104ABA4E8607074BDA1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -360,6 +444,17 @@
 				99E063C94472E720E4759907 /* MacKitLifecycle in Frameworks */,
 				845E7DCCE5BFCBA5B521CAB0 /* MacKitGlass in Frameworks */,
 				0A038C6B5FD86944B36705DC /* MacKitUpdater in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63277C704735199AFE817DE2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF57E9BA146129C38A8C9494 /* MacKitCore in Frameworks */,
+				651EA3CF67B11736E9D4674F /* MacKitLaunchAtLogin in Frameworks */,
+				1C75E340118ECD38FE4A2EAB /* MacKitLifecycle in Frameworks */,
+				6E30D6426935BD3DCE9CCD33 /* MacKitGlass in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,6 +507,7 @@
 		1611A32D798D9B0E174D2384 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				2FCA4BFFFE62E20E86B3F1E1 /* NeatWebAppAppStoreTests */,
 				08D30276935B78B6845CEBF4 /* NeatWebAppRuntimeTests */,
 				240E58313E1F67E04C81AE8A /* NeatWebAppTests */,
 			);
@@ -441,10 +537,19 @@
 			path = NeatWebAppTests;
 			sourceTree = "<group>";
 		};
+		2FCA4BFFFE62E20E86B3F1E1 /* NeatWebAppAppStoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				BEC3B67AF23F8D23B1565A6F /* AppStoreChannelTests.swift */,
+			);
+			path = NeatWebAppAppStoreTests;
+			sourceTree = "<group>";
+		};
 		3771EF9760EB9D9F2518FB43 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
 				FE510B09AE9992B2892FB3F8 /* NeatWebApp */,
+				F9D5B4733A44706DCD421C52 /* NeatWebAppAppStore */,
 				7CC422E1333334373B27BD98 /* NeatWebAppRuntime */,
 				440903D20951D8E07C1E5A1A /* Shared */,
 			);
@@ -463,6 +568,8 @@
 			isa = PBXGroup;
 			children = (
 				D3CE40D02F56E2FB33B16AB7 /* NeatWebApp.app */,
+				EB6E5294C85C12F368F0FB80 /* NeatWebAppAppStore.app */,
+				8561E0FE77BFC29781759F66 /* NeatWebAppAppStoreTests.xctest */,
 				0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */,
 				D97408F059C53BA18814C526 /* NeatWebAppRuntimeTests.xctest */,
 				169D69E2AF778CCFAFBF5CDB /* NeatWebAppTests.xctest */,
@@ -637,6 +744,14 @@
 			path = scripts;
 			sourceTree = "<group>";
 		};
+		CEB3CEB33478BEFF81D43F41 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				3B301E99A6EA2F46952C2D37 /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		D5074A44EC3600AEC3CBD934 = {
 			isa = PBXGroup;
 			children = (
@@ -693,6 +808,7 @@
 				072288DA8EFC3A54629E1706 /* WebAppFloatingIconSupport.swift */,
 				FEED82A73EBCD1156B758A75 /* WebAppIconNormalizer.swift */,
 				05FF8BDDD02D5490C18E7386 /* WebAppPreferencesStore.swift */,
+				EEC1284D5182277CF9F990B0 /* WebAppRuntimeCoordinating.swift */,
 				C5E6F0BF947576532272930B /* WebAppRuntimeCoordinator.swift */,
 				763A5CE2AEC694985D0E9A0C /* WebAppWindowController.swift */,
 				9C08C578E84A6D6B91AD0989 /* WebAppWindowController+AutoCollapse.swift */,
@@ -711,6 +827,16 @@
 				25784BC1A0C406BBC0010C40 /* WebAppWindowPlacement.swift */,
 			);
 			path = Browser;
+			sourceTree = "<group>";
+		};
+		F9D5B4733A44706DCD421C52 /* NeatWebAppAppStore */ = {
+			isa = PBXGroup;
+			children = (
+				CEB3CEB33478BEFF81D43F41 /* Resources */,
+				4AAEF1A62B94EB022C1DA8E9 /* InProcessWebAppRuntimeCoordinator.swift */,
+				FFE4B104ABA4E8607074BDA1 /* PrivacyInfo.xcprivacy */,
+			);
+			path = NeatWebAppAppStore;
 			sourceTree = "<group>";
 		};
 		FB92790582C9B1B5E275A41F /* Features */ = {
@@ -760,6 +886,24 @@
 			productReference = 0920FC54E3D4541E7073362D /* NeatWebAppRuntime.app */;
 			productType = "com.apple.product-type.application";
 		};
+		9623C14C8AFB7DC0BA3BAD78 /* NeatWebAppAppStoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0F2CC7D575F31EAAEE894537 /* Build configuration list for PBXNativeTarget "NeatWebAppAppStoreTests" */;
+			buildPhases = (
+				E207F0E19A7411403C3353F0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				205F28B29650FBAD62C536C7 /* PBXTargetDependency */,
+			);
+			name = NeatWebAppAppStoreTests;
+			packageProductDependencies = (
+			);
+			productName = NeatWebAppAppStoreTests;
+			productReference = 8561E0FE77BFC29781759F66 /* NeatWebAppAppStoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		BFF4B9D25682D9A99393461E /* NeatWebAppTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C6C7CE586E62509F7C82E712 /* Build configuration list for PBXNativeTarget "NeatWebAppTests" */;
@@ -795,6 +939,29 @@
 			productName = NeatWebAppRuntimeTests;
 			productReference = D97408F059C53BA18814C526 /* NeatWebAppRuntimeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F9E860532CAF1370E2DF0894 /* NeatWebAppAppStore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3FB71F0ADB3B649DB59BC855 /* Build configuration list for PBXNativeTarget "NeatWebAppAppStore" */;
+			buildPhases = (
+				E0BB7F2259C62371C8012C96 /* Sources */,
+				D08A65368F11A460F53D88E3 /* Resources */,
+				63277C704735199AFE817DE2 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NeatWebAppAppStore;
+			packageProductDependencies = (
+				82C5CBEC58B1509032D1DD49 /* MacKitCore */,
+				CB21E026B1217F6262EC4F09 /* MacKitLaunchAtLogin */,
+				F6A4B22F6E70D8C27901AD7F /* MacKitLifecycle */,
+				AC0259882AD99381A481F189 /* MacKitGlass */,
+			);
+			productName = NeatWebAppAppStore;
+			productReference = EB6E5294C85C12F368F0FB80 /* NeatWebAppAppStore.app */;
+			productType = "com.apple.product-type.application";
 		};
 		FB04F29A1BD3B13B73302B10 /* NeatWebApp */ = {
 			isa = PBXNativeTarget;
@@ -835,11 +1002,19 @@
 					72B403082BC00B6636D86890 = {
 						DevelopmentTeam = SHZQ3MWP3B;
 					};
+					9623C14C8AFB7DC0BA3BAD78 = {
+						DevelopmentTeam = SHZQ3MWP3B;
+						ProvisioningStyle = Automatic;
+					};
 					BFF4B9D25682D9A99393461E = {
 						DevelopmentTeam = SHZQ3MWP3B;
 					};
 					D1EC521A65C3E7BC1C143B4B = {
 						DevelopmentTeam = SHZQ3MWP3B;
+					};
+					F9E860532CAF1370E2DF0894 = {
+						DevelopmentTeam = SHZQ3MWP3B;
+						ProvisioningStyle = Automatic;
 					};
 					FB04F29A1BD3B13B73302B10 = {
 						DevelopmentTeam = SHZQ3MWP3B;
@@ -867,8 +1042,10 @@
 			targets = (
 				FB04F29A1BD3B13B73302B10 /* NeatWebApp */,
 				72B403082BC00B6636D86890 /* NeatWebAppRuntime */,
+				F9E860532CAF1370E2DF0894 /* NeatWebAppAppStore */,
 				BFF4B9D25682D9A99393461E /* NeatWebAppTests */,
 				D1EC521A65C3E7BC1C143B4B /* NeatWebAppRuntimeTests */,
+				9623C14C8AFB7DC0BA3BAD78 /* NeatWebAppAppStoreTests */,
 			);
 		};
 /* End PBXProject section */
@@ -892,6 +1069,18 @@
 				63AD3C45FA8BB7FB529986E6 /* Assets.xcassets in Resources */,
 				22DCA8705DF9D2457DA0BB16 /* InfoPlist.xcstrings in Resources */,
 				FD177764B8FA812F38A6F9F0 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D08A65368F11A460F53D88E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B26FBC8869EB25CDD2FBD9B5 /* Assets.xcassets in Resources */,
+				AFB559F1E44D8FFF575EC854 /* InfoPlist.xcstrings in Resources */,
+				A69847B4CF9DDE3B202BD8F7 /* Localizable.xcstrings in Resources */,
+				6247DBB400BBC825CCF1870E /* Lucide-LICENSE.txt in Resources */,
+				2CADF8372B171CA4CE60D67F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -970,6 +1159,7 @@
 				81D743A4C462116F8795445A /* WebAppIconNormalizer.swift in Sources */,
 				BA238E30F8D0FCBAFEFB1874 /* WebAppIconView.swift in Sources */,
 				667AD146E10165D3E8FEAD46 /* WebAppPreferencesStore.swift in Sources */,
+				46A8F2ACA451113A922CC2D1 /* WebAppRuntimeCoordinating.swift in Sources */,
 				6C94CC55D95577FE7CDDA210 /* WebAppRuntimeCoordinator.swift in Sources */,
 				28BAAC3B74C235851F2C8AB6 /* WebAppWindowMetrics.swift in Sources */,
 				BF8B414BB1B51D4679447C5C /* WebAppWindowPlacement.swift in Sources */,
@@ -1052,6 +1242,80 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E0BB7F2259C62371C8012C96 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A30EE1068B3850B6425DCDDF /* AppCommands.swift in Sources */,
+				A7DFA2B95E18D66B5CB6FE57 /* AppDelegate.swift in Sources */,
+				D7D4B5CB5E37DD66D6083E64 /* AppModel+Favicon.swift in Sources */,
+				E3036A6236E1103FD88C022B /* AppModel+Launcher.swift in Sources */,
+				83FC0FD841A77B41531D7432 /* AppModel+Preferences.swift in Sources */,
+				2167B695F0C8E4F01A97592F /* AppModel+WebApps.swift in Sources */,
+				48049DA127BF2313030CC9E0 /* AppModel.swift in Sources */,
+				447D4134934808701925611B /* AppPreferencesStore.swift in Sources */,
+				1DDE4CF8BF1C0AAD47E240F3 /* BrowserChromeMetrics.swift in Sources */,
+				77F2A01507F061AB249D6680 /* BrowserChromeTheme.swift in Sources */,
+				7EC6ED7CCCAE9C773C4395AD /* BrowserContainerView.swift in Sources */,
+				FB2A9D4DE77A939C40326216 /* BrowserCookieTransfer.swift in Sources */,
+				AD886E01DE8D2CF63C7B4228 /* BrowserDownloadDestinationResolver.swift in Sources */,
+				0DDCDA47ED47B370B9BD2334 /* BrowserDownloadManager.swift in Sources */,
+				D22FD3EB24DF6C3287B67129 /* BrowserDownloadPanel.swift in Sources */,
+				BC34F1010FF85FA80FBF77C8 /* BrowserExternalNavigationPolicy.swift in Sources */,
+				277A42DBAB0D35E57BE7DC12 /* BrowserKeyCommand.swift in Sources */,
+				D5146554C0112CC06B876D65 /* BrowserPasskeySupport.swift in Sources */,
+				1894D1C62FB02E53CA2B4135 /* BrowserSession.swift in Sources */,
+				2492DCB4DDAA18FF4ECE383C /* BrowserWebView.swift in Sources */,
+				7906A228077EEFAD87343AE7 /* CustomWebAppStore.swift in Sources */,
+				16C7B3837C9C689DB1F76784 /* DashboardView.swift in Sources */,
+				E37F9831892B7A29A8A9564D /* EdgeAttachedShape.swift in Sources */,
+				6B356F6AC1672BB5CEFDE642 /* HostMemoryPressureMonitor.swift in Sources */,
+				FA4609896281DC12174B6691 /* InProcessWebAppRuntimeCoordinator.swift in Sources */,
+				3888C112AA4BEBC8581FC0C4 /* LauncherOverlayController.swift in Sources */,
+				9D8550E1AB4B2C40D15164A4 /* LauncherOverlayRootView.swift in Sources */,
+				CD8BE7DF95F136D90B05BB48 /* LauncherPresentationContext.swift in Sources */,
+				BDAE8C4BA9331EC4C9C2F641 /* ManagementWindowPresenter.swift in Sources */,
+				B5CBC263D2210B7F0038A737 /* NeatWebAppApp.swift in Sources */,
+				7EBB5C0486139D4124D38020 /* NotchActivationMonitor.swift in Sources */,
+				E30AC698A161BA2280D254F6 /* NotchDebugOverlayController.swift in Sources */,
+				023A0AB2C6395DDFC8EC82BB /* RuntimeModels.swift in Sources */,
+				2571E2D93CB927BDBA7A4EB4 /* RuntimeSupportDirectory.swift in Sources */,
+				EDE402D28535B644A1A48B79 /* RuntimeWindowEventSink.swift in Sources */,
+				7804428584E2274112B67F52 /* ScreenNotchGeometry.swift in Sources */,
+				AEFCFE3DE58AFC5FD8E610D2 /* SettingsPanes.swift in Sources */,
+				61FE83CFE5791053C15854E6 /* SideDockOverlayController.swift in Sources */,
+				0077588745CA190FB423FE88 /* SideDockOverlayRootView.swift in Sources */,
+				D88243D90C0DD0C2162984DA /* SideDockPresentationContext.swift in Sources */,
+				4892AFC8694D4F0347195527 /* WebAppBrowserWindow.swift in Sources */,
+				30DDC9521150DDA3428FD9C9 /* WebAppDefinition.swift in Sources */,
+				A7B318921E80E3F4A02B9181 /* WebAppFaviconImagePreparing.swift in Sources */,
+				A1C0682467B5F3C250F78AE5 /* WebAppFaviconLoadCoordinator.swift in Sources */,
+				A7687CF2857D18969D5AEB91 /* WebAppFaviconLoader.swift in Sources */,
+				2AB93153E460AADC21C60EAE /* WebAppFaviconMemoryCache.swift in Sources */,
+				01B1059A480FB3F6B330AFBD /* WebAppFaviconStore.swift in Sources */,
+				DAACDFD720DCB7F1EAC1F094 /* WebAppFloatingIconSupport.swift in Sources */,
+				D0C272E53ADF45DF5A711689 /* WebAppIconNormalizer.swift in Sources */,
+				FFE8536D165538A67A0D5FD8 /* WebAppIconView.swift in Sources */,
+				36A9C724B95CB87135E8C0BA /* WebAppPreferencesStore.swift in Sources */,
+				8FACC843717521108EC3AB5E /* WebAppRuntimeCoordinating.swift in Sources */,
+				A372359B797F3C4BFFD7F535 /* WebAppWindowController+AutoCollapse.swift in Sources */,
+				5F4E0D9E470DFAC182F4903D /* WebAppWindowController+FloatingIcon.swift in Sources */,
+				6A0AB3206EEF61FFF89182D1 /* WebAppWindowController+FramePlacement.swift in Sources */,
+				2F7DFBEBFB42BCC6BDC8CB91 /* WebAppWindowController.swift in Sources */,
+				1F6EC11A3CE75541363B1B2A /* WebAppWindowMetrics.swift in Sources */,
+				F7E248AD72E20431E7140F5A /* WebAppWindowPlacement.swift in Sources */,
+				BC6F963D41540541A38592D8 /* WindowVisibleCoverage.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E207F0E19A7411403C3353F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0F0518CC8F100BBDEE50E152 /* AppStoreChannelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1059,6 +1323,11 @@
 			isa = PBXTargetDependency;
 			target = 72B403082BC00B6636D86890 /* NeatWebAppRuntime */;
 			targetProxy = 07902EC653FF1595A42B298A /* PBXContainerItemProxy */;
+		};
+		205F28B29650FBAD62C536C7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F9E860532CAF1370E2DF0894 /* NeatWebAppAppStore */;
+			targetProxy = D85D88C7EFD33CF992763CA9 /* PBXContainerItemProxy */;
 		};
 		4E6FE2F06569043089B19110 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1109,6 +1378,29 @@
 			};
 			name = Debug;
 		};
+		1A8759564F9D00E84A9F3876 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_CODE_SIGN_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.caozc.NeatWebAppTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG APP_STORE";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatWebAppAppStore.app/Contents/MacOS/NeatWebAppAppStore";
+			};
+			name = Debug;
+		};
 		3720D40B802CE2C5847F9C78 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1143,6 +1435,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
+				COMPILATION_CACHE_ENABLE_CACHING = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 3055;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -1171,7 +1464,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG DIRECT_DISTRIBUTION";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 			};
@@ -1209,6 +1502,80 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.geraltgraham.NeatWebApp;
 				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		8804C204E9E191E7673FF531 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_CODE_SIGN_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.caozc.NeatWebAppTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatWebAppAppStore.app/Contents/MacOS/NeatWebAppAppStore";
+			};
+			name = Release;
+		};
+		9E5AD5C5FE41DB82C645FD3F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/NeatWebAppAppStore/NeatWebAppAppStore.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				COMPILER_INDEX_STORE_ENABLE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/NeatWebAppAppStore/Info-AppStore.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_CODE_SIGN_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.caozc.NeatWebApp;
+				PRODUCT_NAME = NeatWebApp;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_STORE;
+			};
+			name = Release;
+		};
+		AB498E65248FE641132BA2F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/NeatWebAppAppStore/NeatWebAppAppStore.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/NeatWebAppAppStore/Info-AppStore.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_CODE_SIGN_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.caozc.NeatWebApp;
+				PRODUCT_NAME = NeatWebAppAppStore;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG APP_STORE";
 			};
 			name = Debug;
 		};
@@ -1266,6 +1633,8 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
+				COMPILATION_CACHE_ENABLE_CACHING = YES;
+				COMPILER_INDEX_STORE_ENABLE = NO;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 3055;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -1289,7 +1658,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DIRECT_DISTRIBUTION;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -1354,11 +1723,29 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0F2CC7D575F31EAAEE894537 /* Build configuration list for PBXNativeTarget "NeatWebAppAppStoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A8759564F9D00E84A9F3876 /* Debug */,
+				8804C204E9E191E7673FF531 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		3713881D6A265850FA6ED279 /* Build configuration list for PBXProject "NeatWebApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3720D40B802CE2C5847F9C78 /* Debug */,
 				E1090F01B4BBDF05A80D07C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3FB71F0ADB3B649DB59BC855 /* Build configuration list for PBXNativeTarget "NeatWebAppAppStore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB498E65248FE641132BA2F6 /* Debug */,
+				9E5AD5C5FE41DB82C645FD3F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1415,7 +1802,7 @@
 			repositoryURL = "https://github.com/x0c/mac-kit-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.4;
+				minimumVersion = 0.1.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1436,6 +1823,11 @@
 			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
 			productName = MacKitCore;
 		};
+		82C5CBEC58B1509032D1DD49 /* MacKitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitCore;
+		};
 		A82CEC9C739DBA32DB5BEC54 /* MacKitLifecycle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
@@ -1445,6 +1837,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7C92EE8F3F20640F3788DB13 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		AC0259882AD99381A481F189 /* MacKitGlass */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitGlass;
+		};
+		CB21E026B1217F6262EC4F09 /* MacKitLaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitLaunchAtLogin;
+		};
+		F6A4B22F6E70D8C27901AD7F /* MacKitLifecycle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FB9EA900030946BF94DE935 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitLifecycle;
 		};
 		FBB92853AF2A9BEAFAEAE5F0 /* MacKitGlass */ = {
 			isa = XCSwiftPackageProductDependency;

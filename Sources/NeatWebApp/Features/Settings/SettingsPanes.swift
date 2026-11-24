@@ -6,7 +6,9 @@ import SwiftUI
 /// the maintenance actions (updates, quit) mirrored from the menu bar.
 struct GeneralSettingsPane: View {
     @Environment(AppModel.self) private var appModel
+    #if DIRECT_DISTRIBUTION
     @EnvironmentObject private var appUpdater: AppUpdater
+    #endif
 
     var body: some View {
         Form {
@@ -90,6 +92,7 @@ struct GeneralSettingsPane: View {
 
 /// App identity on the left, maintenance actions on the right, so no action sits alone in a row.
 private struct AboutRow: View {
+    #if DIRECT_DISTRIBUTION
     @EnvironmentObject private var appUpdater: AppUpdater
 
     private var updateButtonTitle: String {
@@ -101,6 +104,7 @@ private struct AboutRow: View {
         }
         return String(localized: "settings.check_for_updates")
     }
+    #endif
 
     private var versionTitle: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
@@ -126,10 +130,12 @@ private struct AboutRow: View {
 
             Spacer(minLength: 12)
 
+            #if DIRECT_DISTRIBUTION
             Button(updateButtonTitle) {
                 appUpdater.updater.checkForUpdates()
             }
             .disabled(!appUpdater.canCheckForUpdates)
+            #endif
 
             Button("settings.quit.short") {
                 (NSApp.delegate as? AppDelegate)?.terminationGuard.requestTermination()

@@ -231,9 +231,15 @@ extension WebAppWindowController {
             return
         }
 
+        #if APP_STORE
+        let hostBundleIdentifier = "com.caozc.NeatWebApp"
+        #else
+        let hostBundleIdentifier = "com.geraltgraham.NeatWebApp"
+        #endif
+
         // The host is a switcher proxy, not the application to return to after collapse.
         guard frontmostApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier,
-              frontmostApplication.bundleIdentifier != "com.geraltgraham.NeatWebApp" else {
+              frontmostApplication.bundleIdentifier != hostBundleIdentifier else {
             return
         }
 
@@ -241,6 +247,15 @@ extension WebAppWindowController {
     }
 
     private func reactivateLastExternalApplicationIfPossible() {
+        #if APP_STORE
+        let hasOtherVisibleWebAppWindow = NSApp.windows.contains {
+            $0 is WebAppBrowserWindow && $0 !== window && $0.isVisible
+        }
+        guard !hasOtherVisibleWebAppWindow else {
+            return
+        }
+        #endif
+
         guard let application = lastExternalFrontmostApplication, !application.isTerminated else {
             return
         }

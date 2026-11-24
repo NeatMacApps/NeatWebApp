@@ -11,6 +11,7 @@ options:
 
 settings:
   base:
+    COMPILATION_CACHE_ENABLE_CACHING: YES
     SWIFT_VERSION: 6.0
     MACOSX_DEPLOYMENT_TARGET: "15.0"
     ENABLE_HARDENED_RUNTIME: YES
@@ -24,9 +25,10 @@ settings:
     CURRENT_PROJECT_VERSION: 3055
   configs:
     Debug:
-      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG DIRECT_DISTRIBUTION
     Release:
-      SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+      COMPILER_INDEX_STORE_ENABLE: NO
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DIRECT_DISTRIBUTION
       # 对外分发：Developer ID 签名 + 加固运行时 + 可信时间戳，缺一样苹果公证都会打回。
       # 本应用的权限只有摄像头与麦克风，属于加固运行时的资源访问权限，
       # 不需要苹果背书，因此不配描述文件（留空是为了避免自动签名反过来去找一份）。
@@ -130,6 +132,63 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Sources/NeatWebAppRuntime/App/NeatWebAppRuntime.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
+  NeatWebAppAppStore:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources/NeatWebApp
+        excludes:
+          - App/Info.plist
+          - Resources/Localizable.xcstrings
+          - Services/AppUpdater.swift
+          - Services/WebAppWindowCoordinator.swift
+          - Services/WebAppRuntimeCoordinator.swift
+          - Services/RuntimeLauncher.swift
+          - Services/RuntimeStandbyPool.swift
+          - Services/RuntimeHealthMonitor.swift
+          - Services/LaunchPlaceholderController.swift
+          - Features/Browser/BrowserElementHidingScript.swift
+          - Features/Browser/BrowserSelectorFinderScript.swift
+          - Features/Browser/Localizable.xcstrings
+      - Sources/Shared/Browser
+      - Sources/Shared/Runtime/RuntimeModels.swift
+      - Sources/Shared/Runtime/RuntimeSupportDirectory.swift
+      - path: Sources/NeatWebAppAppStore
+        excludes:
+          - Info-AppStore.plist
+          - NeatWebAppAppStore.entitlements
+    dependencies:
+      - package: MacKit
+        product: MacKitCore
+      - package: MacKit
+        product: MacKitLaunchAtLogin
+      - package: MacKit
+        product: MacKitLifecycle
+      - package: MacKit
+        product: MacKitGlass
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.caozc.NeatWebApp
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/NeatWebAppAppStore/Info-AppStore.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/NeatWebAppAppStore/NeatWebAppAppStore.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        PROVISIONING_PROFILE_SPECIFIER: ""
+        OTHER_CODE_SIGN_FLAGS: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          PRODUCT_NAME: NeatWebAppAppStore
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: YES
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG APP_STORE
+        Release:
+          PRODUCT_NAME: NeatWebApp
+          COMPILER_INDEX_STORE_ENABLE: NO
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_STORE
+
   NeatWebAppTests:
     type: bundle.unit-test
     platform: macOS
@@ -160,6 +219,30 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NeatWebAppRuntime.app/Contents/MacOS/NeatWebAppRuntime"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
+  NeatWebAppAppStoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - Tests/NeatWebAppAppStoreTests
+    dependencies:
+      - target: NeatWebAppAppStore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.caozc.NeatWebAppTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        PROVISIONING_PROFILE_SPECIFIER: ""
+        OTHER_CODE_SIGN_FLAGS: ""
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NeatWebAppAppStore.app/Contents/MacOS/NeatWebAppAppStore"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG APP_STORE
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_STORE
+
 schemes:
   NeatWebApp:
     build:
@@ -176,6 +259,25 @@ schemes:
       targets:
         - NeatWebAppTests
         - NeatWebAppRuntimeTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  NeatWebAppAppStore:
+    build:
+      targets:
+        NeatWebAppAppStore: all
+        NeatWebAppAppStoreTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - NeatWebAppAppStoreTests
     profile:
       config: Release
     analyze:

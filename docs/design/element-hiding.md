@@ -46,7 +46,7 @@
 重新编译再重载，做不到隐藏瞬间生效与一键还原。本功能的产品形态就是所见即所得 + 随时恢复，
 所以走注入样式。日后若要做「导入广告过滤规则订阅」这类批量场景，才值得把原生规则加回来做补充。
 
-### 5. 选择器生成直接复用成熟库，不自研
+### 5. 选择器生成直接复用成熟库，并做稳定度分层兜底
 
 把用户点中的元素反推成一条既唯一又稳的选择器，是这个功能里最容易做砸的一步。
 内嵌 [antonmedv/finder](https://github.com/antonmedv/finder) v4.0.2（MIT，1.5KB），原样保留，
@@ -54,6 +54,16 @@
 升级时直接换上游文件重做同样两步改动，不要在里面加本项目的逻辑。
 
 同类的完整实现（uBlock Origin 的选择器、AdGuard Assistant）是 GPL-3，只能借鉴交互设计，**不能复用代码**。
+
+**2026-11-24 稳定度加固（`BrowserElementHidingScript.swift`）：**
+`finder` 默认 `wordLike()` 会过滤掉 CSS Modules（`Component_local_hash`）、短前缀/驼峰/BEM 类名及中文 `aria-label` / `title`，导致 Vue / React / Webpack 站点大量退化成裸 `:nth-of-type()` 或动态主题类（`.light`、`.layer-satellite`）及通用类（`.controls`、`.box`），一旦条件渲染增减兄弟节点就会藏错别的元素。
+当前在 `BrowserElementHidingScript` 的 `buildStableSelector(target)` 中按优先级分层生成并校验：
+1. **剥离哈希的 CSS Modules 前缀匹配**：Webpack/Vue/Next.js 与 Vite CSS Modules 抽成 `:is([class^="prefix_"],[class*=" prefix_"])`，并跳过 `on`/`white`/`android`/`init`/`small` 等状态后缀。
+2. **语义属性与安全类名过滤**：保留稳定 `#id`、测试/组件 `data-*`、语义 `aria-label` / `title` / `alt` / `name` / 地标 `role`、`[data-v-*]` 与类名的组合；过滤动态 ID、状态/主题类、Tailwind 工具类、CSS-in-JS 哈希与孤立通用容器类。
+3. **语义祖先锚点与 `:has()` 包装指纹**：无身份的匿名外层容器改用子孙特征 `:has(...)` 定位，避免依赖兄弟下标。
+4. **安全闸门与宁缺毋滥**：最多只允许 1 个 `:nth-*` 且必须有非通用组件祖先锚定；否则调用配置过稳定过滤器的 `finder` 兜底；若仍无法安全唯一定位则拒绝生成规则并提示用户，避免存下错藏其他元素的脆弱规则。
+
+> **渠道边界：** 元素隐藏仅保留在直分发版（`NeatWebApp` / `NeatWebAppRuntime`）；Mac App Store 单进程沙盒版（`NeatWebAppAppStore`）已完整剔除页面元素隐藏脚本、接口与 UI。
 
 ### 6. 藏完立刻数命中数，宽规则主动告警、不静默
 

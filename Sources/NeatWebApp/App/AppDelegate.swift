@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var isMenuBarIconVisible: () -> Bool = { true }
     var isUpdateSessionInProgress: () -> Bool = { false }
     var prepareForTermination: () -> Void = {}
+    var restoreWebAppOnReopen: (() -> Bool)?
     private var presentMainWindow: (() -> Void)?
     /// 后台就绪时刻；菜单栏即主入口的二次启动防呆用。
     private var readyAt = Date()
@@ -69,6 +70,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // That is not a second launch; showing the catalog would pop a config
         // window that is not the daily entry.
         if elapsed < 2 {
+            return true
+        }
+        if restoreWebAppOnReopen?() == true {
             return true
         }
         if MenuBarReopenPolicy.presentation(

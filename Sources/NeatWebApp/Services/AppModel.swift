@@ -80,22 +80,48 @@ final class AppModel {
     let sideDockReserveStore = SideDockReserveStore()
 
     @ObservationIgnored
-    lazy var runtimeCoordinator = WebAppRuntimeCoordinator(
-        standbyPool: RuntimeStandbyPool(launcher: RuntimeLauncher(), commandBus: RuntimeCommandBus()),
-        dockReserveStore: sideDockReserveStore,
-        onActiveAppIDChange: { [weak self] appID in
-            self?.activeRuntimeAppID = appID
-        },
-        onDiagnosticMessage: { [weak self] message in
-            self?.diagnosticsMessage = message
-        },
-        onRuntimeStatesChange: { [weak self] states in
-            self?.handleRuntimeStatesChange(states)
-        },
-        onBookmarkWebApp: { [weak self] definition in
-            self?.registerBookmarkWebApp(definition) ?? false
-        }
-    )
+    lazy var runtimeCoordinator: any WebAppRuntimeCoordinating = {
+        #if APP_STORE
+        InProcessWebAppRuntimeCoordinator(
+            dockReserveStore: sideDockReserveStore,
+            onActiveAppIDChange: { [weak self] appID in
+                self?.activeRuntimeAppID = appID
+            },
+            onDiagnosticMessage: { [weak self] message in
+                self?.diagnosticsMessage = message
+            },
+            onRuntimeStatesChange: { [weak self] states in
+                self?.handleRuntimeStatesChange(states)
+            },
+            onBookmarkWebApp: { [weak self] definition in
+                self?.registerBookmarkWebApp(definition) ?? false
+            }
+        )
+        #else
+        WebAppRuntimeCoordinator(
+            standbyPool: RuntimeStandbyPool(launcher: RuntimeLauncher(), commandBus: RuntimeCommandBus()),
+            dockReserveStore: sideDockReserveStore,
+            onActiveAppIDChange: { [weak self] appID in
+                self?.activeRuntimeAppID = appID
+            },
+            onDiagnosticMessage: { [weak self] message in
+                self?.diagnosticsMessage = message
+            },
+            onRuntimeStatesChange: { [weak self] states in
+                self?.handleRuntimeStatesChange(states)
+            },
+            onBookmarkWebApp: { [weak self] definition in
+                self?.registerBookmarkWebApp(definition) ?? false
+            }
+        )
+        #endif
+    }()
+
+    #if APP_STORE
+    func restoreWebAppOnReopen() -> Bool {
+        (runtimeCoordinator as? InProcessWebAppRuntimeCoordinator)?.restoreActiveWebAppOnReopen() ?? false
+    }
+    #endif
 
     // MARK: - Session / tasks
 
