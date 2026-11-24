@@ -7,10 +7,14 @@ struct AppPreferences: Equatable, Sendable {
     let sideDockDisplayID: CGDirectDisplayID?
     let isVirtualNotchEnabled: Bool
     var sideDockFloatingPosition: CGPoint? = nil
+    var showWebAppsInSystemDock: Bool = AppPreferencesStore.defaultShowWebAppsInSystemDock
+    var showFloatingDock: Bool = AppPreferencesStore.defaultShowFloatingDock
 }
 
 final class AppPreferencesStore {
     static let defaultVirtualNotchEnabled = true
+    static let defaultShowWebAppsInSystemDock = true
+    static let defaultShowFloatingDock = true
 
     private enum Key {
         static let sideDockEdge = "sideDock.edge"
@@ -19,6 +23,8 @@ final class AppPreferencesStore {
         static let sideDockFloatingX = "sideDock.floatingX"
         static let sideDockFloatingY = "sideDock.floatingY"
         static let virtualNotchEnabled = "launcher.virtualNotchEnabled"
+        static let showWebAppsInSystemDock = "dock.showWebAppsInSystemDock"
+        static let showFloatingDock = "sideDock.enabled"
     }
 
     private let defaults: UserDefaults
@@ -62,12 +68,28 @@ final class AppPreferencesStore {
             floatingPosition = nil
         }
 
+        let showWebAppsInSystemDock: Bool
+        if defaults.object(forKey: Key.showWebAppsInSystemDock) == nil {
+            showWebAppsInSystemDock = Self.defaultShowWebAppsInSystemDock
+        } else {
+            showWebAppsInSystemDock = defaults.bool(forKey: Key.showWebAppsInSystemDock)
+        }
+
+        let showFloatingDock: Bool
+        if defaults.object(forKey: Key.showFloatingDock) == nil {
+            showFloatingDock = Self.defaultShowFloatingDock
+        } else {
+            showFloatingDock = defaults.bool(forKey: Key.showFloatingDock)
+        }
+
         return AppPreferences(
             sideDockEdge: edge,
             sideDockVerticalPosition: verticalPosition,
             sideDockDisplayID: displayID,
             isVirtualNotchEnabled: isVirtualNotchEnabled,
-            sideDockFloatingPosition: floatingPosition
+            sideDockFloatingPosition: floatingPosition,
+            showWebAppsInSystemDock: showWebAppsInSystemDock,
+            showFloatingDock: showFloatingDock
         )
     }
 
@@ -75,6 +97,8 @@ final class AppPreferencesStore {
         defaults.set(preferences.sideDockEdge.rawValue, forKey: Key.sideDockEdge)
         defaults.set(Double(preferences.sideDockVerticalPosition), forKey: Key.sideDockVerticalPosition)
         defaults.set(preferences.isVirtualNotchEnabled, forKey: Key.virtualNotchEnabled)
+        defaults.set(preferences.showWebAppsInSystemDock, forKey: Key.showWebAppsInSystemDock)
+        defaults.set(preferences.showFloatingDock, forKey: Key.showFloatingDock)
 
         if let position = preferences.sideDockFloatingPosition {
             defaults.set(Double(position.x), forKey: Key.sideDockFloatingX)

@@ -102,6 +102,26 @@ final class RuntimeDockIdentityTests: XCTestCase {
         XCTAssertNotNil(fixture.store.loadDockSource(for: "website"))
     }
 
+    func testDisablingSystemDockDemotesWithoutInstallingIconAndReenablingPromotesAgain() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        fixture.store.saveDockSource(try source(color: .red), for: "website")
+        var events: [String] = []
+        let identity = RuntimeDockIdentity(
+            faviconStore: fixture.store,
+            setIcon: { _ in events.append("icon") },
+            promoteApplication: { events.append("regular"); return true },
+            demoteApplication: { events.append("accessory"); return true }
+        )
+        defer { identity.stop() }
+
+        identity.applyVisibility(false, for: definition())
+        XCTAssertEqual(events, ["accessory"])
+
+        identity.applyVisibility(true, for: definition())
+        XCTAssertEqual(events, ["accessory", "regular", "icon"])
+    }
+
     private func definition() -> WebAppDefinition {
         WebAppDefinition(id: "website", name: "Website", homeURL: URL(fileURLWithPath: "/tmp/website"), accentColorName: "blue", shortDescription: "")
     }

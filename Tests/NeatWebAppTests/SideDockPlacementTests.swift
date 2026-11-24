@@ -164,6 +164,14 @@ final class AppPreferencesStoreTests: XCTestCase {
                 preferences.isVirtualNotchEnabled,
                 AppPreferencesStore.defaultVirtualNotchEnabled
             )
+            XCTAssertEqual(
+                preferences.showWebAppsInSystemDock,
+                AppPreferencesStore.defaultShowWebAppsInSystemDock
+            )
+            XCTAssertEqual(
+                preferences.showFloatingDock,
+                AppPreferencesStore.defaultShowFloatingDock
+            )
         }
     }
 
@@ -174,7 +182,9 @@ final class AppPreferencesStoreTests: XCTestCase {
                 sideDockVerticalPosition: 0.31,
                 sideDockDisplayID: 7,
                 isVirtualNotchEnabled: false,
-                sideDockFloatingPosition: CGPoint(x: 0.42, y: 0.67)
+                sideDockFloatingPosition: CGPoint(x: 0.42, y: 0.67),
+                showWebAppsInSystemDock: false,
+                showFloatingDock: false
             )
 
             store.save(expected)

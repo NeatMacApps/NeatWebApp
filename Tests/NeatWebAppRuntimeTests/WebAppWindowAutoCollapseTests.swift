@@ -46,6 +46,10 @@ final class WebAppWindowAutoCollapseTests: XCTestCase {
         XCTAssertFalse(makeDecision(isAnimatingFloatingIconTransition: true))
     }
 
+    func testNeverAutoCollapsesWhenFloatingDockIsDisabled() {
+        XCTAssertFalse(makeDecision(hiddenFraction: 1, isAutoCollapseEnabled: false))
+    }
+
     private func makeDecision(
         isPinned: Bool = false,
         hasFloatingIconPanel: Bool = false,
@@ -53,7 +57,8 @@ final class WebAppWindowAutoCollapseTests: XCTestCase {
         isWindowVisible: Bool = true,
         isKeyWindow: Bool = false,
         isMiniaturized: Bool = false,
-        hiddenFraction: CGFloat = 1
+        hiddenFraction: CGFloat = 1,
+        isAutoCollapseEnabled: Bool = true
     ) -> Bool {
         WebAppWindowController.shouldCollapseWindowWhenOccluded(
             isPinned: isPinned,
@@ -62,7 +67,8 @@ final class WebAppWindowAutoCollapseTests: XCTestCase {
             isWindowVisible: isWindowVisible,
             isKeyWindow: isKeyWindow,
             isMiniaturized: isMiniaturized,
-            hiddenFraction: hiddenFraction
+            hiddenFraction: hiddenFraction,
+            isAutoCollapseEnabled: isAutoCollapseEnabled
         )
     }
 }

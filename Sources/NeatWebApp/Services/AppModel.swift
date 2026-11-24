@@ -37,6 +37,8 @@ final class AppModel {
     var sideDockFloatingPosition: CGPoint?
     var sideDockDisplayID: CGDirectDisplayID?
     var isVirtualNotchEnabled = AppPreferencesStore.defaultVirtualNotchEnabled
+    var showWebAppsInSystemDock = AppPreferencesStore.defaultShowWebAppsInSystemDock
+    var isFloatingDockEnabled = AppPreferencesStore.defaultShowFloatingDock
     var collapsedWebApps: [WebAppDefinition] = []
 
     // MARK: - Collaborators
@@ -161,7 +163,10 @@ final class AppModel {
         restoreMenuBarIconVisibility()
         refreshScreenState()
         refreshLaunchAtLoginState()
-        runtimeCoordinator.refreshRegistry()
+        runtimeCoordinator.applyDockPreferences(
+            showInSystemDock: showWebAppsInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
+        )
         preloadFavicons()
         startMemoryPressureMonitorIfNeeded()
         scheduleStandbyRuntimeWarmUp()

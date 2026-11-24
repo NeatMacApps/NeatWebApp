@@ -15,4 +15,5 @@ protocol WebAppRuntimeCoordinating {
     func refreshRegistry()
     func prepareStandbyRuntime()
     func releaseStandbyRuntimeForMemoryPressure()
+    func applyDockPreferences(showInSystemDock: Bool, isFloatingDockEnabled: Bool)
 }

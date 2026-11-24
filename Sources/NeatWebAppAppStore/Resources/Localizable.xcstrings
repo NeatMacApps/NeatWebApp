@@ -1736,23 +1736,6 @@
         }
       }
     },
-    "settings.side_dock.edge.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dock Starting Position"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dock 初始位置"
-          }
-        }
-      }
-    },
     "settings.version_format": {
       "extractionState": "manual",
       "localizations": {
@@ -1838,54 +1821,6 @@
         }
       }
     },
-    "sidedock.edge.bottom": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bottom"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "底部"
-          }
-        }
-      }
-    },
-    "sidedock.edge.left": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Left"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "左侧"
-          }
-        }
-      }
-    },
-    "sidedock.edge.right": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Right"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右侧"
-          }
-        }
-      }
-    },
     "sidedock.quit_app": {
       "extractionState": "manual",
       "localizations": {
@@ -1899,6 +1834,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "结束应用"
+          }
+        }
+      }
+    },
+    "settings.system_dock.show_webapps.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Web Apps in System Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在系统 Dock 显示网页应用"
+          }
+        }
+      }
+    },
+    "settings.floating_dock.show.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Floating Dock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示悬浮 Dock"
+          }
+        }
+      }
+    },
+    "settings.floating_dock.show.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows collapsed web apps in a floating Dock and automatically collapses windows when mostly covered."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在悬浮 Dock 中显示已收起的网页应用，并在窗口被大部分遮挡时自动收起。"
           }
         }
       }

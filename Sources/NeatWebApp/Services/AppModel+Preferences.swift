@@ -30,10 +30,30 @@ extension AppModel {
         UserDefaults.standard.set(visible, forKey: Self.menuBarIconVisibleKey)
     }
 
-    func setSideDockEdge(_ edge: SideDockEdge) {
-        sideDockEdge = edge
-        sideDockFloatingPosition = nil
+    func setShowWebAppsInSystemDock(_ isEnabled: Bool) {
+        guard showWebAppsInSystemDock != isEnabled else {
+            return
+        }
+
+        showWebAppsInSystemDock = isEnabled
         saveAppPreferences()
+        runtimeCoordinator.applyDockPreferences(
+            showInSystemDock: showWebAppsInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
+        )
+    }
+
+    func setFloatingDockEnabled(_ isEnabled: Bool) {
+        guard isFloatingDockEnabled != isEnabled else {
+            return
+        }
+
+        isFloatingDockEnabled = isEnabled
+        saveAppPreferences()
+        runtimeCoordinator.applyDockPreferences(
+            showInSystemDock: showWebAppsInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
+        )
         syncSideDockOverlay()
     }
 
@@ -92,6 +112,8 @@ extension AppModel {
         sideDockFloatingPosition = preferences.sideDockFloatingPosition
         sideDockDisplayID = preferences.sideDockDisplayID
         isVirtualNotchEnabled = preferences.isVirtualNotchEnabled
+        showWebAppsInSystemDock = preferences.showWebAppsInSystemDock
+        isFloatingDockEnabled = preferences.showFloatingDock
     }
 
     func saveAppPreferences() {
@@ -101,12 +123,20 @@ extension AppModel {
                 sideDockVerticalPosition: sideDockVerticalPosition,
                 sideDockDisplayID: sideDockDisplayID,
                 isVirtualNotchEnabled: isVirtualNotchEnabled,
-                sideDockFloatingPosition: sideDockFloatingPosition
+                sideDockFloatingPosition: sideDockFloatingPosition,
+                showWebAppsInSystemDock: showWebAppsInSystemDock,
+                showFloatingDock: isFloatingDockEnabled
             )
         )
     }
 
     func syncSideDockOverlay() {
+        guard isFloatingDockEnabled else {
+            sideDockOverlayController.hide()
+            publishSideDockReserve()
+            return
+        }
+
         sideDockOverlayController.update(
             apps: collapsedWebApps,
             edge: sideDockEdge,

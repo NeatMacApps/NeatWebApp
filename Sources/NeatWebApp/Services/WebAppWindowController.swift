@@ -55,6 +55,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
     var shouldHoldLaunchFrame = false
     let dockReserveStore: SideDockReserveStore
     var dockReserve: SideDockScreenReserve?
+    private(set) var isAutoCollapseEnabled: Bool
 
     init(
         definition: WebAppDefinition,
@@ -63,7 +64,8 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         eventSink: (any RuntimeWindowEventSink)?,
         dockReserveStore: SideDockReserveStore = SideDockReserveStore(),
         restoredWindowFrame: CGRect? = nil,
-        lockRestoredFrame: Bool = false
+        lockRestoredFrame: Bool = false,
+        isAutoCollapseEnabled: Bool = true
     ) {
         let preference = preferencesStore.load(for: definition.id)
         self.session = BrowserSession(
@@ -75,6 +77,7 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
         self.preferredGeometry = preferredGeometry
         self.dockReserveStore = dockReserveStore
         self.dockReserve = dockReserveStore.load()
+        self.isAutoCollapseEnabled = isAutoCollapseEnabled
         self.skipNextVisibilityCorrection = lockRestoredFrame && restoredWindowFrame != nil
         self.isAwaitingHostCoverLift = lockRestoredFrame && restoredWindowFrame != nil
 
@@ -223,6 +226,21 @@ final class WebAppWindowController: NSWindowController, NSWindowDelegate, Browse
             startHoverFocusMonitoringIfNeeded()
         } else {
             stopHoverFocusMonitoring()
+        }
+    }
+
+    func setAutoCollapseEnabled(_ isEnabled: Bool) {
+        guard isAutoCollapseEnabled != isEnabled else {
+            return
+        }
+
+        isAutoCollapseEnabled = isEnabled
+        if isEnabled {
+            if window?.isVisible == true, window?.isKeyWindow == false, !session.isPinned {
+                startCoverageWatch()
+            }
+        } else {
+            stopCoverageWatch()
         }
     }
 

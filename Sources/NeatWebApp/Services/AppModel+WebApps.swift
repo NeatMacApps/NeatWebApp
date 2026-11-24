@@ -168,7 +168,7 @@ extension AppModel {
             previousPhases: lastRuntimePhases, states: states
         )
         lastRuntimePhases = Dictionary(states.map { ($0.appID, $0.phase) }) { _, latest in latest }
-        if let collapsedWindowFrame {
+        if isFloatingDockEnabled, let collapsedWindowFrame {
             anchorSideDock(toCollapsedWindowFrame: collapsedWindowFrame)
         } else {
             syncSideDockOverlay()

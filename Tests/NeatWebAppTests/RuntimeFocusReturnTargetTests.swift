@@ -27,4 +27,48 @@ final class RuntimeFocusReturnTargetTests: XCTestCase {
         XCTAssertNil(try JSONDecoder().decode(RuntimeBootstrap.self, from: JSONSerialization.data(withJSONObject: legacy)).focusReturnTarget)
     }
 
+    func testDockPreferencesRoundTripAndDefaultTrueForLegacyPayloads() throws {
+        let bootstrap = RuntimeBootstrap(
+            instanceID: UUID(),
+            appID: "a",
+            definition: WebAppDefinition(id: "a", name: "A", homeURL: URL(fileURLWithPath: "/tmp/a"), accentColorName: "blue", shortDescription: ""),
+            launchReason: .openFromLauncher,
+            preferredDisplayID: nil,
+            runtimeBuildIdentifier: "test-runtime",
+            restoredPhase: nil,
+            restoredWindowFrame: nil,
+            restoredFloatingIconFrame: nil,
+            createdAt: .now,
+            hostVersion: "test",
+            showInSystemDock: false,
+            isFloatingDockEnabled: false
+        )
+        let decodedBootstrap = try JSONDecoder().decode(RuntimeBootstrap.self, from: JSONEncoder().encode(bootstrap))
+        XCTAssertEqual(decodedBootstrap.showInSystemDock, false)
+        XCTAssertEqual(decodedBootstrap.isFloatingDockEnabled, false)
+        XCTAssertFalse(decodedBootstrap.resolvedShowInSystemDock)
+        XCTAssertFalse(decodedBootstrap.resolvedIsFloatingDockEnabled)
+
+        var legacyBootstrap = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(bootstrap)) as? [String: Any])
+        legacyBootstrap.removeValue(forKey: "showInSystemDock")
+        legacyBootstrap.removeValue(forKey: "isFloatingDockEnabled")
+        let decodedLegacy = try JSONDecoder().decode(RuntimeBootstrap.self, from: JSONSerialization.data(withJSONObject: legacyBootstrap))
+        XCTAssertTrue(decodedLegacy.resolvedShowInSystemDock)
+        XCTAssertTrue(decodedLegacy.resolvedIsFloatingDockEnabled)
+
+        let command = RuntimeCommand(
+            instanceID: UUID(),
+            appID: "a",
+            sequence: 2,
+            command: .updateDockPreferences,
+            definition: nil,
+            showInSystemDock: false,
+            isFloatingDockEnabled: true
+        )
+        let decodedCommand = try JSONDecoder().decode(RuntimeCommand.self, from: JSONEncoder().encode(command))
+        XCTAssertEqual(decodedCommand.command, .updateDockPreferences)
+        XCTAssertEqual(decodedCommand.showInSystemDock, false)
+        XCTAssertEqual(decodedCommand.isFloatingDockEnabled, true)
+    }
+
 }

@@ -29,6 +29,8 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private var migratingAppIDs: Set<String> = []
     private var recoveringAppIDs: Set<String> = []
     private var placeholderAppIDs: Set<String> = []
+    private var showInSystemDock = AppPreferencesStore.defaultShowWebAppsInSystemDock
+    private var isFloatingDockEnabled = AppPreferencesStore.defaultShowFloatingDock
     private var activeAppID: String? {
         didSet {
             guard oldValue != activeAppID else {
@@ -204,6 +206,45 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
         standbyPool?.releaseForMemoryPressure()
     }
 
+    func applyDockPreferences(showInSystemDock: Bool, isFloatingDockEnabled: Bool) {
+        self.showInSystemDock = showInSystemDock
+        self.isFloatingDockEnabled = isFloatingDockEnabled
+        refreshRegistry()
+
+        for state in registry.values {
+            if let bootstrap = registryStore.loadBootstrap(instanceID: state.instanceID) {
+                let updatedBootstrap = RuntimeBootstrap(
+                    instanceID: bootstrap.instanceID,
+                    appID: bootstrap.appID,
+                    definition: bootstrap.definition,
+                    launchReason: bootstrap.launchReason,
+                    preferredDisplayID: bootstrap.preferredDisplayID,
+                    runtimeBuildIdentifier: bootstrap.runtimeBuildIdentifier,
+                    restoredPhase: bootstrap.restoredPhase,
+                    restoredWindowFrame: bootstrap.restoredWindowFrame,
+                    restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
+                    createdAt: bootstrap.createdAt,
+                    hostVersion: bootstrap.hostVersion,
+                    focusReturnTarget: bootstrap.focusReturnTarget,
+                    showInSystemDock: showInSystemDock,
+                    isFloatingDockEnabled: isFloatingDockEnabled
+                )
+                do {
+                    _ = try registryStore.saveBootstrap(updatedBootstrap)
+                } catch {
+                    onDiagnosticMessage("Failed to save dock preferences in runtime bootstrap: \(error.localizedDescription)")
+                }
+            }
+
+            sendCommand(
+                .updateDockPreferences,
+                state: state,
+                showInSystemDock: showInSystemDock,
+                isFloatingDockEnabled: isFloatingDockEnabled
+            )
+        }
+    }
+
     func increaseZoom(appID: String) {
         guard let state = registry[appID] else {
             return
@@ -249,7 +290,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                 restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
                 createdAt: bootstrap.createdAt,
                 hostVersion: bootstrap.hostVersion,
-                focusReturnTarget: bootstrap.focusReturnTarget
+                focusReturnTarget: bootstrap.focusReturnTarget,
+                showInSystemDock: showInSystemDock,
+                isFloatingDockEnabled: isFloatingDockEnabled
             )
             do {
                 _ = try registryStore.saveBootstrap(updatedBootstrap)
@@ -333,7 +376,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             restoredFloatingIconFrame: nil,
             createdAt: .now,
             hostVersion: hostVersion,
-            focusReturnTarget: focusReturnTarget
+            focusReturnTarget: focusReturnTarget,
+            showInSystemDock: showInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
         )
     }
 
@@ -396,7 +441,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
                     restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
                     createdAt: .now,
                     hostVersion: bootstrap.hostVersion,
-                    focusReturnTarget: bootstrap.focusReturnTarget
+                    focusReturnTarget: bootstrap.focusReturnTarget,
+                    showInSystemDock: bootstrap.showInSystemDock,
+                    isFloatingDockEnabled: bootstrap.isFloatingDockEnabled
                 )
             )
         }
@@ -533,7 +580,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             restoredFloatingIconFrame: state.floatingIconFrame,
             createdAt: .now,
             hostVersion: hostVersion,
-            focusReturnTarget: focusReturnTarget ?? bootstrap.focusReturnTarget
+            focusReturnTarget: focusReturnTarget ?? bootstrap.focusReturnTarget,
+            showInSystemDock: showInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
         )
 
         do {
@@ -603,7 +652,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
     private func sendCommand(
         _ commandName: RuntimeCommandName,
         state: RuntimeState,
-        definition: WebAppDefinition? = nil
+        definition: WebAppDefinition? = nil,
+        showInSystemDock: Bool? = nil,
+        isFloatingDockEnabled: Bool? = nil
     ) {
         let command = RuntimeCommand(
             instanceID: state.instanceID,
@@ -611,7 +662,9 @@ final class WebAppRuntimeCoordinator: WebAppRuntimeCoordinating {
             sequence: nextSequence,
             command: commandName,
             definition: definition,
-            focusReturnTarget: focusReturnTarget
+            focusReturnTarget: focusReturnTarget,
+            showInSystemDock: showInSystemDock,
+            isFloatingDockEnabled: isFloatingDockEnabled
         )
         nextSequence += 1
         commandBus.send(command)

@@ -46,19 +46,22 @@ struct GeneralSettingsPane: View {
                 )
                 .help(Text("settings.virtual_notch.help"))
 
-                Picker(
-                    "settings.side_dock.edge.title",
-                    selection: Binding(
-                        get: { appModel.sideDockEdge },
-                        set: { appModel.setSideDockEdge($0) }
+                Toggle(
+                    "settings.system_dock.show_webapps.title",
+                    isOn: Binding(
+                        get: { appModel.showWebAppsInSystemDock },
+                        set: { appModel.setShowWebAppsInSystemDock($0) }
                     )
-                ) {
-                    ForEach(SideDockEdge.allCases, id: \.self) { edge in
-                        Text(edge.title)
-                            .tag(edge)
-                    }
-                }
-                .pickerStyle(.segmented)
+                )
+
+                Toggle(
+                    "settings.floating_dock.show.title",
+                    isOn: Binding(
+                        get: { appModel.isFloatingDockEnabled },
+                        set: { appModel.setFloatingDockEnabled($0) }
+                    )
+                )
+                .help(Text("settings.floating_dock.show.help"))
             }
 
             Section {

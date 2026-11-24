@@ -4,6 +4,15 @@
 
 ## 当前规则
 
+### 2026-11-24: Floating Dock toggle and removal of Dock Starting Position
+
+Owner decision:
+
+- Remove **Dock Starting Position** (`settings.side_dock.edge.title`) from Settings (automatic edge fallback, collapse anchoring, and two-axis drag persistence stay internal).
+- Add **Show Floating Dock** (default ON) under General Settings ("Launcher & Dock"):
+  - When ON, collapsed windows appear in the floating Activity Dock and 80% occlusion auto-collapse runs as before.
+  - When OFF, the floating Dock overlay hides immediately and 80% occlusion auto-collapse stops (unfocused/covered windows behave like ordinary macOS windows); clicking `×` or pressing `⌘W` continues to hide the window while preserving the running WebApp session so it can be restored from the notch launcher or system Dock.
+
 ### 2026-10-19: Dock follows each collapse; glass keeps its native separation
 
 Owner decision (supersedes the "position only changes by dragging" part of the 2026-10-11 rule):

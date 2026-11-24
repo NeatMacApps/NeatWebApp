@@ -6,17 +6,6 @@ enum SideDockEdge: String, CaseIterable, Codable, Sendable {
     case right
     case bottom
 
-    var title: String {
-        switch self {
-        case .left:
-            String(localized: "sidedock.edge.left")
-        case .right:
-            String(localized: "sidedock.edge.right")
-        case .bottom:
-            String(localized: "sidedock.edge.bottom")
-        }
-    }
-
     var isSide: Bool { self != .bottom }
 }
 

@@ -39,6 +39,9 @@ extension WebAppWindowController {
 
     func startCoverageWatch() {
         startEnvironmentObserversIfNeeded()
+        guard isAutoCollapseEnabled else {
+            return
+        }
         evaluateAutoCollapse()
 
         guard coverageWatchTask == nil,
@@ -82,7 +85,7 @@ extension WebAppWindowController {
     }
 
     private var isEligibleForAutoCollapse: Bool {
-        guard let window, Date() >= suppressAutoCollapseUntil else {
+        guard isAutoCollapseEnabled, let window, Date() >= suppressAutoCollapseUntil else {
             return false
         }
 
@@ -104,7 +107,8 @@ extension WebAppWindowController {
             isWindowVisible: window.isVisible,
             isKeyWindow: window.isKeyWindow,
             isMiniaturized: window.isMiniaturized,
-            hiddenFraction: WindowVisibleCoverage.hiddenFraction(of: window)
+            hiddenFraction: WindowVisibleCoverage.hiddenFraction(of: window),
+            isAutoCollapseEnabled: isAutoCollapseEnabled
         )
     }
 
@@ -117,10 +121,12 @@ extension WebAppWindowController {
         isWindowVisible: Bool,
         isKeyWindow: Bool,
         isMiniaturized: Bool,
-        hiddenFraction: CGFloat
+        hiddenFraction: CGFloat,
+        isAutoCollapseEnabled: Bool = true
     ) -> Bool {
         // 注意：实例侧 isEligibleForAutoCollapse 会先做一遍同样的便宜检查，
         // 这里保留全量判断，供单测与无窗口上下文的调用方使用。
+        isAutoCollapseEnabled &&
         !isPinned &&
         !hasFloatingIconPanel &&
         !isAnimatingFloatingIconTransition &&

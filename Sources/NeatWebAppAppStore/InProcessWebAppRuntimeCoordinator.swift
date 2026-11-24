@@ -17,6 +17,8 @@ final class InProcessWebAppRuntimeCoordinator: WebAppRuntimeCoordinating, Runtim
 
     private var controllers: [String: WebAppWindowController] = [:]
     private var states: [String: RuntimeState] = [:]
+    private(set) var showInSystemDock = AppPreferencesStore.defaultShowWebAppsInSystemDock
+    private(set) var isFloatingDockEnabled = AppPreferencesStore.defaultShowFloatingDock
     private var activeAppID: String? {
         didSet {
             guard oldValue != activeAppID else {
@@ -72,7 +74,8 @@ final class InProcessWebAppRuntimeCoordinator: WebAppRuntimeCoordinating, Runtim
             eventSink: self,
             dockReserveStore: dockReserveStore,
             restoredWindowFrame: launchFrame,
-            lockRestoredFrame: false
+            lockRestoredFrame: false,
+            isAutoCollapseEnabled: isFloatingDockEnabled
         )
         controller.session.registerBookmarkWebApp = { [weak self] newDefinition in
             self?.onBookmarkWebApp(newDefinition) ?? false
@@ -169,6 +172,19 @@ final class InProcessWebAppRuntimeCoordinator: WebAppRuntimeCoordinating, Runtim
     func prepareStandbyRuntime() {}
 
     func releaseStandbyRuntimeForMemoryPressure() {}
+
+    func applyDockPreferences(showInSystemDock: Bool, isFloatingDockEnabled: Bool) {
+        self.showInSystemDock = showInSystemDock
+        self.isFloatingDockEnabled = isFloatingDockEnabled
+        for controller in controllers.values {
+            controller.setAutoCollapseEnabled(isFloatingDockEnabled)
+        }
+        syncActivationPolicy()
+    }
+
+    func isAutoCollapseEnabled(for appID: String) -> Bool? {
+        controllers[appID]?.isAutoCollapseEnabled
+    }
 
     func restoreActiveWebAppOnReopen() -> Bool {
         guard !controllers.isEmpty else {
@@ -271,11 +287,32 @@ final class InProcessWebAppRuntimeCoordinator: WebAppRuntimeCoordinating, Runtim
     }
 
     private func promoteActivationPolicyIfNeeded() {
-        guard !isRunningUnitTests, NSApp.activationPolicy() != .regular else {
+        guard showInSystemDock, !isRunningUnitTests, NSApp.activationPolicy() != .regular else {
             return
         }
 
         _ = NSApp.setActivationPolicy(.regular)
+    }
+
+    private func syncActivationPolicy() {
+        guard !isRunningUnitTests else {
+            return
+        }
+
+        if showInSystemDock {
+            if !controllers.isEmpty {
+                promoteActivationPolicyIfNeeded()
+            } else {
+                demoteActivationPolicyIfNeeded()
+            }
+        } else if NSApp.activationPolicy() != .accessory {
+            let keyWindow = NSApp.keyWindow
+            _ = NSApp.setActivationPolicy(.accessory)
+            if let keyWindow, keyWindow.isVisible {
+                NSApp.activate(ignoringOtherApps: true)
+                keyWindow.makeKeyAndOrderFront(nil)
+            }
+        }
     }
 
     private func demoteActivationPolicyIfNeeded() {

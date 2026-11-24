@@ -26,6 +26,16 @@ struct RuntimeBootstrap: Codable, Sendable {
     let createdAt: Date
     let hostVersion: String
     var focusReturnTarget: RuntimeFocusReturnTarget? = nil
+    var showInSystemDock: Bool? = nil
+    var isFloatingDockEnabled: Bool? = nil
+
+    var resolvedShowInSystemDock: Bool {
+        showInSystemDock ?? true
+    }
+
+    var resolvedIsFloatingDockEnabled: Bool {
+        isFloatingDockEnabled ?? true
+    }
 }
 
 /// PID alone can refer to a different application after the original process exits.
@@ -58,6 +68,7 @@ enum RuntimeCommandName: String, Codable, Equatable, Sendable {
     case resetZoom
     /// A warm standby runtime takes over a web app; the host has already saved the bootstrap under this instance ID.
     case adoptBootstrap
+    case updateDockPreferences
 }
 
 struct RuntimeCommand: Codable, Sendable {
@@ -67,6 +78,8 @@ struct RuntimeCommand: Codable, Sendable {
     let command: RuntimeCommandName
     let definition: WebAppDefinition?
     var focusReturnTarget: RuntimeFocusReturnTarget? = nil
+    var showInSystemDock: Bool? = nil
+    var isFloatingDockEnabled: Bool? = nil
 }
 
 enum RuntimeEventName: String, Codable, Equatable, Sendable {

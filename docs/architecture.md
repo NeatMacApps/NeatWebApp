@@ -84,8 +84,10 @@ become regular applications. Warm standby helpers stay hidden until adoption.
 
 Public storefront copy must not claim the product has no Dock presence. The
 accessory policy belongs to the host; every running web app is deliberately a
-regular app with its own Dock and Command-Tab entry, so describe the launcher as
-living outside the Dock rather than the running apps.
+regular app with its own Dock and Command-Tab entry when **Show Web Apps in System Dock**
+is enabled, so describe the launcher as living outside the Dock rather than the running apps.
+
+Owner decision (2026-11-24): add **Show Web Apps in System Dock** (default ON) in General Settings. When OFF, newly launched/restarted runtimes stay `.accessory` and already-running runtimes (as well as the single-process App Store host) are immediately demoted to `.accessory` so running WebApps do not appear in the system Dock or Command-Tab; toggling it back ON immediately promotes them to `.regular` and installs the website icon after promotion.
 
 A runtime uses native `NSApplication.setActivationPolicy(.regular)` and
 `applicationIconImage`, loading the existing per-web-app favicon cache and updating

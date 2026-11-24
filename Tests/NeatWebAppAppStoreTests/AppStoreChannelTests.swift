@@ -136,4 +136,53 @@ final class AppStoreChannelTests: XCTestCase {
         XCTAssertEqual(info["ITSAppUsesNonExemptEncryption"] as? Bool, false)
         XCTAssertTrue(info.keys.filter { $0.hasPrefix("SU") }.isEmpty)
     }
+
+    func testDockPreferencesUpdateLiveAndNewlyOpenedControllers() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appending(path: "NeatWebAppStoreDockPrefs-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let suiteName = "NeatWebAppStoreDockPrefs-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: tempRoot)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let coordinator = InProcessWebAppRuntimeCoordinator(
+            preferencesStore: WebAppPreferencesStore(userDefaults: defaults, rootDirectoryURL: tempRoot),
+            dockReserveStore: SideDockReserveStore(rootDirectoryURL: tempRoot),
+            onActiveAppIDChange: { _ in },
+            onDiagnosticMessage: { _ in }
+        )
+        defer { coordinator.terminateAll() }
+
+        let firstApp = WebAppDefinition(
+            id: "first-dock-app",
+            name: "First",
+            homeURL: try XCTUnwrap(URL(string: "https://example.com/one")),
+            accentColorName: "WebAppAccentBlue",
+            shortDescription: ""
+        )
+        let secondApp = WebAppDefinition(
+            id: "second-dock-app",
+            name: "Second",
+            homeURL: try XCTUnwrap(URL(string: "https://example.com/two")),
+            accentColorName: "WebAppAccentGreen",
+            shortDescription: ""
+        )
+
+        coordinator.open(firstApp, preferredGeometry: nil)
+        XCTAssertEqual(coordinator.isAutoCollapseEnabled(for: firstApp.id), true)
+
+        coordinator.applyDockPreferences(showInSystemDock: false, isFloatingDockEnabled: false)
+        XCTAssertFalse(coordinator.showInSystemDock)
+        XCTAssertFalse(coordinator.isFloatingDockEnabled)
+        XCTAssertEqual(coordinator.isAutoCollapseEnabled(for: firstApp.id), false)
+
+        coordinator.open(secondApp, preferredGeometry: nil)
+        XCTAssertEqual(coordinator.isAutoCollapseEnabled(for: secondApp.id), false)
+
+        coordinator.applyDockPreferences(showInSystemDock: true, isFloatingDockEnabled: true)
+        XCTAssertEqual(coordinator.isAutoCollapseEnabled(for: firstApp.id), true)
+        XCTAssertEqual(coordinator.isAutoCollapseEnabled(for: secondApp.id), true)
+    }
 }

@@ -67,7 +67,8 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             eventSink: self,
             dockReserveStore: dockReserveStore,
             restoredWindowFrame: bootstrap.restoredWindowFrame,
-            lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil
+            lockRestoredFrame: bootstrap.restoredPhase == nil && bootstrap.restoredWindowFrame != nil,
+            isAutoCollapseEnabled: bootstrap.resolvedIsFloatingDockEnabled
         )
         windowController = controller
         controller.session.registerBookmarkWebApp = { [weak bookmarkClient] definition in
@@ -82,7 +83,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             self.windowController?.applyDockReserve(self.dockReserveStore.load())
         }
         restoreInitialPresentation(with: controller)
-        dockIdentity.update(for: bootstrap.definition)
+        dockIdentity.applyVisibility(bootstrap.resolvedShowInSystemDock, for: bootstrap.definition)
     }
 
     func restoreWindowAfterApplicationActivation() {
@@ -202,7 +203,37 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             windowController?.session.resetZoom()
         case .adoptBootstrap:
             break
+        case .updateDockPreferences:
+            applyDockPreferencesUpdate(from: command)
         }
+    }
+
+    private func applyDockPreferencesUpdate(from command: RuntimeCommand) {
+        let nextShowInSystemDock = command.showInSystemDock ?? bootstrap.showInSystemDock
+        let nextFloatingDockEnabled = command.isFloatingDockEnabled ?? bootstrap.isFloatingDockEnabled
+        bootstrap = RuntimeBootstrap(
+            instanceID: bootstrap.instanceID,
+            appID: bootstrap.appID,
+            definition: bootstrap.definition,
+            launchReason: bootstrap.launchReason,
+            preferredDisplayID: bootstrap.preferredDisplayID,
+            runtimeBuildIdentifier: bootstrap.runtimeBuildIdentifier,
+            restoredPhase: bootstrap.restoredPhase,
+            restoredWindowFrame: bootstrap.restoredWindowFrame,
+            restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
+            createdAt: bootstrap.createdAt,
+            hostVersion: bootstrap.hostVersion,
+            focusReturnTarget: bootstrap.focusReturnTarget,
+            showInSystemDock: nextShowInSystemDock,
+            isFloatingDockEnabled: nextFloatingDockEnabled
+        )
+        do {
+            _ = try registryStore.saveBootstrap(bootstrap)
+        } catch {
+            NSLog("Failed to save updated dock preferences in runtime bootstrap: %@", error.localizedDescription)
+        }
+        dockIdentity.applyVisibility(bootstrap.resolvedShowInSystemDock, for: bootstrap.definition)
+        windowController?.setAutoCollapseEnabled(bootstrap.resolvedIsFloatingDockEnabled)
     }
 
     private func applyReloadedDefinition(_ definition: WebAppDefinition?) {
@@ -222,7 +253,9 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             restoredFloatingIconFrame: bootstrap.restoredFloatingIconFrame,
             createdAt: bootstrap.createdAt,
             hostVersion: bootstrap.hostVersion,
-            focusReturnTarget: bootstrap.focusReturnTarget
+            focusReturnTarget: bootstrap.focusReturnTarget,
+            showInSystemDock: bootstrap.showInSystemDock,
+            isFloatingDockEnabled: bootstrap.isFloatingDockEnabled
         )
         do {
             _ = try registryStore.saveBootstrap(bootstrap)
@@ -230,7 +263,7 @@ final class RuntimeWindowCoordinator: RuntimeWindowEventSink {
             NSLog("Failed to save the updated runtime bootstrap: %@", error.localizedDescription)
         }
         appModel.applyDefinition(definition)
-        dockIdentity.update(for: definition)
+        dockIdentity.applyVisibility(bootstrap.resolvedShowInSystemDock, for: definition)
         windowController?.applyDefinition(definition)
     }
 
