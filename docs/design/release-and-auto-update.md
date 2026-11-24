@@ -21,7 +21,7 @@
 | 内嵌运行时包标识 | `com.geraltgraham.NeatWebAppRuntime` | `project.yml` |
 | 签名身份 | `Developer ID Application: Zhichao Cao (SHZQ3MWP3B)` | 本机登录钥匙串，与 JotBox 共用同一张证书 |
 | Developer ID 描述文件 | **不需要**，见下 | — |
-| 公证密钥 | 团队级 Team Key，与 JotBox 共用同一把 | `~/Documents/P8 密钥/发布公证密钥/` |
+| 公证密钥 | 团队级 Team Key，与 JotBox 共用同一把 | `~/Documents/P8/发布公证密钥/` |
 | Sparkle 更新签名密钥 | 钥匙串 account `neatwebapp`（**与 JotBox 的那把分开**）；应用内只存公钥 `SUPublicEDKey` | 本机钥匙串，私钥不导出、不进环境变量、不进仓库 |
 
 ## NeatWebApp 独有的决策
@@ -48,6 +48,14 @@ The 0.3.23/3041 publication stopped after creating its GitHub Release: DMG uploa
 The publisher supports `--resume-publication`: it validates retained app/DMG tickets, the ZIP signature and version/build, and equality between the ZIP application and exported application, then resumes without rebuilding or resubmitting notarization. Uploads retry up to three times; new Releases remain drafts until uploaded names and sizes match. Final anonymous downloads compare complete bytes with the original artifacts. A draft must be read through `gh release view --json assets`: the tag REST endpoint returned 404 for the draft even though both uploads succeeded. Resume retains uploaded same-name/same-size assets and still checks complete anonymous bytes after publication.
 
 Retry failed uploads with a bounded retry policy, read back uploaded names/sizes, then complete feed publication, Cask synchronization and anonymous full-byte checks. Keep the release owned after a failure and resume its failed stage; background launch alone is not closure. A durable detached runner must record PID, intended version/build, source commit, current stage, exit code and a completion/failure notification. Recurring transport failures require a tracked resumable-publisher improvement; documentation alone does not repair that mechanism.
+
+## 0.3.38 / 3056 (2026-11-24)
+
+Source: `3e04a43` (`appcast.xml` commit `5660e37`, `publish-release.sh` exit 0). Debug build and tests passed (`114` host + `130` runtime + `5` App Store tests, static analysis clean on both schemes, zero source warnings beyond the existing `appintentsmetadataprocessor` skip notice).
+
+Both app (`61efba52-8070-4d97-8f85-4bc41d293bab`) and DMG (`f7e11143-2a9f-4f79-a134-7900fb6ca5d2`) notarizations were accepted and stapled. Anonymous full-byte comparisons passed for the `6,074,807`-byte DMG (SHA-256 `f04bb08686a262de5268bd415aa535aecb1590649e20ee8cf9ec17245e01d025`) and `6,120,136`-byte ZIP (SHA-256 `41b0cb6bd5e74f44e44553a773f715ab280786909b030411ddb037b7a4aaf9ff`). The signed public feed (`appcast.xml`) serves build `3056`, and `x0c/homebrew-tap` (`3cf06dd`) advertises `0.3.38` with the matching DMG SHA-256.
+
+The stapled Release replaced `/Applications/NeatWebApp.app`, read back `0.3.38` (`3056`), and launched. Deep strict signature verification and `stapler validate` passed; `spctl` reported `accepted, source=Notarized Developer ID` alongside this Mac's `override=security disabled`. Note: `leakgate` reported `gitleaks` unavailable during push and ran built-in rules with zero blocking findings.
 
 ## 0.3.37 / 3055 (2026-11-22)
 
